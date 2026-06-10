@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بترونيل يمن للطاقة | حاسبة الأنظمة الشمسية الذكية</title>
+    <meta name="description" content="احسب احتياجك من الألواح الشمسية والبطاريات والعواكس الهجينة بسهولة. اختر أجهزتك الكهربائية واحصل على كشف فني وتكلفة تقديرية لمنظومتك فوراً.">
+    <!-- Google Fonts: Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <!-- Background Elements -->
+    <div class="solar-glow"></div>
+    <div class="sun-orb"></div>
+
+    <!-- Header / Navbar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
+                <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#hero" class="nav-link active">الرئيسية</a>
+                <a href="#services" class="nav-link">خدماتنا</a>
+                <a href="#calculator" class="nav-link highlight-btn">احسب منظومتك</a>
+                <a href="#contact" class="nav-link">اتصل بنا</a>
+            </nav>
+            <div class="nav-actions">
+                <button id="theme-toggle" class="btn-icon" aria-label="تغيير المظهر">
+                    <i class="fa-solid fa-sun icon-sun"></i>
+                    <i class="fa-solid fa-moon icon-moon"></i>
+                </button>
+                <div class="currency-selector-container">
+                    <select id="currency-select" class="currency-select" aria-label="العملة">
+                        <option value="USD">الدولار ($)</option>
+                        <option value="SAR">الريال السعودي (ر.س)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="mobile-menu-toggle" aria-label="فتح القائمة">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="mobile-drawer">
+        <button class="close-drawer" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
+        <div class="drawer-logo">
+            <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
+            <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+        </div>
+        <nav class="drawer-nav">
+            <a href="#hero" class="drawer-link">الرئيسية</a>
+            <a href="#services" class="drawer-link">خدماتنا</a>
+            <a href="#calculator" class="drawer-link">احسب منظومتك</a>
+            <a href="#contact" class="drawer-link">اتصل بنا</a>
+        </nav>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero-section">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="badge">
+                    <i class="fa-solid fa-leaf text-success"></i>
+                    <span>طاقة خضراء، مستدامة ونظيفة</span>
+                </div>
+                <h1 class="hero-title">تحكّم بكهربائك ووفر أموالك مع <span class="gradient-text">بترونيل يمن</span></h1>
+                <p class="hero-subtitle">نحن نؤمن لك أفضل حلول الطاقة البديلة والأنظمة الشمسية الذكية من بترونيل يمن. احسب منظومتك المتكاملة الآن بضغطة زر واحصل على تصميم فني دقيق وتكلفة تقديرية فورية.</p>
+                <div class="hero-buttons">
+                    <a href="#calculator" class="btn btn-primary btn-lg pulse">
+                        <i class="fa-solid fa-calculator"></i> ابدأ الحساب الآن
+                    </a>
+                    <a href="#services" class="btn btn-secondary btn-lg">
+                        اكتشف خدماتنا <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-card glass">
+                    <div class="visual-header">
+                        <span class="visual-dot red"></span>
+                        <span class="visual-dot yellow"></span>
+                        <span class="visual-dot green"></span>
+                    </div>
+                    <div class="visual-body">
+                        <div class="live-indicator">
+                            <span class="ping-dot"></span>
+                            <span class="indicator-text">معدل التوليد اللحظي</span>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-label">الألواح</span>
+                                <span class="stat-val font-num">4.8 kW</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">البطاريات</span>
+                                <span class="stat-val font-num">92%</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">الحمل</span>
+                                <span class="stat-val font-num">1.2 kW</span>
+                            </div>
+                        </div>
+                        <div class="visual-chart">
+                            <!-- Visual placeholder representing a solar generation chart -->
+                            <svg viewBox="0 0 100 40" class="chart-svg">
+                                <defs>
+                                    <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.4"/>
+                                        <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M0,40 Q15,10 30,25 T60,5 T90,20 L100,40 Z" fill="url(#chart-grad)"></path>
+                                <path d="M0,40 Q15,10 30,25 T60,5 T90,20 L100,20" fill="none" stroke="var(--primary-color)" stroke-width="1.5"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services / Features Section -->
+    <section id="services" class="services-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2 class="section-title">لماذا تختار <span class="accent-text">بترونيل يمن؟</span></h2>
+                <p class="section-subtitle">نقدم خدمات متكاملة تضمن لك أعلى كفاءة وأطول عمر افتراضي للمنظومة الشمسية</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card glass hover-lift">
+                    <div class="service-icon"><i class="fa-solid fa-solar-panel"></i></div>
+                    <h3>أجود أنواع الألواح</h3>
+                    <p>نوفر ألواحاً شمسية من الفئة الأولى (Tier 1) بنظام أنصاف الخلايا (Half-Cell) المقاوم للظلال وذو الكفاءة العالية.</p>
+                </div>
+                <div class="service-card glass hover-lift">
+                    <div class="service-icon"><i class="fa-solid fa-battery-three-quarters"></i></div>
+                    <h3>بطاريات ليثيوم متطورة</h3>
+                    <p>حلول تخزين طاقة فائقة الأمان من بطاريات الليثيوم LiFePO4 ذات العمر الافتراضي الطويل والكفاءة العالية.</p>
+                </div>
+                <div class="service-card glass hover-lift">
+                    <div class="service-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                    <h3>انفرترات ذكية</h3>
+                    <p>انفرترات طاقة بموجة جيبية نقية متطورة تدعم الشحن الذكي والتحكم الفوري عبر الهواتف الذكية.</p>
+                </div>
+                <div class="service-card glass hover-lift">
+                    <div class="service-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <h3>صيانة ودعم فني مستمر</h3>
+                    <p>فريق متكامل من المهندسين والفنيين لضمان التركيب الاحترافي الآمن وتقديم خدمات الصيانة الدورية.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Calculator Section -->
+    <section id="calculator" class="calculator-section">
+        <div class="container">
+            <div class="section-header text-center">
+                 <span class="section-tag calc-title-tag">الحاسبة الذكية للمنظومات</span>
+                <h2 class="section-title" id="main-hero-title">صمم منظومتك الشمسية بنفسك</h2>
+                <p class="section-subtitle" id="main-hero-subtitle">انقر على الأجهزة التي تريد تشغيلها، حدد ساعات عملها، واحصل على التحليل المالي والفني فوراً!</p>
+            </div>
+
+            <div class="calc-layout">
+                <!-- Inputs Side -->
+                <div class="calc-inputs-container">
+                    
+                    <!-- Appliance Click Grid -->
+                    <div class="step-card glass">
+                        <div class="card-header-icon">
+                            <i class="fa-solid fa-circle-plus header-icon"></i>
+                            <div>
+                                <h3>اختر الأجهزة المراد تشغيلها</h3>
+                                <p>انقر على بطاقة الجهاز لإضافته تلقائياً إلى قائمة الحسابات</p>
+                            </div>
+                        </div>
+                        
+                        <div class="appliance-quick-grid" id="appliance-picker">
+                            <!-- JS will inject options, but let's put default fallbacks for fast SEO and layout -->
+                            <button class="appliance-picker-card" data-type="ac">
+                                <div class="card-badge">1500W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-snowflake"></i></div>
+                                <span>مكيف هواء</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="fridge">
+                                <div class="card-badge">200W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-refrigerator"></i></div>
+                                <span>ثلاجة</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="tv">
+                                <div class="card-badge">100W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-tv"></i></div>
+                                <span>شاشة تلفزيون</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="led">
+                                <div class="card-badge">80W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                                <span>إنارة LED</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="washer">
+                                <div class="card-badge">500W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-soap"></i></div>
+                                <span>غسالة ملابس</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="fan">
+                                <div class="card-badge">75W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-fan"></i></div>
+                                <span>مروحة</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="computer">
+                                <div class="card-badge">120W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-laptop"></i></div>
+                                <span>كمبيوتر</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="router">
+                                <div class="card-badge">15W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-wifi"></i></div>
+                                <span>راوتر إنترنت</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="pump">
+                                <div class="card-badge">750W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-faucet-drip"></i></div>
+                                <span>مضخة مياه</span>
+                            </button>
+                            <button class="appliance-picker-card" data-type="microwave">
+                                <div class="card-badge">1200W</div>
+                                <div class="appliance-icon"><i class="fa-solid fa-circle-dot"></i></div>
+                                <span>ميكروويف</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Add Custom Appliance Form -->
+                        <div class="custom-device-wrapper">
+                            <h4 class="custom-device-title"><i class="fa-solid fa-circle-plus"></i> إضافة أجهزة أخرى غير مدرجة بالقائمة</h4>
+                            <div class="custom-device-form">
+                                <div class="form-group-custom">
+                                    <label for="custom-appliance-name">اسم الجهاز</label>
+                                    <input type="text" id="custom-appliance-name" class="form-control-custom" placeholder="مثال: خلاط، كاوية...">
+                                </div>
+                                <div class="form-group-custom">
+                                    <label for="custom-appliance-watt">القدرة بالوات (W)</label>
+                                    <input type="number" id="custom-appliance-watt" class="form-control-custom font-num" placeholder="مثال: 350">
+                                </div>
+                                <button type="button" id="btn-add-custom" class="btn btn-primary btn-custom-add">
+                                    <i class="fa-solid fa-plus"></i> إضافة الجهاز
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Appliances Table/List -->
+                    <div class="step-card glass" id="selected-appliances-card">
+                        <div class="card-header-icon justify-between">
+                            <div class="header-title-wrapper">
+                                <i class="fa-solid fa-list-check header-icon text-primary"></i>
+                                <div>
+                                    <h3>قائمة الأجهزة المضافة للحساب</h3>
+                                    <p>اضبط الأعداد، السحبية (وات)، وساعات التشغيل لكل جهاز</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger-outline btn-sm" id="clear-all-appliances">
+                                <i class="fa-solid fa-trash-can"></i> مسح الكل
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="appliances-table">
+                                <thead>
+                                    <tr>
+                                        <th>الجهاز</th>
+                                        <th class="w-100">العدد</th>
+                                        <th class="w-120">القدرة (وات)</th>
+                                        <th>تشغيل نهاراً (ساعة)</th>
+                                        <th>تشغيل ليلاً (ساعة)</th>
+                                        <th class="text-center">إلغاء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="selected-appliances-list">
+                                    <!-- Dynamic rows will go here -->
+                                    <tr class="empty-placeholder">
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i class="fa-solid fa-circle-exclamation fa-2x mb-3 text-secondary d-block"></i>
+                                            لم يتم إضافة أي أجهزة بعد. انقر على بطاقات الأجهزة بالأعلى للبدء.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Results Output Side -->
+                <div class="calc-results-container">
+                    <div class="results-card glass sticky-results">
+                        <div class="results-header">
+                            <span class="results-badge">كشف الحساب الفني والمالي</span>
+                            <h2>ملخص المنظومة المقترحة</h2>
+                            <div class="live-badge-results"><span class="pulse-dot"></span> حسابات لحظية</div>
+                        </div>
+
+                        <!-- Main Big Metric -->
+                        <div class="main-metric">
+                            <span class="metric-label">حجم المنظومة المقدر</span>
+                            <span class="metric-value font-num" id="total-system-kw">0.00 <span class="metric-unit">كيلووات (kW)</span></span>
+                        </div>
+
+                        <!-- Results Checklist/Specs Grid -->
+                        <div class="results-detail-grid">
+                            <!-- Inverter Result -->
+                            <div class="result-item-box">
+                                <div class="result-icon-wrapper text-primary">
+                                    <i class="fa-solid fa-gauge-high"></i>
+                                </div>
+                                <div class="result-text-wrapper" style="width: 100%;">
+                                    <span class="result-item-label">الانفرتر (Inverter) المقترح</span>
+                                    <select id="calc-inverter-select" class="calc-select font-num" style="display: block; width: 100%; margin: 0.25rem 0;"></select>
+                                    <span class="result-item-sub" id="result-inverter-sub">انفرتر بموجة جيبية نقية</span>
+                                </div>
+                            </div>
+
+                            <!-- Solar Panels Result -->
+                            <div class="result-item-box">
+                                <div class="result-icon-wrapper text-warning">
+                                    <i class="fa-solid fa-solar-panel"></i>
+                                </div>
+                                <div class="result-text-wrapper" style="width: 100%;">
+                                    <span class="result-item-label">نوع الألواح الشمسية</span>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%; margin: 0.25rem 0;">
+                                        <select id="calc-panel-select" class="calc-select font-num" style="flex: 2; min-width: 0;"></select>
+                                        <span id="result-panels-count" class="font-num" style="flex: 1; font-size: 1.15rem; font-weight: 800; text-align: left; white-space: nowrap;">-- ألواح</span>
+                                    </div>
+                                    <span class="result-item-sub" id="result-panels-sub">إجمالي: -- واط | مساحة: -- م²</span>
+                                </div>
+                            </div>
+
+                            <!-- Batteries Result -->
+                            <div class="result-item-box">
+                                <div class="result-icon-wrapper text-success">
+                                    <i class="fa-solid fa-battery-full"></i>
+                                </div>
+                                <div class="result-text-wrapper" style="width: 100%;">
+                                    <span class="result-item-label">مخزن الطاقة (البطاريات)</span>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%; margin: 0.25rem 0;">
+                                        <select id="calc-battery-select" class="calc-select font-num" style="flex: 2; min-width: 0;"></select>
+                                        <span id="result-batteries-count" class="font-num" style="flex: 1; font-size: 1.15rem; font-weight: 800; text-align: left; white-space: nowrap;">-- بطاريات</span>
+                                    </div>
+                                    <span class="result-item-sub" id="result-batteries-sub">سعة تخزين: -- kWh</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cost Breakdown Accordion/Section -->
+                        <div class="cost-summary-section">
+                            <h3 class="cost-title">جدول التكاليف التقديرية</h3>
+                            
+                            <div class="cost-items-list">
+                                <div class="cost-item">
+                                    <span>الألواح الشمسية (لوح 610W)</span>
+                                    <span class="cost-val font-num" id="cost-panels">--</span>
+                                </div>
+                                <div class="cost-item">
+                                    <span>مخزن البطاريات المختارة</span>
+                                    <span class="cost-val font-num" id="cost-batteries">--</span>
+                                </div>
+                                <div class="cost-item">
+                                    <span>انفرتر ذكي</span>
+                                    <span class="cost-val font-num" id="cost-inverter">--</span>
+                                </div>
+                                <div class="cost-item">
+                                    <span>الهيكل، الكابلات، والتركيب</span>
+                                    <span class="cost-val font-num" id="cost-accessories">--</span>
+                                </div>
+                                <div class="cost-item total-cost-row">
+                                    <span>التكلفة الإجمالية التقريبية</span>
+                                    <span class="cost-val font-num" id="cost-total">--</span>
+                                </div>
+                            </div>
+
+                            <!-- Budget distribution bar chart -->
+                            <div class="budget-bar">
+                                <div class="budget-segment segment-panels" style="width: 30%" data-tooltip="الألواح"></div>
+                                <div class="budget-segment segment-batteries" style="width: 45%" data-tooltip="البطاريات"></div>
+                                <div class="budget-segment segment-inverter" style="width: 15%" data-tooltip="العاكس"></div>
+                                <div class="budget-segment segment-install" style="width: 10%" data-tooltip="التركيب"></div>
+                            </div>
+                            <div class="budget-bar-labels">
+                                <span><span class="dot panels-dot"></span>ألواح</span>
+                                <span><span class="dot batteries-dot"></span>بطاريات</span>
+                                <span><span class="dot inverter-dot"></span>انفرتر</span>
+                                <span><span class="dot install-dot"></span>تركيب</span>
+                            </div>
+                        </div>
+
+                        <!-- CTA Actions -->
+                        <div class="results-actions-buttons">
+                            <button id="download-report" class="btn btn-secondary-outline w-full btn-lg">
+                                <i class="fa-solid fa-file-pdf"></i> تحميل تقرير فني (PDF)
+                            </button>
+                            <a href="#contact" class="btn btn-primary w-full btn-lg">
+                                <i class="fa-solid fa-paper-plane"></i> اطلب المنظومة والتركيب
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & Lead Form Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <div class="contact-layout glass">
+                <div class="contact-info">
+                    <h2>هل تحتاج إلى مساعدة أو معاينة فنية مجانية؟</h2>
+                    <p>يسعد فريق المهندسين في شركة <strong>بترونيل يمن للطاقة</strong> تقديم الاستشارات والزيارات الميدانية لمعاينة منزلك وتحديد أنسب منظومة لك.</p>
+                    
+                    <div class="info-items">
+                        <div class="info-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div>
+                                <h4>المقر الرئيسي</h4>
+                                <p id="main-address">عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-phone"></i>
+                            <div>
+                                <h4>اتصل بنا</h4>
+                                <p class="font-num" id="main-phone">783999039</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div>
+                                <h4>البريد الإلكتروني</h4>
+                                <p id="main-email">info@shamsunaenergy.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form-wrapper">
+                    <h3>أرسل حساباتك للمهندس الفني</h3>
+                    <p>قم بملء بياناتك وسيقوم مهندس مختص بالتواصل معك ومراجعة حسابات منظومتك وتأكيد الأسعار.</p>
+                    
+                    <form id="lead-form" class="lead-form">
+                        <!-- Hidden inputs to submit calculator values -->
+                        <input type="hidden" id="form-system-kw" name="system_kw">
+                        <input type="hidden" id="form-panels" name="panels_count">
+                        <input type="hidden" id="form-batteries" name="batteries_count">
+                        <input type="hidden" id="form-inverter" name="inverter_size">
+                        <input type="hidden" id="form-total-cost" name="total_cost">
+
+                        <div class="form-group">
+                            <label for="client-name">الاسم الكريم</label>
+                            <input type="text" id="client-name" name="name" class="form-control" placeholder="أدخل اسمك الكامل" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="client-phone">رقم الجوال</label>
+                                <input type="tel" id="client-phone" name="phone" class="form-control font-num" placeholder="05xxxxxxxx" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="client-city">المدينة</label>
+                                <input type="text" id="client-city" name="city" class="form-control" placeholder="مثال: الرياض" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-notes">ملاحظات إضافية (أو تعديلات خاصة)</label>
+                            <textarea id="client-notes" name="notes" class="form-control" rows="3" placeholder="اكتب أي ملاحظات أخرى هنا..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-full">
+                            <i class="fa-solid fa-circle-check"></i> إرسال الطلب والاستشارة
+                        </button>
+                    </form>
+                    <div id="form-success-msg" class="success-message glass hidden">
+                        <i class="fa-solid fa-circle-check text-success fa-3x mb-3"></i>
+                        <h4>تم إرسال طلبك بنجاح!</h4>
+                        <p>شكراً لاهتمامك بشركة بترونيل يمن. سيقوم أحد مهندسينا بالاتصال بك خلال 24 ساعة لمناقشة حسابات المنظومة المقترحة.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <div class="logo">
+                    <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
+                    <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+                </div>
+                <p>بترونيل يمن للطاقة - شريكك الموثوق لمستقبل طاقة نظيف، مستدام، واقتصادي. نقدم حلولاً متكاملة وتصاميم ذكية تلبي كافة احتياجاتك السكنية والزراعية والصناعية.</p>
+            </div>
+            <div class="footer-links">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="#hero">الرئيسية</a></li>
+                    <li><a href="#services">خدماتنا</a></li>
+                    <li><a href="#calculator">الحاسبة الذكية</a></li>
+                    <li><a href="#contact">طلب معاينة</a></li>
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h4>تابعنا على وسائل التواصل</h4>
+                <div class="social-icons">
+                    <a href="#" aria-label="X (تويتر)"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" aria-label="لينكد إن"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="#" aria-label="فيسبوك"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" aria-label="إنستغرام"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom text-center">
+            <p>&copy; 2026 بترونيل يمن للطاقة. جميع الحقوق محفوظة. | <a href="/admin" style="color: var(--text-muted); text-decoration: none; margin-right: 10px;"><i class="fa-solid fa-lock"></i> دخول الإدارة</a></p>
+        </div>
+    </footer>
+
+    <!-- Custom Script -->
+    <script src="calculator.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+{
+  "settings": {
+    "title": "بترونيل يمن للطاقة",
+    "heroTitle": "صمم منظومتك الشمسية بنفسك",
+    "heroSubtitle": "انقر على الأجهزة التي تريد تشغيلها، حدد ساعات عملها، واحصل على التحليل المالي والفني فوراً!",
+    "address": "عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان",
+    "phone": "783999039",
+    "email": "----@GMIL.COM"
+  },
+  "appliances": [
+    {
+      "id": "ac",
+      "name": "مكيف هواء (1.5 طن)",
+      "watt": 1500,
+      "dayHours": 6,
+      "nightHours": 2,
+      "icon": "fa-snowflake",
+      "quantity": 1
+    },
+    {
+      "id": "fridge",
+      "name": "ثلاجة منزلية",
+      "watt": 200,
+      "dayHours": 10,
+      "nightHours": 14,
+      "icon": "fa-cube",
+      "quantity": 1
+    },
+    {
+      "id": "tv",
+      "name": "شاشة تلفزيون",
+      "watt": 100,
+      "dayHours": 4,
+      "nightHours": 4,
+      "icon": "fa-tv",
+      "quantity": 1
+    },
+    {
+      "id": "led",
+      "name": "إنارة LED (مجموعة)",
+      "watt": 80,
+      "dayHours": 1,
+      "nightHours": 6,
+      "icon": "fa-lightbulb",
+      "quantity": 1
+    },
+    {
+      "id": "washer",
+      "name": "غسالة ملابس",
+      "watt": 500,
+      "dayHours": 2,
+      "nightHours": 0,
+      "icon": "fa-soap",
+      "quantity": 1
+    },
+    {
+      "id": "fan",
+      "name": "مروحة كهربائية",
+      "watt": 75,
+      "dayHours": 8,
+      "nightHours": 8,
+      "icon": "fa-fan",
+      "quantity": 1
+    },
+    {
+      "id": "computer",
+      "name": "كمبيوتر / لاب توب",
+      "watt": 120,
+      "dayHours": 4,
+      "nightHours": 2,
+      "icon": "fa-laptop",
+      "quantity": 1
+    },
+    {
+      "id": "router",
+      "name": "راوتر إنترنت",
+      "watt": 15,
+      "dayHours": 12,
+      "nightHours": 12,
+      "icon": "fa-wifi",
+      "quantity": 1
+    },
+    {
+      "id": "pump",
+      "name": "مضخة مياه (1 حصان)",
+      "watt": 750,
+      "dayHours": 1,
+      "nightHours": 0,
+      "icon": "fa-faucet-drip",
+      "quantity": 1
+    },
+    {
+      "id": "microwave",
+      "name": "ميكروويف / فرن",
+      "watt": 1200,
+      "dayHours": 0.5,
+      "nightHours": 0.2,
+      "icon": "fa-circle-dot",
+      "quantity": 1
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "passwordHash": "$2a$10$Lv4esMBsXX.UKFrwTu48r.BVh4qgrL3wyb8iSrlrTxJbvXcQirhv6",
+      "role": "SuperAdmin",
+      "permissions": [
+        "overview",
+        "leads",
+        "appliances",
+        "content",
+        "inventory",
+        "users"
+      ]
+    },
+    {
+      "username": "editor",
+      "passwordHash": "$2a$10$hRgaggQWv0sc2dK3fL2JYueV6LWC.nlilfEeAZcy2CHg1ETEj2Pqe",
+      "role": "Editor",
+      "permissions": [
+        "overview",
+        "leads",
+        "appliances",
+        "inventory"
+      ]
+    }
+  ],
+  "leads": [
+    {
+      "id": "lead_um0fdqxlv",
+      "name": "احمد الحامد",
+      "phone": "773577824",
+      "notes": "طلب المنظومه (المدينة: عدن)",
+      "systemSizeKw": 0.82,
+      "panelsCount": "2 panels",
+      "batteriesKwh": "2 units (lithium)",
+      "inverterKva": "1.5 kW",
+      "totalCost": "$2,892",
+      "currency": "USD",
+      "status": "New",
+      "createdAt": "2026-06-09T20:14:49.262Z"
+    },
+    {
+      "id": "lead_tzubz1l75",
+      "name": "احمد",
+      "phone": "6534211ذ",
+      "notes": "مستعجل (المدينة: عدن)",
+      "systemSizeKw": 3.18,
+      "panelsCount": "6 panels (لوح جينكو 610 W)",
+      "batteriesKwh": "3 units (بطارية ليثيوم نارادا 5.12kWh 48V)",
+      "inverterKva": "انفرتر داي ذكي 5kW 48V",
+      "totalCost": "$5,911",
+      "currency": "USD",
+      "status": "New",
+      "createdAt": "2026-06-09T22:31:35.091Z"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel_69ozhi0g0",
+      "name": "لوح جينكو 610 W",
+      "watt": 610,
+      "price": 96,
+      "available": true
+    }
+  ],
+  "batteries": [
+    {
+      "id": "battery_1",
+      "name": "بطارية ليثيوم نارادا 5.12kWh 48V",
+      "capacityKwh": 5.12,
+      "price": 1200,
+      "available": true
+    },
+    {
+      "id": "battery_2",
+      "name": "بطارية ليثيوم BYD 10.24kWh 48V",
+      "capacityKwh": 10.24,
+      "price": 2300,
+      "available": true
+    }
+  ],
+  "inverters": [
+    {
+      "id": "inv_15",
+      "name": "انفرتر داي ذكي 1.5kW 12V",
+      "capacityKw": 1.5,
+      "price": 250,
+      "available": true
+    },
+    {
+      "id": "inv_30",
+      "name": "انفرتر داي ذكي 3kW 24V",
+      "capacityKw": 3,
+      "price": 450,
+      "available": false
+    },
+    {
+      "id": "inv_50",
+      "name": "انفرتر داي ذكي 5kW 48V",
+      "capacityKw": 5,
+      "price": 750,
+      "available": true
+    },
+    {
+      "id": "inv_80",
+      "name": "انفرتر داي ذكي 8kW 48V",
+      "capacityKw": 8,
+      "price": 1100,
+      "available": false
+    },
+    {
+      "id": "inv_100",
+      "name": "انفرتر داي ذكي 10kW 48V",
+      "capacityKw": 10,
+      "price": 1400,
+      "available": false
+    },
+    {
+      "id": "inv_150",
+      "name": "انفرتر داي ذكي 15kW 48V",
+      "capacityKw": 15,
+      "price": 2000,
+      "available": true
+    },
+    {
+      "id": "inv_200",
+      "name": "انفرتر داي ذكي 20kW 48V",
+      "capacityKw": 20,
+      "price": 2600,
+      "available": true
+    }
+  ]
+}
