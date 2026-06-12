@@ -1,9 +1,4 @@
 User-agent: *
-Allow: /$
-Allow: /index.html
-Allow: /styles.css
-Allow: /calculator.js
-
 # Block admin panel and API endpoints from search results
 Disallow: /admin.html
 Disallow: /admin.js
