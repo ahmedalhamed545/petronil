@@ -686,17 +686,53 @@ async function loadBackendContent() {
             const s = data.settings;
             if (s.title) document.title = s.title;
             
+            const heroBadgeEl = document.getElementById('hero-badge');
+            const heroTitleLargeEl = document.getElementById('hero-title');
+            const heroSubLargeEl = document.getElementById('hero-subtitle');
+            
             const heroTitleEl = document.getElementById('main-hero-title');
             const heroSubEl = document.getElementById('main-hero-subtitle');
+            
+            const servicesTitleEl = document.getElementById('services-title');
+            const servicesSubEl = document.getElementById('services-subtitle');
+            
+            const s1TitleEl = document.getElementById('service1-title');
+            const s1DescEl = document.getElementById('service1-desc');
+            const s2TitleEl = document.getElementById('service2-title');
+            const s2DescEl = document.getElementById('service2-desc');
+            const s3TitleEl = document.getElementById('service3-title');
+            const s3DescEl = document.getElementById('service3-desc');
+            const s4TitleEl = document.getElementById('service4-title');
+            const s4DescEl = document.getElementById('service4-desc');
+            
             const addressEl = document.getElementById('main-address');
             const phoneEl = document.getElementById('main-phone');
             const emailEl = document.getElementById('main-email');
+            const footerAboutEl = document.getElementById('footer-about');
+            
+            if (heroBadgeEl && s.heroBadge) heroBadgeEl.innerText = s.heroBadge;
+            if (heroTitleLargeEl && s.heroTitle) heroTitleLargeEl.innerHTML = s.heroTitle;
+            if (heroSubLargeEl && s.heroSubtitle) heroSubLargeEl.innerText = s.heroSubtitle;
             
             if (heroTitleEl && s.heroTitle) heroTitleEl.innerText = s.heroTitle;
             if (heroSubEl && s.heroSubtitle) heroSubEl.innerText = s.heroSubtitle;
+            
+            if (servicesTitleEl && s.servicesTitle) servicesTitleEl.innerHTML = s.servicesTitle;
+            if (servicesSubEl && s.servicesSubtitle) servicesSubEl.innerText = s.servicesSubtitle;
+            
+            if (s1TitleEl && s.service1Title) s1TitleEl.innerText = s.service1Title;
+            if (s1DescEl && s.service1Desc) s1DescEl.innerText = s.service1Desc;
+            if (s2TitleEl && s.service2Title) s2TitleEl.innerText = s.service2Title;
+            if (s2DescEl && s.service2Desc) s2DescEl.innerText = s.service2Desc;
+            if (s3TitleEl && s.service3Title) s3TitleEl.innerText = s.service3Title;
+            if (s3DescEl && s.service3Desc) s3DescEl.innerText = s.service3Desc;
+            if (s4TitleEl && s.service4Title) s4TitleEl.innerText = s.service4Title;
+            if (s4DescEl && s.service4Desc) s4DescEl.innerText = s.service4Desc;
+            
             if (addressEl && s.address) addressEl.innerText = s.address;
             if (phoneEl && s.phone) phoneEl.innerText = s.phone;
             if (emailEl && s.email) emailEl.innerText = s.email;
+            if (footerAboutEl && s.footerAbout) footerAboutEl.innerText = s.footerAbout;
         }
 
         // Update panels, batteries, inverters arrays from backend

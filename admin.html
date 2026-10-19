@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="icon-192.png">
     
     <style>
         :root {
@@ -736,7 +737,7 @@
     <!-- ==================== LOGIN SCREEN ==================== -->
     <div class="login-wrapper glass-card" id="login-section">
         <div class="logo-area">
-            <i class="fa-solid fa-solar-panel"></i>
+            <img src="logo.png" alt="بترونيل يمن للطاقة" style="height: 65px; object-fit: contain; margin-bottom: 12px; border-radius: 6px;">
             <h2>بترونيل يمن للطاقة</h2>
             <p>لوحة تحكم إشرافية آمنة للأنظمة</p>
         </div>
@@ -791,8 +792,7 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="admin-sidebar">
             <div class="sidebar-logo">
-                <i class="fa-solid fa-solar-panel"></i>
-                <h1>بترونيل يمن</h1>
+                <img src="logo.png" alt="بترونيل يمن" style="height: 40px; object-fit: contain; border-radius: 4px;">
             </div>
             <ul class="sidebar-menu">
                 <li class="menu-item active" data-target="section-overview">
@@ -1018,23 +1018,90 @@
                     </div>
                 </div>
 
-                <div class="admin-form-card glass-card" style="max-width: 800px;">
+                <div class="admin-form-card glass-card" style="max-width: 900px;">
                     <h3>تعديل محتوى الصفحة الرئيسية</h3>
                     <form id="content-form">
-                        <div class="form-group">
-                            <label for="content-title">اسم الشركة / العنوان الرئيسي</label>
-                            <input type="text" id="content-title" class="form-control" required>
+                        
+                        <!-- 1. قسم الواجهة والهيرو -->
+                        <h4 style="margin-top: 10px; margin-bottom: 15px; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                            <i class="fa-solid fa-house"></i> قسم البداية والهيرو (Hero Section)
+                        </h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="content-title">اسم الشركة / العنوان الرئيسي للموقع</label>
+                                <input type="text" id="content-title" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="content-hero-badge">نص الشارة الخضراء الصغيرة (Badge)</label>
+                                <input type="text" id="content-hero-badge" class="form-control" required>
+                            </div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="content-hero-title">عنوان الهيرو الرئيسي للحاسبة</label>
+                            <label for="content-hero-title">العنوان العريض للهيرو (Hero Title)</label>
                             <input type="text" id="content-hero-title" class="form-control" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="content-hero-subtitle">النص التعريفي الفرعي للحاسبة</label>
+                            <label for="content-hero-subtitle">الوصف التفصيلي للهيرو (Hero Subtitle)</label>
                             <textarea id="content-hero-subtitle" class="form-control" rows="3" required style="resize: vertical; font-family: inherit;"></textarea>
                         </div>
+
+                        <!-- 2. قسم الخدمات -->
+                        <h4 style="margin-top: 25px; margin-bottom: 15px; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                            <i class="fa-solid fa-solar-panel"></i> قسم الخدمات (Services Section)
+                        </h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="content-services-title">العنوان الرئيسي لقسم الخدمات</label>
+                                <input type="text" id="content-services-title" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="content-services-subtitle">العنوان الفرعي لقسم الخدمات</label>
+                                <input type="text" id="content-services-subtitle" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 15px;">
+                            <div class="form-group" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 10px;">
+                                <h5 style="margin-bottom: 10px; color: var(--accent-secondary);">الخدمة 1: الألواح</h5>
+                                <label for="content-service1-title">عنوان الخدمة</label>
+                                <input type="text" id="content-service1-title" class="form-control" style="margin-bottom: 10px;" required>
+                                <label for="content-service1-desc">وصف الخدمة</label>
+                                <textarea id="content-service1-desc" class="form-control" rows="2" style="resize: vertical; font-family: inherit;" required></textarea>
+                            </div>
+                            <div class="form-group" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 10px;">
+                                <h5 style="margin-bottom: 10px; color: var(--accent-secondary);">الخدمة 2: البطاريات</h5>
+                                <label for="content-service2-title">عنوان الخدمة</label>
+                                <input type="text" id="content-service2-title" class="form-control" style="margin-bottom: 10px;" required>
+                                <label for="content-service2-desc">وصف الخدمة</label>
+                                <textarea id="content-service2-desc" class="form-control" rows="2" style="resize: vertical; font-family: inherit;" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 15px;">
+                            <div class="form-group" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 10px;">
+                                <h5 style="margin-bottom: 10px; color: var(--accent-secondary);">الخدمة 3: الانفرترات</h5>
+                                <label for="content-service3-title">عنوان الخدمة</label>
+                                <input type="text" id="content-service3-title" class="form-control" style="margin-bottom: 10px;" required>
+                                <label for="content-service3-desc">وصف الخدمة</label>
+                                <textarea id="content-service3-desc" class="form-control" rows="2" style="resize: vertical; font-family: inherit;" required></textarea>
+                            </div>
+                            <div class="form-group" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 10px;">
+                                <h5 style="margin-bottom: 10px; color: var(--accent-secondary);">الخدمة 4: الصيانة</h5>
+                                <label for="content-service4-title">عنوان الخدمة</label>
+                                <input type="text" id="content-service4-title" class="form-control" style="margin-bottom: 10px;" required>
+                                <label for="content-service4-desc">وصف الخدمة</label>
+                                <textarea id="content-service4-desc" class="form-control" rows="2" style="resize: vertical; font-family: inherit;" required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 3. قسم اتصل بنا والتذييل -->
+                        <h4 style="margin-top: 25px; margin-bottom: 15px; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                            <i class="fa-solid fa-circle-info"></i> معلومات التواصل والتذييل (Contact & Footer)
+                        </h4>
 
                         <div class="form-row">
                             <div class="form-group">
@@ -1052,7 +1119,12 @@
                             <input type="text" id="content-address" class="form-control" required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="margin-top: 10px; width: fit-content; padding: 12px 30px;">
+                        <div class="form-group">
+                            <label for="content-footer-about">نص "عن الشركة" في تذييل الصفحة</label>
+                            <textarea id="content-footer-about" class="form-control" rows="2" required style="resize: vertical; font-family: inherit;"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: fit-content; padding: 12px 30px;">
                             حفظ وتحديث المحتوى <i class="fa-solid fa-save"></i>
                         </button>
                     </form>

@@ -6,6 +6,14 @@
     <meta name="google-site-verification" content="o0lzOg9iDTf-Hr4NH03D3mRDq6okrF26rIBU41NHSYE" />
     <title>بترونيل يمن للطاقة | حاسبة الأنظمة الشمسية الذكية</title>
     <meta name="description" content="احسب احتياجك من الألواح الشمسية والبطاريات والعواكس الهجينة بسهولة. اختر أجهزتك الكهربائية واحصل على كشف فني وتكلفة تقديرية لمنظومتك فوراً.">
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="حاسبة بترونيل">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
     <!-- Google Fonts: Tajawal -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,8 +32,7 @@
     <header class="navbar">
         <div class="container nav-container">
             <div class="logo">
-                <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
-                <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+                <img src="logo.png" alt="بترونيل يمن للطاقة" class="brand-logo-img">
             </div>
             <nav class="nav-menu">
                 <a href="#hero" class="nav-link active">الرئيسية</a>
@@ -55,8 +62,7 @@
     <div class="mobile-drawer">
         <button class="close-drawer" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
         <div class="drawer-logo">
-            <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
-            <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+            <img src="logo.png" alt="بترونيل يمن للطاقة" class="drawer-logo-img">
         </div>
         <nav class="drawer-nav">
             <a href="#hero" class="drawer-link">الرئيسية</a>
@@ -72,10 +78,10 @@
             <div class="hero-content">
                 <div class="badge">
                     <i class="fa-solid fa-leaf text-success"></i>
-                    <span>طاقة خضراء، مستدامة ونظيفة</span>
+                    <span id="hero-badge">طاقة خضراء، مستدامة ونظيفة</span>
                 </div>
-                <h1 class="hero-title">تحكّم بكهربائك ووفر أموالك مع <span class="gradient-text">بترونيل يمن</span></h1>
-                <p class="hero-subtitle">نحن نؤمن لك أفضل حلول الطاقة البديلة والأنظمة الشمسية الذكية من بترونيل يمن. احسب منظومتك المتكاملة الآن بضغطة زر واحصل على تصميم فني دقيق وتكلفة تقديرية فورية.</p>
+                <h1 class="hero-title" id="hero-title">تحكّم بكهربائك ووفر أموالك مع <span class="gradient-text">بترونيل يمن</span></h1>
+                <p class="hero-subtitle" id="hero-subtitle">نحن نؤمن لك أفضل حلول الطاقة البديلة والأنظمة الشمسية الذكية من بترونيل يمن. احسب منظومتك المتكاملة الآن بضغطة زر واحصل على تصميم فني دقيق وتكلفة تقديرية فورية.</p>
                 <div class="hero-buttons">
                     <a href="#calculator" class="btn btn-primary btn-lg pulse">
                         <i class="fa-solid fa-calculator"></i> ابدأ الحساب الآن
@@ -134,29 +140,29 @@
     <section id="services" class="services-section">
         <div class="container">
             <div class="section-header text-center">
-                <h2 class="section-title">لماذا تختار <span class="accent-text">بترونيل يمن؟</span></h2>
-                <p class="section-subtitle">نقدم خدمات متكاملة تضمن لك أعلى كفاءة وأطول عمر افتراضي للمنظومة الشمسية</p>
+                <h2 class="section-title" id="services-title">لماذا تختار <span class="accent-text">بترونيل يمن؟</span></h2>
+                <p class="section-subtitle" id="services-subtitle">نقدم خدمات متكاملة تضمن لك أعلى كفاءة وأطول عمر افتراضي للمنظومة الشمسية</p>
             </div>
             <div class="services-grid">
                 <div class="service-card glass hover-lift">
                     <div class="service-icon"><i class="fa-solid fa-solar-panel"></i></div>
-                    <h3>أجود أنواع الألواح</h3>
-                    <p>نوفر ألواحاً شمسية من الفئة الأولى (Tier 1) بنظام أنصاف الخلايا (Half-Cell) المقاوم للظلال وذو الكفاءة العالية.</p>
+                    <h3 id="service1-title">أجود أنواع الألواح</h3>
+                    <p id="service1-desc">نوفر ألواحاً شمسية من الفئة الأولى (Tier 1) بنظام أنصاف الخلايا (Half-Cell) المقاوم للظلال وذو الكفاءة العالية.</p>
                 </div>
                 <div class="service-card glass hover-lift">
                     <div class="service-icon"><i class="fa-solid fa-battery-three-quarters"></i></div>
-                    <h3>بطاريات ليثيوم متطورة</h3>
-                    <p>حلول تخزين طاقة فائقة الأمان من بطاريات الليثيوم LiFePO4 ذات العمر الافتراضي الطويل والكفاءة العالية.</p>
+                    <h3 id="service2-title">بطاريات ليثيوم متطورة</h3>
+                    <p id="service2-desc">حلول تخزين طاقة فائقة الأمان من بطاريات الليثيوم LiFePO4 ذات العمر الافتراضي الطويل والكفاءة العالية.</p>
                 </div>
                 <div class="service-card glass hover-lift">
                     <div class="service-icon"><i class="fa-solid fa-gauge-high"></i></div>
-                    <h3>انفرترات ذكية</h3>
-                    <p>انفرترات طاقة بموجة جيبية نقية متطورة تدعم الشحن الذكي والتحكم الفوري عبر الهواتف الذكية.</p>
+                    <h3 id="service3-title">انفرترات ذكية</h3>
+                    <p id="service3-desc">انفرترات طاقة بموجة جيبية نقية متطورة تدعم الشحن الذكي والتحكم الفوري عبر الهواتف الذكية.</p>
                 </div>
                 <div class="service-card glass hover-lift">
                     <div class="service-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-                    <h3>صيانة ودعم فني مستمر</h3>
-                    <p>فريق متكامل من المهندسين والفنيين لضمان التركيب الاحترافي الآمن وتقديم خدمات الصيانة الدورية.</p>
+                    <h3 id="service4-title">صيانة ودعم فني مستمر</h3>
+                    <p id="service4-desc">فريق متكامل من المهندسين والفنيين لضمان التركيب الاحترافي الآمن وتقديم خدمات الصيانة الدورية.</p>
                 </div>
             </div>
         </div>
@@ -498,10 +504,9 @@
         <div class="container footer-container">
             <div class="footer-brand">
                 <div class="logo">
-                    <i class="fa-solid fa-sun-plant-wilt brand-icon"></i>
-                    <span class="brand-name">بترونيل يمن <span class="accent-text">للطاقة</span></span>
+                    <img src="logo.png" alt="بترونيل يمن للطاقة" class="footer-logo-img">
                 </div>
-                <p>بترونيل يمن للطاقة - شريكك الموثوق لمستقبل طاقة نظيف، مستدام، واقتصادي. نقدم حلولاً متكاملة وتصاميم ذكية تلبي كافة احتياجاتك السكنية والزراعية والصناعية.</p>
+                <p id="footer-about">بترونيل يمن للطاقة - شريكك الموثوق لمستقبل طاقة نظيف، مستدام، واقتصادي. نقدم حلولاً متكاملة وتصاميم ذكية تلبي كافة احتياجاتك السكنية والزراعية والصناعية.</p>
             </div>
             <div class="footer-links">
                 <h4>روابط سريعة</h4>
@@ -529,5 +534,14 @@
 
     <!-- Custom Script -->
     <script src="calculator.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA ServiceWorker registered successfully.'))
+                    .catch(err => console.log('ServiceWorker registration error:', err));
+            });
+        }
+    </script>
 </body>
 </html>

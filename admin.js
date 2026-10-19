@@ -363,11 +363,26 @@ function renderUsersTable(users) {
 
 function populateContentForm(settings) {
     document.getElementById('content-title').value = settings.title || '';
+    if (document.getElementById('content-hero-badge')) document.getElementById('content-hero-badge').value = settings.heroBadge || '';
     document.getElementById('content-hero-title').value = settings.heroTitle || '';
     document.getElementById('content-hero-subtitle').value = settings.heroSubtitle || '';
+    
+    if (document.getElementById('content-services-title')) document.getElementById('content-services-title').value = settings.servicesTitle || '';
+    if (document.getElementById('content-services-subtitle')) document.getElementById('content-services-subtitle').value = settings.servicesSubtitle || '';
+    
+    if (document.getElementById('content-service1-title')) document.getElementById('content-service1-title').value = settings.service1Title || '';
+    if (document.getElementById('content-service1-desc')) document.getElementById('content-service1-desc').value = settings.service1Desc || '';
+    if (document.getElementById('content-service2-title')) document.getElementById('content-service2-title').value = settings.service2Title || '';
+    if (document.getElementById('content-service2-desc')) document.getElementById('content-service2-desc').value = settings.service2Desc || '';
+    if (document.getElementById('content-service3-title')) document.getElementById('content-service3-title').value = settings.service3Title || '';
+    if (document.getElementById('content-service3-desc')) document.getElementById('content-service3-desc').value = settings.service3Desc || '';
+    if (document.getElementById('content-service4-title')) document.getElementById('content-service4-title').value = settings.service4Title || '';
+    if (document.getElementById('content-service4-desc')) document.getElementById('content-service4-desc').value = settings.service4Desc || '';
+    
     document.getElementById('content-phone').value = settings.phone || '';
     document.getElementById('content-email').value = settings.email || '';
     document.getElementById('content-address').value = settings.address || '';
+    if (document.getElementById('content-footer-about')) document.getElementById('content-footer-about').value = settings.footerAbout || '';
 }
 
 // --- Render Inventory Tables ---
@@ -694,13 +709,36 @@ async function deleteAppliance(id) {
 document.getElementById('content-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('content-title').value.trim();
+    const heroBadge = document.getElementById('content-hero-badge') ? document.getElementById('content-hero-badge').value.trim() : '';
     const heroTitle = document.getElementById('content-hero-title').value.trim();
     const heroSubtitle = document.getElementById('content-hero-subtitle').value.trim();
+    
+    const servicesTitle = document.getElementById('content-services-title') ? document.getElementById('content-services-title').value.trim() : '';
+    const servicesSubtitle = document.getElementById('content-services-subtitle') ? document.getElementById('content-services-subtitle').value.trim() : '';
+    
+    const service1Title = document.getElementById('content-service1-title') ? document.getElementById('content-service1-title').value.trim() : '';
+    const service1Desc = document.getElementById('content-service1-desc') ? document.getElementById('content-service1-desc').value.trim() : '';
+    const service2Title = document.getElementById('content-service2-title') ? document.getElementById('content-service2-title').value.trim() : '';
+    const service2Desc = document.getElementById('content-service2-desc') ? document.getElementById('content-service2-desc').value.trim() : '';
+    const service3Title = document.getElementById('content-service3-title') ? document.getElementById('content-service3-title').value.trim() : '';
+    const service3Desc = document.getElementById('content-service3-desc') ? document.getElementById('content-service3-desc').value.trim() : '';
+    const service4Title = document.getElementById('content-service4-title') ? document.getElementById('content-service4-title').value.trim() : '';
+    const service4Desc = document.getElementById('content-service4-desc') ? document.getElementById('content-service4-desc').value.trim() : '';
+    
     const phone = document.getElementById('content-phone').value.trim();
     const email = document.getElementById('content-email').value.trim();
     const address = document.getElementById('content-address').value.trim();
+    const footerAbout = document.getElementById('content-footer-about') ? document.getElementById('content-footer-about').value.trim() : '';
     
-    const payload = { title, heroTitle, heroSubtitle, phone, email, address };
+    const payload = { 
+        title, heroBadge, heroTitle, heroSubtitle,
+        servicesTitle, servicesSubtitle,
+        service1Title, service1Desc,
+        service2Title, service2Desc,
+        service3Title, service3Desc,
+        service4Title, service4Desc,
+        phone, email, address, footerAbout
+    };
     
     try {
         const res = await fetch('/api/content/text', {

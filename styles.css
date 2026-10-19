@@ -306,6 +306,33 @@ ul {
     color: var(--primary-color);
 }
 
+.brand-logo-img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    transition: transform var(--transition-fast);
+}
+
+.brand-logo-img:hover {
+    transform: scale(1.03);
+}
+
+.footer-logo-img {
+    height: 54px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.drawer-logo-img {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
 .brand-name {
     font-size: 1.5rem;
     font-weight: 900;
