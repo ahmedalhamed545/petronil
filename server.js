@@ -243,9 +243,14 @@ app.get('/api/inventory/panels', (req, res) => {
 app.post('/api/inventory/panels', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, watt, price } = req.body;
   if (!name || isNaN(watt) || isNaN(price)) {
-    return res.status(400).json({ error: 'البيانات غير صالحة' });
+    return res.status(400).json({ error: 'البيانات غير صالحة، تأكد من إدخال الاسم والقدرة والسعر' });
   }
-  const panel = db.addPanel({ name, watt, price });
+  const panel = db.addPanel(req.body);
+  res.json({ success: true, panel });
+});
+app.put('/api/inventory/panels/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const panel = db.updatePanel(req.params.id, req.body);
+  if (!panel) return res.status(404).json({ error: 'المنتج غير موجود' });
   res.json({ success: true, panel });
 });
 app.put('/api/inventory/panels/:id/toggle', requireAuth, hasPermission('inventory'), (req, res) => {
@@ -266,9 +271,14 @@ app.get('/api/inventory/batteries', (req, res) => {
 app.post('/api/inventory/batteries', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, capacityKwh, price } = req.body;
   if (!name || isNaN(capacityKwh) || isNaN(price)) {
-    return res.status(400).json({ error: 'البيانات غير صالحة' });
+    return res.status(400).json({ error: 'البيانات غير صالحة، تأكد من إدخال الاسم والسعة والسعر' });
   }
-  const battery = db.addBattery({ name, capacityKwh, price });
+  const battery = db.addBattery(req.body);
+  res.json({ success: true, battery });
+});
+app.put('/api/inventory/batteries/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const battery = db.updateBattery(req.params.id, req.body);
+  if (!battery) return res.status(404).json({ error: 'المنتج غير موجود' });
   res.json({ success: true, battery });
 });
 app.put('/api/inventory/batteries/:id/toggle', requireAuth, hasPermission('inventory'), (req, res) => {
@@ -289,9 +299,14 @@ app.get('/api/inventory/inverters', (req, res) => {
 app.post('/api/inventory/inverters', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, capacityKw, price } = req.body;
   if (!name || isNaN(capacityKw) || isNaN(price)) {
-    return res.status(400).json({ error: 'البيانات غير صالحة' });
+    return res.status(400).json({ error: 'البيانات غير صالحة، تأكد من إدخال الاسم والقدرة والسعر' });
   }
-  const inverter = db.addInverter({ name, capacityKw, price });
+  const inverter = db.addInverter(req.body);
+  res.json({ success: true, inverter });
+});
+app.put('/api/inventory/inverters/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const inverter = db.updateInverter(req.params.id, req.body);
+  if (!inverter) return res.status(404).json({ error: 'المنتج غير موجود' });
   res.json({ success: true, inverter });
 });
 app.put('/api/inventory/inverters/:id/toggle', requireAuth, hasPermission('inventory'), (req, res) => {
@@ -302,6 +317,29 @@ app.put('/api/inventory/inverters/:id/toggle', requireAuth, hasPermission('inven
 app.delete('/api/inventory/inverters/:id', requireAuth, hasPermission('inventory'), (req, res) => {
   const success = db.deleteInverter(req.params.id);
   if (!success) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true });
+});
+
+// Design Parameters
+app.get('/api/design-params', (req, res) => {
+  res.json(db.getDesignParams());
+});
+app.put('/api/design-params', requireAuth, hasPermission('content'), (req, res) => {
+  const updated = db.updateDesignParams(req.body);
+  res.json({ success: true, designParams: updated });
+});
+
+// Quotes
+app.get('/api/quotes', requireAuth, hasPermission('leads'), (req, res) => {
+  res.json(db.getQuotes());
+});
+app.post('/api/quotes', (req, res) => {
+  const quote = db.addQuote(req.body);
+  res.json({ success: true, quote });
+});
+app.delete('/api/quotes/:id', requireAuth, hasPermission('leads'), (req, res) => {
+  const success = db.deleteQuote(req.params.id);
+  if (!success) return res.status(404).json({ error: 'عرض السعر غير موجود' });
   res.json({ success: true });
 });
 

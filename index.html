@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="o0lzOg9iDTf-Hr4NH03D3mRDq6okrF26rIBU41NHSYE" />
-    <title>بترونيل يمن للطاقة | حاسبة الأنظمة الشمسية الذكية</title>
-    <meta name="description" content="احسب احتياجك من الألواح الشمسية والبطاريات والعواكس الهجينة بسهولة. اختر أجهزتك الكهربائية واحصل على كشف فني وتكلفة تقديرية لمنظومتك فوراً.">
+    <title>بترونيل يمن للطاقة | حاسبة وتصميم المنظومات الشمسية المتطورة</title>
+    <meta name="description" content="النظام الهندسي الذكي لحساب وتصميم منظومات الطاقة الشمسية من شركة بترونيل يمن للطاقة. محاكاة 24 ساعة، جداول انقطاع الشبكة، مطابقة المكونات، وعروض أسعار فورية.">
     <!-- PWA & Mobile Web App Meta -->
-    <meta name="theme-color" content="#10b981">
+    <meta name="theme-color" content="#f59e0b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="حاسبة بترونيل">
@@ -17,9 +17,13 @@
     <!-- Google Fonts: Tajawal -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for 24h Solar Simulation Curve -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- html2pdf for Arabic PDF Report & Quotations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -32,7 +36,9 @@
     <header class="navbar">
         <div class="container nav-container">
             <div class="logo">
-                <img src="logo.png" alt="بترونيل يمن للطاقة" class="brand-logo-img">
+                <a href="#hero">
+                    <img src="logo.png" alt="بترونيل يمن للطاقة" class="brand-logo-img">
+                </a>
             </div>
             <nav class="nav-menu">
                 <a href="#hero" class="nav-link active">الرئيسية</a>
@@ -48,6 +54,7 @@
                 <div class="currency-selector-container">
                     <select id="currency-select" class="currency-select" aria-label="العملة">
                         <option value="USD">الدولار ($)</option>
+                        <option value="YER">الريال اليمني (ر.ي)</option>
                         <option value="SAR">الريال السعودي (ر.س)</option>
                     </select>
                 </div>
@@ -84,7 +91,7 @@
                 <p class="hero-subtitle" id="hero-subtitle">نحن نؤمن لك أفضل حلول الطاقة البديلة والأنظمة الشمسية الذكية من بترونيل يمن. احسب منظومتك المتكاملة الآن بضغطة زر واحصل على تصميم فني دقيق وتكلفة تقديرية فورية.</p>
                 <div class="hero-buttons">
                     <a href="#calculator" class="btn btn-primary btn-lg pulse">
-                        <i class="fa-solid fa-calculator"></i> ابدأ الحساب الآن
+                        <i class="fa-solid fa-calculator"></i> صمم منظومتك الآن
                     </a>
                     <a href="#services" class="btn btn-secondary btn-lg">
                         اكتشف خدماتنا <i class="fa-solid fa-arrow-left"></i>
@@ -101,24 +108,23 @@
                     <div class="visual-body">
                         <div class="live-indicator">
                             <span class="ping-dot"></span>
-                            <span class="indicator-text">معدل التوليد اللحظي</span>
+                            <span class="indicator-text">محاكاة هندسية حية</span>
                         </div>
                         <div class="stats-grid">
                             <div class="stat-box">
-                                <span class="stat-label">الألواح</span>
-                                <span class="stat-val font-num">4.8 kW</span>
+                                <span class="stat-label">توليد الألواح</span>
+                                <span class="stat-val font-num" id="hero-pv-stat">5.8 kWp</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">البطاريات</span>
-                                <span class="stat-val font-num">92%</span>
+                                <span class="stat-label">شحن البطارية</span>
+                                <span class="stat-val font-num" id="hero-soc-stat">94%</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">الحمل</span>
-                                <span class="stat-val font-num">1.2 kW</span>
+                                <span class="stat-label">الحمل المتزامن</span>
+                                <span class="stat-val font-num" id="hero-load-stat">1.8 kW</span>
                             </div>
                         </div>
                         <div class="visual-chart">
-                            <!-- Visual placeholder representing a solar generation chart -->
                             <svg viewBox="0 0 100 40" class="chart-svg">
                                 <defs>
                                     <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
@@ -168,257 +174,839 @@
         </div>
     </section>
 
-    <!-- Calculator Section -->
+    <!-- 5-Step Solar Design & Calculation Wizard Section -->
     <section id="calculator" class="calculator-section">
         <div class="container">
             <div class="section-header text-center">
-                 <span class="section-tag calc-title-tag">الحاسبة الذكية للمنظومات</span>
-                <h2 class="section-title" id="main-hero-title">صمم منظومتك الشمسية بنفسك</h2>
-                <p class="section-subtitle" id="main-hero-subtitle">انقر على الأجهزة التي تريد تشغيلها، حدد ساعات عملها، واحصل على التحليل المالي والفني فوراً!</p>
+                <span class="section-tag calc-title-tag">نظام بترونيل الهندسي المتكامل</span>
+                <h2 class="section-title">صمم منظومتك الشمسية الذكية</h2>
+                <p class="section-subtitle">خطوات متسلسلة مبنية على جداول الكهرباء الفعلية ومحاكاة 24 ساعة ومطابقة دقيقة لمكونات الطاقة</p>
             </div>
 
-            <div class="calc-layout">
-                <!-- Inputs Side -->
-                <div class="calc-inputs-container">
-                    
-                    <!-- Appliance Click Grid -->
+            <!-- Wizard Progress Navigation Header -->
+            <div class="wizard-stepper-container glass">
+                <div class="wizard-step-node active" data-step="1">
+                    <div class="step-num-bubble">1</div>
+                    <div class="step-label-wrapper">
+                        <span class="step-main-title">كهرباء الشبكة</span>
+                        <span class="step-sub-desc">جدول وساعات التوفر</span>
+                    </div>
+                </div>
+                <div class="step-line-divider"></div>
+
+                <div class="wizard-step-node" data-step="2">
+                    <div class="step-num-bubble">2</div>
+                    <div class="step-label-wrapper">
+                        <span class="step-main-title">الأحمال الكهربائية</span>
+                        <span class="step-sub-desc">الأجهزة وأوقات التشغيل</span>
+                    </div>
+                </div>
+                <div class="step-line-divider"></div>
+
+                <div class="wizard-step-node" data-step="3">
+                    <div class="step-num-bubble">3</div>
+                    <div class="step-label-wrapper">
+                        <span class="step-main-title">المحاكاة الهندسية</span>
+                        <span class="step-sub-desc">توازن الطاقة (24h)</span>
+                    </div>
+                </div>
+                <div class="step-line-divider"></div>
+
+                <div class="wizard-step-node" data-step="4">
+                    <div class="step-num-bubble">4</div>
+                    <div class="step-label-wrapper">
+                        <span class="step-main-title">اختيار المنظومة</span>
+                        <span class="step-sub-desc">المطابقة والمعدات</span>
+                    </div>
+                </div>
+                <div class="step-line-divider"></div>
+
+                <div class="wizard-step-node" data-step="5">
+                    <div class="step-num-bubble">5</div>
+                    <div class="step-label-wrapper">
+                        <span class="step-main-title">عرض السعر والتقرير</span>
+                        <span class="step-sub-desc">الكشف الفني والـ PDF</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WIZARD STEP PANELS -->
+            <div class="wizard-panels-wrapper">
+
+                <!-- ==============================================
+                     الخطوة 1: جدول توفر كهرباء الشبكة
+                     ============================================== -->
+                <div class="wizard-step-panel active" id="step-panel-1">
                     <div class="step-card glass">
                         <div class="card-header-icon">
-                            <i class="fa-solid fa-circle-plus header-icon"></i>
+                            <i class="fa-solid fa-tower-broadcast header-icon text-warning"></i>
                             <div>
-                                <h3>اختر الأجهزة المراد تشغيلها</h3>
-                                <p>انقر على بطاقة الجهاز لإضافته تلقائياً إلى قائمة الحسابات</p>
+                                <h3>جدول توفر كهرباء الشبكة العامة / التجارية</h3>
+                                <p>يحدد النظام سعة البطاريات والألواح بناءً على ساعات الانقطاع الحقيقية بدقة</p>
                             </div>
                         </div>
-                        
-                        <div class="appliance-quick-grid" id="appliance-picker">
-                            <!-- JS will inject options, but let's put default fallbacks for fast SEO and layout -->
-                            <button class="appliance-picker-card" data-type="ac">
-                                <div class="card-badge">1500W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-snowflake"></i></div>
-                                <span>مكيف هواء</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="fridge">
-                                <div class="card-badge">200W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-refrigerator"></i></div>
-                                <span>ثلاجة</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="tv">
-                                <div class="card-badge">100W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-tv"></i></div>
-                                <span>شاشة تلفزيون</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="led">
-                                <div class="card-badge">80W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-lightbulb"></i></div>
-                                <span>إنارة LED</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="washer">
-                                <div class="card-badge">500W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-soap"></i></div>
-                                <span>غسالة ملابس</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="fan">
-                                <div class="card-badge">75W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-fan"></i></div>
-                                <span>مروحة</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="computer">
-                                <div class="card-badge">120W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-laptop"></i></div>
-                                <span>كمبيوتر</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="router">
-                                <div class="card-badge">15W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-wifi"></i></div>
-                                <span>راوتر إنترنت</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="pump">
-                                <div class="card-badge">750W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-faucet-drip"></i></div>
-                                <span>مضخة مياه</span>
-                            </button>
-                            <button class="appliance-picker-card" data-type="microwave">
-                                <div class="card-badge">1200W</div>
-                                <div class="appliance-icon"><i class="fa-solid fa-circle-dot"></i></div>
-                                <span>ميكروويف</span>
+
+                        <!-- Grid Mode Selector Tabs -->
+                        <div class="grid-mode-selector">
+                            <label class="mode-tab-option active" data-mode="offgrid">
+                                <input type="radio" name="grid_mode" value="offgrid" checked>
+                                <div class="mode-card-content">
+                                    <i class="fa-solid fa-solar-panel text-warning"></i>
+                                    <span class="mode-title">نظام مستقل تماماً (Off-Grid)</span>
+                                    <span class="mode-desc">لا توجد شبكة عامة، الاعتماد 100% على الطاقة الشمسية والبطاريات</span>
+                                </div>
+                            </label>
+
+                            <label class="mode-tab-option" data-mode="schedule">
+                                <input type="radio" name="grid_mode" value="schedule">
+                                <div class="mode-card-content">
+                                    <i class="fa-solid fa-calendar-days text-primary"></i>
+                                    <span class="mode-title">جدول فترات محددة</span>
+                                    <span class="mode-desc">الكهرباء تأتي في أوقات وفترات زمنية معلومة خلال اليوم</span>
+                                </div>
+                            </label>
+
+                            <label class="mode-tab-option" data-mode="dailyHours">
+                                <input type="radio" name="grid_mode" value="dailyHours">
+                                <div class="mode-card-content">
+                                    <i class="fa-solid fa-clock text-success"></i>
+                                    <span class="mode-title">ساعات توفر يومية</span>
+                                    <span class="mode-desc">تحديد إجمالي عدد ساعات توفر الشبكة يومياً</span>
+                                </div>
+                            </label>
+
+                            <label class="mode-tab-option" data-mode="irregular">
+                                <input type="radio" name="grid_mode" value="irregular">
+                                <div class="mode-card-content">
+                                    <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                                    <span class="mode-title">كهرباء غير منتظمة</span>
+                                    <span class="mode-desc">انقطاعات عشوائية، وتحديد أسوأ مدة انقطاع متواصلة متوقعة</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Dynamic Config Area Based on Mode -->
+                        <div class="grid-mode-config-container">
+                            <!-- Config: Schedule Intervals -->
+                            <div class="mode-config-subpanel hidden" id="subpanel-schedule">
+                                <div class="intervals-header">
+                                    <h4><i class="fa-solid fa-clock-rotate-left"></i> فترات توفر كهرباء الشبكة (أوقات التشغيل)</h4>
+                                    <button type="button" class="btn btn-secondary-outline btn-sm" id="btn-add-interval">
+                                        <i class="fa-solid fa-plus"></i> إضافة فترة أخرى
+                                    </button>
+                                </div>
+                                <div class="intervals-list" id="intervals-container">
+                                    <div class="interval-row">
+                                        <div class="time-input-group">
+                                            <label>من الساعة:</label>
+                                            <input type="time" class="form-control interval-start" value="06:00">
+                                        </div>
+                                        <div class="time-input-group">
+                                            <label>إلى الساعة:</label>
+                                            <input type="time" class="form-control interval-end" value="10:00">
+                                        </div>
+                                        <button type="button" class="btn-remove-interval" title="حذف الفترة"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                    <div class="interval-row">
+                                        <div class="time-input-group">
+                                            <label>من الساعة:</label>
+                                            <input type="time" class="form-control interval-start" value="16:00">
+                                        </div>
+                                        <div class="time-input-group">
+                                            <label>إلى الساعة:</label>
+                                            <input type="time" class="form-control interval-end" value="20:00">
+                                        </div>
+                                        <button type="button" class="btn-remove-interval" title="حذف الفترة"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                                <span class="field-hint"><i class="fa-solid fa-info-circle"></i> يمكنك إدخال فترات تعبر منتصف الليل مثل (من 22:00 إلى 06:00) وسيعالجها النظام تلقائياً.</span>
+                            </div>
+
+                            <!-- Config: Daily Hours -->
+                            <div class="mode-config-subpanel hidden" id="subpanel-dailyHours">
+                                <div class="form-group-slider">
+                                    <div class="slider-header">
+                                        <label for="input-daily-grid-hours">عدد ساعات توفر الشبكة في اليوم:</label>
+                                        <span class="slider-val-badge font-num" id="val-daily-grid-hours">6 ساعات</span>
+                                    </div>
+                                    <input type="range" id="input-daily-grid-hours" min="1" max="23" value="6" class="range-slider">
+                                </div>
+                            </div>
+
+                            <!-- Config: Irregular Outage -->
+                            <div class="mode-config-subpanel hidden" id="subpanel-irregular">
+                                <div class="form-group-slider">
+                                    <div class="slider-header">
+                                        <label for="input-worst-outage-hours">أطول مدة انقطاع متواصلة تريد أن تصمد فيها البطارية:</label>
+                                        <span class="slider-val-badge font-num text-danger" id="val-worst-outage-hours">16 ساعة</span>
+                                    </div>
+                                    <input type="range" id="input-worst-outage-hours" min="4" max="24" value="16" class="range-slider">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid Policy Settings -->
+                        <div class="grid-policy-card glass">
+                            <div class="policy-header">
+                                <i class="fa-solid fa-sliders text-secondary"></i>
+                                <h4>سياسة استخدام الطاقة عند توفر كهرباء الشبكة</h4>
+                            </div>
+                            <div class="policy-options">
+                                <label class="policy-radio">
+                                    <input type="radio" name="grid_policy" value="solar_first" checked>
+                                    <span><strong>الأولوية للطاقة الشمسية (توفير الفاتورة):</strong> تغذية الأحمال من الألواح والبطاريات أولاً، واستخدام الشبكة فقط عند العجز أو لشحن البطارية.</span>
+                                </label>
+                                <label class="policy-radio">
+                                    <input type="radio" name="grid_policy" value="grid_first">
+                                    <span><strong>الشبكة كحمل أساسي (حماية البطارية):</strong> تشغيل الأحمال من الشبكة مباشرة عند توفرها والاحتفاظ بكامل سعة البطارية لأوقات الانقطاع.</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Live Grid Summary -->
+                        <div class="grid-summary-banner">
+                            <div class="grid-metric-box">
+                                <span class="g-label"><i class="fa-solid fa-plug-circle-check text-success"></i> ساعات الشبكة اليومية</span>
+                                <span class="g-val font-num" id="summary-grid-hours">0.0 ساعة</span>
+                            </div>
+                            <div class="grid-metric-box">
+                                <span class="g-label"><i class="fa-solid fa-plug-circle-xmark text-danger"></i> ساعات الانقطاع اليومية</span>
+                                <span class="g-val font-num" id="summary-outage-hours">24.0 ساعة</span>
+                            </div>
+                            <div class="grid-metric-box">
+                                <span class="g-label"><i class="fa-solid fa-shield-halved text-warning"></i> أطول انقطاع متواصل</span>
+                                <span class="g-val font-num" id="summary-max-outage">24.0 ساعة</span>
+                            </div>
+                        </div>
+
+                        <!-- Wizard Step Actions -->
+                        <div class="step-nav-footer">
+                            <div></div>
+                            <button type="button" class="btn btn-primary btn-lg" id="btn-next-to-loads">
+                                الخطوة التالية: إدخال الأحمال الكهربائية <i class="fa-solid fa-arrow-left"></i>
                             </button>
                         </div>
-                        
-                        <!-- Add Custom Appliance Form -->
-                        <div class="custom-device-wrapper">
-                            <h4 class="custom-device-title"><i class="fa-solid fa-circle-plus"></i> إضافة أجهزة أخرى غير مدرجة بالقائمة</h4>
-                            <div class="custom-device-form">
-                                <div class="form-group-custom">
-                                    <label for="custom-appliance-name">اسم الجهاز</label>
-                                    <input type="text" id="custom-appliance-name" class="form-control-custom" placeholder="مثال: خلاط، كاوية...">
+                    </div>
+                </div>
+
+                <!-- ==============================================
+                     الخطوة 2: إدخال الأحمال والأجهزة الكهربائية
+                     ============================================== -->
+                <div class="wizard-step-panel" id="step-panel-2">
+                    <div class="step-card glass">
+                        <div class="card-header-icon justify-between">
+                            <div class="header-title-wrapper">
+                                <i class="fa-solid fa-bolt-lightning header-icon text-primary"></i>
+                                <div>
+                                    <h3>الأحمال والأجهزة الكهربائية</h3>
+                                    <p>أضف كافة الأجهزة مع قدراتها الفعلية ونوع الحمل ونسب التشغيل الدوري</p>
                                 </div>
-                                <div class="form-group-custom">
-                                    <label for="custom-appliance-watt">القدرة بالوات (W)</label>
-                                    <input type="number" id="custom-appliance-watt" class="form-control-custom font-num" placeholder="مثال: 350">
+                            </div>
+                            <button type="button" class="btn btn-danger-outline btn-sm" id="clear-all-appliances">
+                                <i class="fa-solid fa-trash-can"></i> مسح جميع الأجهزة
+                            </button>
+                        </div>
+
+                        <!-- Category Filter Pills -->
+                        <div class="category-filters-pills" id="category-filter-bar">
+                            <button type="button" class="cat-pill active" data-cat="all">جميع الأجهزة</button>
+                            <button type="button" class="cat-pill" data-cat="تبريد وتكييف"><i class="fa-solid fa-snowflake"></i> تبريد وتكييف</button>
+                            <button type="button" class="cat-pill" data-cat="إنارة وإلكترونيات"><i class="fa-solid fa-tv"></i> إلكترونيات وإنارة</button>
+                            <button type="button" class="cat-pill" data-cat="محركات ومضخات"><i class="fa-solid fa-faucet-drip"></i> مضخات ومحركات</button>
+                            <button type="button" class="cat-pill" data-cat="أجهزة مطبخ"><i class="fa-solid fa-blender"></i> أجهزة مطبخ</button>
+                        </div>
+
+                        <!-- Quick Templates Appliance Grid -->
+                        <div class="appliance-quick-grid" id="appliance-picker">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Custom Device Inline Adder Accordion -->
+                        <div class="custom-device-box glass">
+                            <div class="custom-box-toggle" id="toggle-custom-form">
+                                <span><i class="fa-solid fa-circle-plus text-primary"></i> إضافة جهاز مخصص غير موجود في القائمة الجاهزة</span>
+                                <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="custom-form-body hidden" id="custom-form-content">
+                                <div class="form-row-custom">
+                                    <div class="form-group-custom">
+                                        <label for="custom-app-name">اسم الجهاز:</label>
+                                        <input type="text" id="custom-app-name" class="form-control-custom" placeholder="مثال: منشار، سخان، خلاط...">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-app-watt">القدرة بالواط (Watt):</label>
+                                        <input type="number" id="custom-app-watt" class="form-control-custom font-num" placeholder="مثال: 750">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-app-type">نوع الحمل الكهربائي:</label>
+                                        <select id="custom-app-type" class="form-control-custom">
+                                            <option value="resistive">مقاومي (إنارة، سخان، كاوية) - معامل 1.0</option>
+                                            <option value="aircon">مكيف عاكس (Inverter) - إقلاع 2.5x</option>
+                                            <option value="motor">محرك / مضخة مياه عادية - إقلاع 4x-5x</option>
+                                            <option value="electronic">إلكتروني (كمبيوتر، راوتر، شاشة)</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <button type="button" id="btn-add-custom" class="btn btn-primary btn-custom-add">
-                                    <i class="fa-solid fa-plus"></i> إضافة الجهاز
+                                <div class="form-row-custom mt-2">
+                                    <div class="form-group-custom">
+                                        <label for="custom-app-duty">دورة التشغيل الفعلية (Duty Cycle):</label>
+                                        <select id="custom-app-duty" class="form-control-custom">
+                                            <option value="1.0">100% (يعمل باستمرار كامل الوقت)</option>
+                                            <option value="0.7">70% (مكيف يعمل ويفصل بحسب الثرموستات)</option>
+                                            <option value="0.5" selected>50% (ثلاجة منزلية تدور دورات منتظمة)</option>
+                                            <option value="0.3">30% (استخدام متقطع خفيف)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-app-priority">أولوية الحمل عند انقطاع الكهرباء:</label>
+                                        <select id="custom-app-priority" class="form-control-custom">
+                                            <option value="essential">أساسي جداً (إنارة، راوتر، ثلاجة)</option>
+                                            <option value="important" selected>مهم (شاشات، مراوح، كمبيوتر)</option>
+                                            <option value="sheddable">قابل للفصل (مكيف، غسالة، مضخة)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group-custom d-flex-end">
+                                        <button type="button" class="btn btn-primary w-full" id="btn-add-custom-app">
+                                            <i class="fa-solid fa-plus"></i> إدراج الجهاز
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selected Appliances Data Table -->
+                        <div class="selected-appliances-section mt-4">
+                            <div class="table-responsive">
+                                <table class="appliances-table">
+                                    <thead>
+                                        <tr>
+                                            <th>الجهاز والتصنيف</th>
+                                            <th class="w-100">العدد</th>
+                                            <th class="w-110">القدرة (واط)</th>
+                                            <th>التشغيل نهاراً</th>
+                                            <th>التشغيل ليلاً</th>
+                                            <th>دورة التشغيل</th>
+                                            <th>الأولوية</th>
+                                            <th class="text-center">حذف</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="selected-appliances-list">
+                                        <!-- Dynamic load rows injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Loads Summary Banner -->
+                        <div class="load-metrics-summary-banner">
+                            <div class="load-metric-box">
+                                <span class="lm-label"><i class="fa-solid fa-battery-three-quarters text-warning"></i> إجمالي الطاقة اليومية</span>
+                                <span class="lm-val font-num" id="summary-total-kwh">0.00 <small>kWh/يوم</small></span>
+                            </div>
+                            <div class="load-metric-box">
+                                <span class="lm-label"><i class="fa-solid fa-sun text-primary"></i> الاستهلاك نهاراً</span>
+                                <span class="lm-val font-num" id="summary-day-kwh">0.00 <small>kWh</small></span>
+                            </div>
+                            <div class="load-metric-box">
+                                <span class="lm-label"><i class="fa-solid fa-moon text-secondary"></i> الاستهلاك ليلاً / الانقطاع</span>
+                                <span class="lm-val font-num" id="summary-outage-kwh">0.00 <small>kWh</small></span>
+                            </div>
+                            <div class="load-metric-box">
+                                <span class="lm-label"><i class="fa-solid fa-gauge-high text-primary"></i> أقصى حمل متزامن</span>
+                                <span class="lm-val font-num" id="summary-peak-kw">0.00 <small>kW</small></span>
+                            </div>
+                            <div class="load-metric-box">
+                                <span class="lm-label"><i class="fa-solid fa-bolt text-danger"></i> أقصى قدرة إقلاع</span>
+                                <span class="lm-val font-num" id="summary-surge-kw">0.00 <small>kW</small></span>
+                            </div>
+                        </div>
+
+                        <!-- Step Navigation -->
+                        <div class="step-nav-footer">
+                            <button type="button" class="btn btn-secondary" id="btn-back-to-grid">
+                                <i class="fa-solid fa-arrow-right"></i> السابق: جدول الشبكة
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg" id="btn-next-to-sim">
+                                الخطوة التالية: تشغيل المحاكاة 24 ساعة <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================================
+                     الخطوة 3: المحاكاة الهندسية 24 ساعة
+                     ============================================== -->
+                <div class="wizard-step-panel" id="step-panel-3">
+                    <div class="step-card glass">
+                        <div class="card-header-icon justify-between">
+                            <div class="header-title-wrapper">
+                                <i class="fa-solid fa-chart-area header-icon text-secondary"></i>
+                                <div>
+                                    <h3>المحاكاة الهندسية على مدار 24 ساعة (Time-Step Simulation)</h3>
+                                    <p>توزيع الأحمال وتدفق الطاقة الشمسية وتفريغ البطارية وتتبع العجز اللحظي</p>
+                                </div>
+                            </div>
+                            <div class="sim-badge-live">
+                                <span class="live-dot-pulse"></span> محاكاة 96 شريحة زمنية (15 دقيقة)
+                            </div>
+                        </div>
+
+                        <!-- Interactive 24h Chart Container -->
+                        <div class="simulation-chart-wrapper glass">
+                            <div class="chart-canvas-container" style="position: relative; height: 350px; width: 100%;">
+                                <canvas id="simChartCanvas"></canvas>
+                            </div>
+                            <div class="chart-legend-custom">
+                                <span class="leg-item"><span class="leg-color leg-solar"></span> الإنتاج الشمسي (kW)</span>
+                                <span class="leg-item"><span class="leg-color leg-load"></span> استهلاك الأحمال (kW)</span>
+                                <span class="leg-item"><span class="leg-color leg-soc"></span> نسبة شحن البطارية (SoC %)</span>
+                                <span class="leg-item"><span class="leg-color leg-grid"></span> طاقة الشبكة (kW)</span>
+                                <span class="leg-item"><span class="leg-color leg-deficit"></span> عجز غير مغطى (Deficit)</span>
+                            </div>
+                        </div>
+
+                        <!-- Deficit or Warning Alert Box -->
+                        <div class="sim-alert-box glass hidden" id="sim-deficit-alert">
+                            <div class="alert-icon text-danger"><i class="fa-solid fa-triangle-exclamation fa-2x"></i></div>
+                            <div class="alert-content">
+                                <h4 class="text-danger">تنبيه هندسي: رصد عجز في تغطية الطاقة أثناء ساعات الانقطاع!</h4>
+                                <p id="sim-deficit-details">البطارية تفرغ قبل عودة الكهرباء بمقدار -- kWh. يقترح النظام ترقية سعة التخزين تلقائياً في الخطوة القادمة لضمان استمرارية التيار.</p>
+                            </div>
+                        </div>
+
+                        <!-- 24h Energy Balance Key Stats -->
+                        <div class="sim-metrics-grid">
+                            <div class="sim-stat-card">
+                                <span class="stat-title"><i class="fa-solid fa-sun text-warning"></i> التوليد الشمسي المتوقع</span>
+                                <span class="stat-number font-num" id="sim-total-solar-kwh">0.0 kWh</span>
+                                <span class="stat-desc">بمعدل ذروة 5.8 PSH باليمن</span>
+                            </div>
+                            <div class="sim-stat-card">
+                                <span class="stat-title"><i class="fa-solid fa-arrows-split-up-and-left text-success"></i> الاستهلاك المباشر من الألواح</span>
+                                <span class="stat-number font-num" id="sim-direct-solar-kwh">0.0 kWh</span>
+                                <span class="stat-desc">تغذية نهارية فورية دون استنزاف البطارية</span>
+                            </div>
+                            <div class="sim-stat-card">
+                                <span class="stat-title"><i class="fa-solid fa-battery-half text-primary"></i> الطاقة المستمدة من البطارية</span>
+                                <span class="stat-number font-num" id="sim-battery-discharged-kwh">0.0 kWh</span>
+                                <span class="stat-desc">تغطية ساعات المساء والانقطاع</span>
+                            </div>
+                            <div class="sim-stat-card">
+                                <span class="stat-title"><i class="fa-solid fa-shield-virus text-info"></i> نسبة الاستقلالية الشمسية</span>
+                                <span class="stat-number font-num" id="sim-autonomy-percent">100%</span>
+                                <span class="stat-desc">نسبة تغطية الأحمال من الطاقة النظيفة</span>
+                            </div>
+                        </div>
+
+                        <!-- Step Navigation -->
+                        <div class="step-nav-footer">
+                            <button type="button" class="btn btn-secondary" id="btn-back-to-loads">
+                                <i class="fa-solid fa-arrow-right"></i> السابق: تعديل الأحمال
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg" id="btn-next-to-matching">
+                                الخطوة التالية: مطابقة واختيار المنظومة <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================================
+                     الخطوة 4: مطابقة واختيار المنظومة (3 باقات)
+                     ============================================== -->
+                <div class="wizard-step-panel" id="step-panel-4">
+                    <div class="step-card glass">
+                        <div class="card-header-icon">
+                            <i class="fa-solid fa-cubes header-icon text-warning"></i>
+                            <div>
+                                <h3>المطابقة الهندسية واختيار المنظومة المناسبة</h3>
+                                <p>مطابقة كهربائية دقيقة لحدود جهد الـ MPPT وتيار الإقلاع وسعة التخزين</p>
+                            </div>
+                        </div>
+
+                        <!-- Electrical Validation Banner -->
+                        <div class="mppt-validation-banner glass">
+                            <div class="mppt-check-item">
+                                <i class="fa-solid fa-circle-check text-success"></i>
+                                <span>جهد السلسلة البارد (Voc Cold): <strong id="mppt-val-voc" class="font-num">-- V</strong> &le; أقصى جهد للإنفرتر</span>
+                            </div>
+                            <div class="mppt-check-item">
+                                <i class="fa-solid fa-circle-check text-success"></i>
+                                <span>جهد السلسلة الساخن (Vmp Hot): <strong id="mppt-val-vmp" class="font-num">-- V</strong> &ge; أدنى حد للـ MPPT</span>
+                            </div>
+                            <div class="mppt-check-item">
+                                <i class="fa-solid fa-circle-check text-success"></i>
+                                <span>قدرة الإنفرتر اللحظية: <strong id="mppt-val-surge" class="font-num">-- kW</strong> تغطي إقلاع المحركات</span>
+                            </div>
+                        </div>
+
+                        <!-- 3 Curated Packages Grid -->
+                        <div class="packages-comparison-grid">
+
+                            <!-- Package 1: Economic -->
+                            <div class="package-card glass" id="pkg-card-economic">
+                                <div class="pkg-header">
+                                    <span class="pkg-type-badge">خيار اقتصادي</span>
+                                    <h4 class="pkg-title">الباقة الاقتصادية</h4>
+                                    <p class="pkg-sub">تغطية كاملة للاحتياج بأقل تكلفة ممكنة مع الالتزام بالمعايير الهندسية</p>
+                                </div>
+                                <div class="pkg-specs-list">
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        <div>
+                                            <span class="s-label">الإنفرتر:</span>
+                                            <span class="s-val" id="econ-inv-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-solar-panel"></i>
+                                        <div>
+                                            <span class="s-label">الألواح الشمسية:</span>
+                                            <span class="s-val" id="econ-panel-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-battery-full"></i>
+                                        <div>
+                                            <span class="s-label">البطاريات:</span>
+                                            <span class="s-val" id="econ-battery-name">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pkg-pricing">
+                                    <div class="pkg-price-usd font-num" id="econ-price-usd">$0</div>
+                                    <div class="pkg-price-yer font-num" id="econ-price-yer">0 ر.ي</div>
+                                </div>
+                                <button type="button" class="btn btn-secondary w-full btn-select-pkg" data-pkg="economic">
+                                    <i class="fa-solid fa-check"></i> اختيار الباقة الاقتصادية
+                                </button>
+                            </div>
+
+                            <!-- Package 2: Recommended (Featured) -->
+                            <div class="package-card glass featured-pkg" id="pkg-card-recommended">
+                                <div class="featured-ribbon"><i class="fa-solid fa-star"></i> موصى بها هندسياً</div>
+                                <div class="pkg-header">
+                                    <span class="pkg-type-badge badge-featured">الخيار المتوازن والأفضل</span>
+                                    <h4 class="pkg-title">الباقة الموصى بها</h4>
+                                    <p class="pkg-sub">أفضل توازن بين الأداء الفائق وعمر الليثيوم الطويل وهوامش الأمان الكاملة</p>
+                                </div>
+                                <div class="pkg-specs-list">
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-gauge-high text-primary"></i>
+                                        <div>
+                                            <span class="s-label">الإنفرتر الذكي:</span>
+                                            <span class="s-val" id="rec-inv-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-solar-panel text-warning"></i>
+                                        <div>
+                                            <span class="s-label">الألواح الشمسية N-Type:</span>
+                                            <span class="s-val" id="rec-panel-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-battery-full text-success"></i>
+                                        <div>
+                                            <span class="s-label">بطارية ليثيوم LiFePO4:</span>
+                                            <span class="s-val" id="rec-battery-name">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pkg-pricing">
+                                    <div class="pkg-price-usd font-num text-primary" id="rec-price-usd">$0</div>
+                                    <div class="pkg-price-yer font-num" id="rec-price-yer">0 ر.ي</div>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-lg w-full btn-select-pkg" data-pkg="recommended">
+                                    <i class="fa-solid fa-circle-check"></i> اعتماد الباقة الموصى بها
+                                </button>
+                            </div>
+
+                            <!-- Package 3: High Performance -->
+                            <div class="package-card glass" id="pkg-card-highPerformance">
+                                <div class="pkg-header">
+                                    <span class="pkg-type-badge">أداء فائق واستقلالية</span>
+                                    <h4 class="pkg-title">باقة الأداء العالي</h4>
+                                    <p class="pkg-sub">سعة تخزين مضاعفة وهوامش توسع مستقبلي لأثقل الأحمال والأيام الغائمة</p>
+                                </div>
+                                <div class="pkg-specs-list">
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        <div>
+                                            <span class="s-label">الإنفرتر:</span>
+                                            <span class="s-val" id="high-inv-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-solar-panel"></i>
+                                        <div>
+                                            <span class="s-label">الألواح الشمسية:</span>
+                                            <span class="s-val" id="high-panel-name">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="pkg-spec-row">
+                                        <i class="fa-solid fa-battery-full"></i>
+                                        <div>
+                                            <span class="s-label">البطاريات:</span>
+                                            <span class="s-val" id="high-battery-name">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pkg-pricing">
+                                    <div class="pkg-price-usd font-num" id="high-price-usd">$0</div>
+                                    <div class="pkg-price-yer font-num" id="high-price-yer">0 ر.ي</div>
+                                </div>
+                                <button type="button" class="btn btn-secondary w-full btn-select-pkg" data-pkg="highPerformance">
+                                    <i class="fa-solid fa-check"></i> اختيار باقة الأداء العالي
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Selected Appliances Table/List -->
-                    <div class="step-card glass" id="selected-appliances-card">
-                        <div class="card-header-icon justify-between">
-                            <div class="header-title-wrapper">
-                                <i class="fa-solid fa-list-check header-icon text-primary"></i>
-                                <div>
-                                    <h3>قائمة الأجهزة المضافة للحساب</h3>
-                                    <p>اضبط الأعداد، السحبية (وات)، وساعات التشغيل لكل جهاز</p>
+                        <!-- Manual Component Override / Tuning Section -->
+                        <div class="component-tuning-box glass mt-4">
+                            <div class="tuning-header" id="toggle-tuning-section">
+                                <span><i class="fa-solid fa-screwdriver-wrench text-secondary"></i> تخصيص واستبدال مكونات المنظومة يدوياً (خيارات المهندسين)</span>
+                                <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="tuning-body hidden" id="tuning-content">
+                                <div class="form-row-custom">
+                                    <div class="form-group-custom">
+                                        <label for="custom-select-inverter">الإنفرتر المختار:</label>
+                                        <select id="custom-select-inverter" class="form-control-custom font-num"></select>
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-select-panel">نوع الألواح:</label>
+                                        <select id="custom-select-panel" class="form-control-custom font-num"></select>
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-select-battery">نوع وسعة البطارية:</label>
+                                        <select id="custom-select-battery" class="form-control-custom font-num"></select>
+                                    </div>
+                                </div>
+                                <div class="form-row-custom mt-2">
+                                    <div class="form-group-custom">
+                                        <label for="custom-panels-count">عدد الألواح الشمسية:</label>
+                                        <input type="number" id="custom-panels-count" min="1" max="100" class="form-control-custom font-num">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="custom-batteries-count">عدد وحدات البطارية:</label>
+                                        <input type="number" id="custom-batteries-count" min="1" max="20" class="form-control-custom font-num">
+                                    </div>
+                                    <div class="form-group-custom d-flex-end">
+                                        <button type="button" class="btn btn-secondary w-full" id="btn-apply-custom-tuning">
+                                            <i class="fa-solid fa-rotate"></i> تحديث الحسابات والتكلفة
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <button class="btn btn-danger-outline btn-sm" id="clear-all-appliances">
-                                <i class="fa-solid fa-trash-can"></i> مسح الكل
-                            </button>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="appliances-table">
+                        <!-- Step Navigation -->
+                        <div class="step-nav-footer">
+                            <button type="button" class="btn btn-secondary" id="btn-back-to-sim">
+                                <i class="fa-solid fa-arrow-right"></i> السابق: المحاكاة الهندسية
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg" id="btn-next-to-quote">
+                                الخطوة التالية: عرض السعر والتقرير الفني <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================================
+                     الخطوة 5: عرض السعر والتقرير الفني الرسمي (BOM & PDF)
+                     ============================================== -->
+                <div class="wizard-step-panel" id="step-panel-5">
+                    
+                    <!-- Customer Information Inputs Before Printing -->
+                    <div class="step-card glass mb-4">
+                        <div class="card-header-icon">
+                            <i class="fa-solid fa-user-pen header-icon text-primary"></i>
+                            <div>
+                                <h3>بيانات العميل الموجه له عرض السعر</h3>
+                                <p>أدخل اسمك ورقم هاتفك ليتم إدراجهما رسمياً في التقرير الفني وعرض الأسعار</p>
+                            </div>
+                        </div>
+                        <div class="form-row-custom">
+                            <div class="form-group-custom">
+                                <label for="quote-client-name">اسم العميل الكريم:</label>
+                                <input type="text" id="quote-client-name" class="form-control-custom" placeholder="مثال: م. أحمد سالم العولقي" value="عميل بترونيل المميز">
+                            </div>
+                            <div class="form-group-custom">
+                                <label for="quote-client-phone">رقم الهاتف / الواتساب:</label>
+                                <input type="tel" id="quote-client-phone" class="form-control-custom font-num" placeholder="77xxxxxxx أو 73xxxxxxx">
+                            </div>
+                            <div class="form-group-custom">
+                                <label for="quote-client-location">المدينة / المحافظة:</label>
+                                <input type="text" id="quote-client-location" class="form-control-custom" placeholder="مثال: عدن، حضرموت، صنعاء..." value="عدن">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Printable / PDF Official Quotation Sheet -->
+                    <div class="quotation-print-sheet" id="printable-quotation-area">
+                        <!-- Official Petronil Header -->
+                        <div class="quote-header">
+                            <div class="quote-logo-wrapper">
+                                <img src="logo.png" alt="بترونيل يمن للطاقة" class="quote-logo-img">
+                            </div>
+                            <div class="quote-company-info">
+                                <h2>بترونيل يمن للطاقة</h2>
+                                <p class="quote-tagline">منظومات الطاقة الشمسية، الإنفرترات، البطاريات، وملحقات الطاقة المتطورة</p>
+                                <div class="quote-meta-row">
+                                    <span><strong>المقر:</strong> عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان</span>
+                                    <span><strong>هاتف:</strong> 783999039</span>
+                                </div>
+                            </div>
+                            <div class="quote-doc-details">
+                                <div class="quote-ref-badge" id="quote-ref-code">PYS-2026-0001</div>
+                                <span class="quote-date" id="quote-issue-date">التاريخ: 2026/10/20</span>
+                                <span class="quote-validity">صلاحية العرض: 14 يوماً</span>
+                            </div>
+                        </div>
+
+                        <hr class="quote-divider">
+
+                        <!-- Client and System Summary Bar -->
+                        <div class="quote-client-banner">
+                            <div class="qc-box">
+                                <span class="qc-label">السيد / السادة:</span>
+                                <strong class="qc-val" id="doc-client-name">عميل بترونيل المميز</strong>
+                            </div>
+                            <div class="qc-box">
+                                <span class="qc-label">رقم الهاتف:</span>
+                                <strong class="qc-val font-num" id="doc-client-phone">--</strong>
+                            </div>
+                            <div class="qc-box">
+                                <span class="qc-label">الموقع:</span>
+                                <strong class="qc-val" id="doc-client-location">عدن</strong>
+                            </div>
+                            <div class="qc-box">
+                                <span class="qc-label">نوع المنظومة:</span>
+                                <strong class="qc-val text-primary" id="doc-package-type">الباقة الموصى بها</strong>
+                            </div>
+                        </div>
+
+                        <!-- Technical Specs Summary Box -->
+                        <div class="quote-tech-specs-summary">
+                            <div class="qts-item">
+                                <span>قدرة الإنفرتر:</span>
+                                <strong id="doc-inv-kw" class="font-num">-- kW</strong>
+                            </div>
+                            <div class="qts-item">
+                                <span>إجمالي الألواح:</span>
+                                <strong id="doc-pv-kw" class="font-num">-- kWp (-- لوح)</strong>
+                            </div>
+                            <div class="qts-item">
+                                <span>سعة بنك البطاريات:</span>
+                                <strong id="doc-bat-kwh" class="font-num">-- kWh</strong>
+                            </div>
+                            <div class="qts-item">
+                                <span>ساعات دعم الانقطاع:</span>
+                                <strong id="doc-outage-support" class="font-num">-- ساعة</strong>
+                            </div>
+                        </div>
+
+                        <!-- Itemized Table (BOM) -->
+                        <div class="quote-table-wrapper">
+                            <table class="quote-table">
                                 <thead>
                                     <tr>
-                                        <th>الجهاز</th>
-                                        <th class="w-100">العدد</th>
-                                        <th class="w-120">القدرة (وات)</th>
-                                        <th>تشغيل نهاراً (ساعة)</th>
-                                        <th>تشغيل ليلاً (ساعة)</th>
-                                        <th class="text-center">إلغاء</th>
+                                        <th class="w-50 text-center">#</th>
+                                        <th>البند والمواصفات الفنية المعتمدة</th>
+                                        <th class="w-80 text-center">الكمية</th>
+                                        <th class="w-70 text-center">الوحدة</th>
+                                        <th class="w-100 text-center">الضمان</th>
+                                        <th class="w-110 text-left">السعر الإفرادي</th>
+                                        <th class="w-120 text-left">الإجمالي ($)</th>
                                     </tr>
                                 </thead>
-                                <tbody id="selected-appliances-list">
-                                    <!-- Dynamic rows will go here -->
-                                    <tr class="empty-placeholder">
-                                        <td colspan="6" class="text-center py-5 text-muted">
-                                            <i class="fa-solid fa-circle-exclamation fa-2x mb-3 text-secondary d-block"></i>
-                                            لم يتم إضافة أي أجهزة بعد. انقر على بطاقات الأجهزة بالأعلى للبدء.
-                                        </td>
-                                    </tr>
+                                <tbody id="quote-items-tbody">
+                                    <!-- Injected dynamically by SolarEngine.generateQuotation -->
                                 </tbody>
                             </table>
                         </div>
-                    </div>
 
-                </div>
-
-                <!-- Results Output Side -->
-                <div class="calc-results-container">
-                    <div class="results-card glass sticky-results">
-                        <div class="results-header">
-                            <span class="results-badge">كشف الحساب الفني والمالي</span>
-                            <h2>ملخص المنظومة المقترحة</h2>
-                            <div class="live-badge-results"><span class="pulse-dot"></span> حسابات لحظية</div>
-                        </div>
-
-                        <!-- Main Big Metric -->
-                        <div class="main-metric">
-                            <span class="metric-label">حجم المنظومة المقدر</span>
-                            <span class="metric-value font-num" id="total-system-kw">0.00 <span class="metric-unit">كيلووات (kW)</span></span>
-                        </div>
-
-                        <!-- Results Checklist/Specs Grid -->
-                        <div class="results-detail-grid">
-                            <!-- Inverter Result -->
-                            <div class="result-item-box">
-                                <div class="result-icon-wrapper text-primary">
-                                    <i class="fa-solid fa-gauge-high"></i>
-                                </div>
-                                <div class="result-text-wrapper" style="width: 100%;">
-                                    <span class="result-item-label">الانفرتر (Inverter) المقترح</span>
-                                    <select id="calc-inverter-select" class="calc-select font-num" style="display: block; width: 100%; margin: 0.25rem 0;"></select>
-                                    <span class="result-item-sub" id="result-inverter-sub">انفرتر بموجة جيبية نقية</span>
-                                </div>
+                        <!-- Financial Totals -->
+                        <div class="quote-totals-container">
+                            <div class="quote-notes-side">
+                                <h4>شروط وملاحظات بترونيل يمن:</h4>
+                                <ul id="quote-terms-list">
+                                    <li>الأسعار تشمل التوريد والتركيب والبرمجة والفحص الهندسي المعتمد.</li>
+                                    <li>ضمان الوكيل الرسمي 5 سنوات للإنفرتر والبطاريات، و25 سنة لألواح الطاقة.</li>
+                                    <li>الأسعار تخضع لأسعار الصرف السائدة في تاريخ تحرير هذا العرض.</li>
+                                </ul>
                             </div>
-
-                            <!-- Solar Panels Result -->
-                            <div class="result-item-box">
-                                <div class="result-icon-wrapper text-warning">
-                                    <i class="fa-solid fa-solar-panel"></i>
+                            <div class="quote-figures-side">
+                                <div class="fig-row">
+                                    <span>تكلفة المعدات الأساسية:</span>
+                                    <span class="font-num" id="doc-cost-equipment">$0.00</span>
                                 </div>
-                                <div class="result-text-wrapper" style="width: 100%;">
-                                    <span class="result-item-label">نوع الألواح الشمسية</span>
-                                    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%; margin: 0.25rem 0;">
-                                        <select id="calc-panel-select" class="calc-select font-num" style="flex: 2; min-width: 0;"></select>
-                                        <span id="result-panels-count" class="font-num" style="flex: 1; font-size: 1.15rem; font-weight: 800; text-align: left; white-space: nowrap;">-- ألواح</span>
-                                    </div>
-                                    <span class="result-item-sub" id="result-panels-sub">إجمالي: -- واط | مساحة: -- م²</span>
+                                <div class="fig-row">
+                                    <span>القواعد والكابلات والحماية:</span>
+                                    <span class="font-num" id="doc-cost-accessories">$0.00</span>
                                 </div>
-                            </div>
-
-                            <!-- Batteries Result -->
-                            <div class="result-item-box">
-                                <div class="result-icon-wrapper text-success">
-                                    <i class="fa-solid fa-battery-full"></i>
+                                <div class="fig-row">
+                                    <span>أجور التركيب والفحص الهندسي:</span>
+                                    <span class="font-num" id="doc-cost-install">$0.00</span>
                                 </div>
-                                <div class="result-text-wrapper" style="width: 100%;">
-                                    <span class="result-item-label">مخزن الطاقة (البطاريات)</span>
-                                    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%; margin: 0.25rem 0;">
-                                        <select id="calc-battery-select" class="calc-select font-num" style="flex: 2; min-width: 0;"></select>
-                                        <span id="result-batteries-count" class="font-num" style="flex: 1; font-size: 1.15rem; font-weight: 800; text-align: left; white-space: nowrap;">-- بطاريات</span>
-                                    </div>
-                                    <span class="result-item-sub" id="result-batteries-sub">سعة تخزين: -- kWh</span>
+                                <div class="fig-row total-usd-row">
+                                    <span>الإجمالي الكلي بالدولار:</span>
+                                    <span class="font-num" id="doc-total-usd">$0.00</span>
+                                </div>
+                                <div class="fig-row total-yer-row">
+                                    <span>الإجمالي بالريال اليمني:</span>
+                                    <span class="font-num" id="doc-total-yer">0 ر.ي</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Cost Breakdown Accordion/Section -->
-                        <div class="cost-summary-section">
-                            <h3 class="cost-title">جدول التكاليف التقديرية</h3>
-                            
-                            <div class="cost-items-list">
-                                <div class="cost-item">
-                                    <span>الألواح الشمسية (لوح 610W)</span>
-                                    <span class="cost-val font-num" id="cost-panels">--</span>
-                                </div>
-                                <div class="cost-item">
-                                    <span>مخزن البطاريات المختارة</span>
-                                    <span class="cost-val font-num" id="cost-batteries">--</span>
-                                </div>
-                                <div class="cost-item">
-                                    <span>انفرتر ذكي</span>
-                                    <span class="cost-val font-num" id="cost-inverter">--</span>
-                                </div>
-                                <div class="cost-item">
-                                    <span>الهيكل، الكابلات، والتركيب</span>
-                                    <span class="cost-val font-num" id="cost-accessories">--</span>
-                                </div>
-                                <div class="cost-item total-cost-row">
-                                    <span>التكلفة الإجمالية التقريبية</span>
-                                    <span class="cost-val font-num" id="cost-total">--</span>
+                        <!-- Signatures & Official Stamp -->
+                        <div class="quote-signatures">
+                            <div class="sig-block">
+                                <span>إعداد المهندس المختص:</span>
+                                <strong>قسم الدراسات والمشاريع</strong>
+                                <span class="sig-line">بترونيل يمن للطاقة</span>
+                            </div>
+                            <div class="sig-block text-center">
+                                <div class="official-stamp-box">
+                                    <i class="fa-solid fa-stamp text-primary"></i>
+                                    <span>معتمد ومطابق للمواصفات</span>
                                 </div>
                             </div>
-
-                            <!-- Budget distribution bar chart -->
-                            <div class="budget-bar">
-                                <div class="budget-segment segment-panels" style="width: 30%" data-tooltip="الألواح"></div>
-                                <div class="budget-segment segment-batteries" style="width: 45%" data-tooltip="البطاريات"></div>
-                                <div class="budget-segment segment-inverter" style="width: 15%" data-tooltip="العاكس"></div>
-                                <div class="budget-segment segment-install" style="width: 10%" data-tooltip="التركيب"></div>
+                            <div class="sig-block text-left">
+                                <span>موافقة العميل:</span>
+                                <span class="sig-line">.......................................</span>
                             </div>
-                            <div class="budget-bar-labels">
-                                <span><span class="dot panels-dot"></span>ألواح</span>
-                                <span><span class="dot batteries-dot"></span>بطاريات</span>
-                                <span><span class="dot inverter-dot"></span>انفرتر</span>
-                                <span><span class="dot install-dot"></span>تركيب</span>
-                            </div>
-                        </div>
-
-                        <!-- CTA Actions -->
-                        <div class="results-actions-buttons">
-                            <button id="download-report" class="btn btn-secondary-outline w-full btn-lg">
-                                <i class="fa-solid fa-file-pdf"></i> تحميل تقرير فني (PDF)
-                            </button>
-                            <a href="#contact" class="btn btn-primary w-full btn-lg">
-                                <i class="fa-solid fa-paper-plane"></i> اطلب المنظومة والتركيب
-                            </a>
                         </div>
                     </div>
+
+                    <!-- Actions Toolbar (PDF, WhatsApp, Order) -->
+                    <div class="quote-actions-toolbar glass mt-4">
+                        <button type="button" class="btn btn-primary btn-lg" id="btn-download-pdf">
+                            <i class="fa-solid fa-file-pdf"></i> تحميل التقرير وعرض السعر (PDF)
+                        </button>
+                        <button type="button" class="btn btn-secondary-outline btn-lg" id="btn-print-quote">
+                            <i class="fa-solid fa-print"></i> طباعة فورية
+                        </button>
+                        <button type="button" class="btn btn-success btn-lg" id="btn-whatsapp-share">
+                            <i class="fa-brands fa-whatsapp"></i> إرسال عبر واتساب
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" id="btn-request-installation">
+                            <i class="fa-solid fa-paper-plane"></i> اعتماد الطلب والتركيب
+                        </button>
+                    </div>
+
+                    <!-- Step Navigation -->
+                    <div class="step-nav-footer">
+                        <button type="button" class="btn btn-secondary" id="btn-back-to-matching">
+                            <i class="fa-solid fa-arrow-right"></i> السابق: باقات المنظومة
+                        </button>
+                        <button type="button" class="btn btn-secondary-outline" id="btn-restart-wizard">
+                            <i class="fa-solid fa-rotate-right"></i> تعديل المدخلات من البداية
+                        </button>
+                    </div>
                 </div>
+
             </div>
         </div>
     </section>
@@ -450,7 +1038,7 @@
                             <i class="fa-solid fa-envelope"></i>
                             <div>
                                 <h4>البريد الإلكتروني</h4>
-                                <p id="main-email">info@shamsunaenergy.com</p>
+                                <p id="main-email">info@petronilyemen.com</p>
                             </div>
                         </div>
                     </div>
@@ -460,25 +1048,18 @@
                     <p>قم بملء بياناتك وسيقوم مهندس مختص بالتواصل معك ومراجعة حسابات منظومتك وتأكيد الأسعار.</p>
                     
                     <form id="lead-form" class="lead-form">
-                        <!-- Hidden inputs to submit calculator values -->
-                        <input type="hidden" id="form-system-kw" name="system_kw">
-                        <input type="hidden" id="form-panels" name="panels_count">
-                        <input type="hidden" id="form-batteries" name="batteries_count">
-                        <input type="hidden" id="form-inverter" name="inverter_size">
-                        <input type="hidden" id="form-total-cost" name="total_cost">
-
                         <div class="form-group">
                             <label for="client-name">الاسم الكريم</label>
                             <input type="text" id="client-name" name="name" class="form-control" placeholder="أدخل اسمك الكامل" required>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="client-phone">رقم الجوال</label>
-                                <input type="tel" id="client-phone" name="phone" class="form-control font-num" placeholder="05xxxxxxxx" required>
+                                <label for="client-phone">رقم الجوال / الواتساب</label>
+                                <input type="tel" id="client-phone" name="phone" class="form-control font-num" placeholder="77xxxxxxx أو 73xxxxxxx" required>
                             </div>
                             <div class="form-group">
                                 <label for="client-city">المدينة</label>
-                                <input type="text" id="client-city" name="city" class="form-control" placeholder="مثال: الرياض" required>
+                                <input type="text" id="client-city" name="city" class="form-control" placeholder="مثال: عدن، حضرموت..." required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -532,7 +1113,9 @@
         </div>
     </footer>
 
-    <!-- Custom Script -->
+    <!-- Universal Solar Calculation Engine -->
+    <script src="engine/solar-engine.js"></script>
+    <!-- Interactive Calculator Wizard Controller -->
     <script src="calculator.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

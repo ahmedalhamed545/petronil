@@ -62,6 +62,7 @@ function showDashboard() {
         'section-appliances': 'appliances',
         'section-content': 'content',
         'section-inventory': 'inventory',
+        'section-design-params': 'content',
         'section-users': 'users'
     };
     
@@ -113,7 +114,10 @@ async function loadAllData() {
     
     if (hasPerm('leads')) promises.push(fetchLeads());
     if (hasPerm('appliances')) promises.push(fetchAppliances());
-    if (hasPerm('content')) promises.push(fetchContentSettings());
+    if (hasPerm('content')) {
+        promises.push(fetchContentSettings());
+        promises.push(fetchDesignParams());
+    }
     if (hasPerm('inventory')) promises.push(fetchInventory());
     
     await Promise.all(promises);
@@ -1035,4 +1039,49 @@ function updateThemeIcon() {
         }
     }
 }
+
+// --- Design Parameters Functions ---
+async function fetchDesignParams() {
+    try {
+        const res = await fetch('/api/design-params');
+        if (res.ok) {
+            const p = await res.json();
+            if (document.getElementById('param-psh')) document.getElementById('param-psh').value = p.psh || 5.8;
+            if (document.getElementById('param-derating')) document.getElementById('param-derating').value = p.deratingFactor || 0.78;
+            if (document.getElementById('param-inverter-margin')) document.getElementById('param-inverter-margin').value = p.inverterSafetyMargin || 1.25;
+            if (document.getElementById('param-exchange-rate')) document.getElementById('param-exchange-rate').value = p.currencyExchangeRate || 535;
+            if (document.getElementById('param-temp-min')) document.getElementById('param-temp-min').value = p.tempMinC || 15;
+            if (document.getElementById('param-temp-max')) document.getElementById('param-temp-max').value = p.tempMaxCellC || 65;
+        }
+    } catch (err) {
+        console.error("Failed to fetch design params", err);
+    }
+}
+
+// Handle Design Parameters form submit
+document.getElementById('design-params-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+        psh: parseFloat(document.getElementById('param-psh').value),
+        deratingFactor: parseFloat(document.getElementById('param-derating').value),
+        inverterSafetyMargin: parseFloat(document.getElementById('param-inverter-margin').value),
+        currencyExchangeRate: parseFloat(document.getElementById('param-exchange-rate').value),
+        tempMinC: parseFloat(document.getElementById('param-temp-min').value),
+        tempMaxCellC: parseFloat(document.getElementById('param-temp-max').value)
+    };
+    try {
+        const res = await fetch('/api/design-params', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast("تم تحديث المعايير الهندسية بنجاح", true);
+        } else {
+            showToast("فشل تحديث المعايير الهندسية", false);
+        }
+    } catch (err) {
+        showToast("خطأ في الاتصال بالخادم", false);
+    }
+});
 

@@ -7,6 +7,13 @@ const fs = require('fs');
     const tunnel = await localtunnel({ port: 3000 });
     console.log("Tunnel URL:", tunnel.url);
     fs.writeFileSync('tunnel_url.txt', tunnel.url, 'utf8');
+    
+    tunnel.on('close', () => {
+      console.log("Tunnel closed.");
+    });
+    
+    // Keep process alive indefinitely
+    setInterval(() => {}, 1000 * 60 * 60);
   } catch (err) {
     console.error("Tunnel error:", err);
     fs.writeFileSync('tunnel_url.txt', "Error: " + err.message, 'utf8');
