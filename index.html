@@ -497,27 +497,188 @@
                             </div>
                         </div>
 
-                        <!-- Real-time Loads Summary Banner -->
-                        <div class="load-metrics-summary-banner">
-                            <div class="load-metric-box">
-                                <span class="lm-label"><i class="fa-solid fa-battery-three-quarters text-warning"></i> إجمالي الطاقة اليومية</span>
-                                <span class="lm-val font-num" id="summary-total-kwh">0.00 <small>kWh/يوم</small></span>
+                        <!-- Real-time Loads Summary Banner (Engineering Breakdown) -->
+                        <div class="loads-analysis-dashboard mt-4">
+                            <!-- قسم 1: الاستطاعة اللحظية وتيار الإقلاع (Power kW) -->
+                            <div class="analysis-section glass">
+                                <div class="section-title-tag">
+                                    <i class="fa-solid fa-gauge-high text-primary"></i>
+                                    <div>
+                                        <h4>الاستطاعة اللحظية وتيار الإقلاع (Instantaneous Power & Inrush)</h4>
+                                        <p>تحدد قدرة الإنفرتر، مساحة مقطع الكابلات، وسعة القواطع الهندسية للحماية</p>
+                                    </div>
+                                </div>
+                                <div class="analysis-cards-grid">
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-primary-soft"><i class="fa-solid fa-plug text-primary"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">القدرة المركبة الإجمالية (Installed Load)</span>
+                                            <div class="ac-val font-num" id="val-installed-power">0 <small>W</small> <span class="val-sub" id="val-installed-kw">(0.00 kW)</span></div>
+                                            <span class="ac-hint">مجموع قدرات جميع الأجهزة المتصلة عند عملها معاً بنسبة 100%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card highlight-border">
+                                        <div class="ac-icon bg-warning-soft"><i class="fa-solid fa-bolt-lightning text-warning"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">أقصى حمل متزامن مستمر (Coincident Peak)</span>
+                                            <div class="ac-val font-num text-warning" id="val-peak-power">0.00 <small>kW</small> <span class="val-sub" id="val-peak-kva">(0.00 kVA)</span></div>
+                                            <span class="ac-hint">القدرة الفعلية المطلوبة من الإنفرتر بعد تطبيق معامل التزامن</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-danger-soft"><i class="fa-solid fa-volcano text-danger"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">أقصى قدرة إقلاع لحظية (Surge Inrush)</span>
+                                            <div class="ac-val font-num text-danger" id="val-surge-power">0.00 <small>kW</small></div>
+                                            <span class="ac-hint">تيار بدء دوران ضواغط المكيفات والمضخات والمحركات</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="load-metric-box">
-                                <span class="lm-label"><i class="fa-solid fa-sun text-primary"></i> الاستهلاك نهاراً</span>
-                                <span class="lm-val font-num" id="summary-day-kwh">0.00 <small>kWh</small></span>
+
+                            <!-- قسم 2: استهلاك الطاقة عبر الفترات (Energy kWh) -->
+                            <div class="analysis-section glass">
+                                <div class="section-title-tag">
+                                    <i class="fa-solid fa-chart-pie text-success"></i>
+                                    <div>
+                                        <h4>استهلاك الطاقة التراكمي (Energy Consumption Over Time)</h4>
+                                        <p>تحدد عدد الألواح الشمسية وسعة بنك البطاريات اللازمة للتغطية والاستقلالية الكاملة</p>
+                                    </div>
+                                </div>
+                                <div class="analysis-cards-grid grid-5-cols">
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-warning-soft"><i class="fa-solid fa-calendar-day text-warning"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">الطاقة اليومية</span>
+                                            <div class="ac-val font-num" id="val-daily-kwh">0.00 <small>kWh/يوم</small></div>
+                                            <span class="ac-hint">الاستهلاك الكلي لـ 24 ساعة</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-info-soft"><i class="fa-solid fa-calendar-week text-info"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">الطاقة الأسبوعية</span>
+                                            <div class="ac-val font-num" id="val-weekly-kwh">0.0 <small>kWh/أسبوع</small></div>
+                                            <span class="ac-hint">الاستهلاك التراكمي لـ 7 أيام</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-secondary-soft"><i class="fa-solid fa-calendar-days text-secondary"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">الطاقة الشهرية</span>
+                                            <div class="ac-val font-num" id="val-monthly-kwh">0.0 <small>kWh/شهر</small></div>
+                                            <span class="ac-hint">الاستهلاك التراكمي لـ 30 يوماً</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-primary-soft"><i class="fa-solid fa-sun text-primary"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">الاستهلاك نهاراً</span>
+                                            <div class="ac-val font-num" id="val-day-kwh">0.00 <small>kWh</small></div>
+                                            <span class="ac-hint">تغذية مباشرة من الألواح (06:00-18:00)</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="analysis-card">
+                                        <div class="ac-icon bg-purple-soft"><i class="fa-solid fa-moon text-purple"></i></div>
+                                        <div class="ac-info">
+                                            <span class="ac-label">الاستهلاك ليلاً / انقطاع</span>
+                                            <div class="ac-val font-num text-danger" id="val-outage-kwh">0.00 <small>kWh</small></div>
+                                            <span class="ac-hint">يجب تغطيتها بالكامل من البطاريات</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="load-metric-box">
-                                <span class="lm-label"><i class="fa-solid fa-moon text-secondary"></i> الاستهلاك ليلاً / الانقطاع</span>
-                                <span class="lm-val font-num" id="summary-outage-kwh">0.00 <small>kWh</small></span>
+                        </div>
+
+                        <!-- Real-time Loads Summary Legacy Compat Elements (Hidden visually, populated for backwards compat) -->
+                        <div class="load-metrics-summary-banner" style="display: none;">
+                            <span id="summary-total-kwh">0.00</span>
+                            <span id="summary-day-kwh">0.00</span>
+                            <span id="summary-outage-kwh">0.00</span>
+                            <span id="summary-peak-kw">0.00</span>
+                            <span id="summary-surge-kw">0.00</span>
+                        </div>
+
+                        <!-- ==============================================
+                             بطاقة المنظومة المقترحة فورياً (Live Recommended System Sizing)
+                             ============================================== -->
+                        <div class="live-sizing-card glass mt-4">
+                            <div class="live-card-header">
+                                <div class="lch-title">
+                                    <div class="live-pulse-badge">
+                                        <span class="live-dot-pulse"></span>
+                                        <span>تحديث فوري مباشر</span>
+                                    </div>
+                                    <h3>المنظومة المقترحة فورياً بناءً على أحمالك</h3>
+                                </div>
+                                <span class="lch-sub">تتحدث هذه الأرقام تلقائياً بمجرد إدخال أو تعديل أي جهاز، أو تغيير ساعات الليل والنهار</span>
                             </div>
-                            <div class="load-metric-box">
-                                <span class="lm-label"><i class="fa-solid fa-gauge-high text-primary"></i> أقصى حمل متزامن</span>
-                                <span class="lm-val font-num" id="summary-peak-kw">0.00 <small>kW</small></span>
+
+                            <div class="live-components-grid">
+                                <!-- Inverter -->
+                                <div class="live-comp-box">
+                                    <div class="lcb-head">
+                                        <i class="fa-solid fa-gauge-high text-primary"></i>
+                                        <span>الإنفرتر المطلوب</span>
+                                    </div>
+                                    <div class="lcb-main-val font-num text-primary" id="live-card-inv-cap">-- kW</div>
+                                    <div class="lcb-sub-val" id="live-card-inv-name">جاري المطابقة...</div>
+                                    <div class="lcb-footer">مع معامل أمان 25% وقدرة استيعاب كاملة لتيار إقلاع المحركات</div>
+                                </div>
+
+                                <!-- Solar Panels -->
+                                <div class="live-comp-box">
+                                    <div class="lcb-head">
+                                        <i class="fa-solid fa-solar-panel text-warning"></i>
+                                        <span>الألواح الشمسية</span>
+                                    </div>
+                                    <div class="lcb-main-val font-num text-warning" id="live-card-pv-panels">-- لوح</div>
+                                    <div class="lcb-sub-val font-num" id="live-card-pv-power">-- kWp</div>
+                                    <div class="lcb-footer">تغطي الأحمال النهارية بالكامل وتشحن البطاريات لساعات الليل والانقطاع</div>
+                                </div>
+
+                                <!-- Battery Storage -->
+                                <div class="live-comp-box">
+                                    <div class="lcb-head">
+                                        <i class="fa-solid fa-battery-full text-success"></i>
+                                        <span>سعة البطاريات</span>
+                                    </div>
+                                    <div class="lcb-main-val font-num text-success" id="live-card-bat-kwh">-- kWh</div>
+                                    <div class="lcb-sub-val font-num" id="live-card-bat-ah">-- Ah @ 48V</div>
+                                    <div class="lcb-footer">ليثيوم LiFePO4 بعمق تفريغ 90% وعمر افتراضي يتجاوز 10 سنوات</div>
+                                </div>
+
+                                <!-- Estimated Cost -->
+                                <div class="live-comp-box highlight-cost">
+                                    <div class="lcb-head">
+                                        <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
+                                        <span>التكلفة التقديرية</span>
+                                    </div>
+                                    <div class="lcb-main-val font-num text-warning" id="live-card-cost-usd">$0</div>
+                                    <div class="lcb-sub-val font-num" id="live-card-cost-yer">0 ر.ي</div>
+                                    <div class="lcb-footer">شاملة الإنفرتر والألواح والبطاريات والقواطع والهياكل والتوصيل</div>
+                                </div>
                             </div>
-                            <div class="load-metric-box">
-                                <span class="lm-label"><i class="fa-solid fa-bolt text-danger"></i> أقصى قدرة إقلاع</span>
-                                <span class="lm-val font-num" id="summary-surge-kw">0.00 <small>kW</small></span>
+
+                            <div class="live-card-actions">
+                                <div class="lca-note">
+                                    <i class="fa-solid fa-shield-check text-success"></i>
+                                    <span>مطابقة هندسية معتمدة لمعايير المناخ في اليمن (جهد شتوي 15°C وحرارة صيفية 65°C)</span>
+                                </div>
+                                <div class="lca-buttons">
+                                    <button type="button" class="btn btn-secondary-outline btn-sm" id="btn-quick-to-sim">
+                                        <i class="fa-solid fa-chart-line"></i> معاينة المحاكاة 24h
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-quick-to-matching">
+                                        <i class="fa-solid fa-cubes"></i> اختيار وتخصيص الباقة <i class="fa-solid fa-arrow-left"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

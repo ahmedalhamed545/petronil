@@ -210,6 +210,10 @@ function initWizardNavigation() {
   document.getElementById('btn-next-to-quote')?.addEventListener('click', () => goToStep(5));
   document.getElementById('btn-back-to-matching')?.addEventListener('click', () => goToStep(4));
   document.getElementById('btn-restart-wizard')?.addEventListener('click', () => goToStep(1));
+
+  // Quick navigation buttons from live sizing card
+  document.getElementById('btn-quick-to-sim')?.addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-quick-to-matching')?.addEventListener('click', () => goToStep(4));
 }
 
 function goToStep(step) {
@@ -357,12 +361,8 @@ function updateGridScheduleMetrics() {
   document.getElementById('summary-outage-hours').textContent = `${schedule.totalOutageHours} ساعة`;
   document.getElementById('summary-max-outage').textContent = `${schedule.maxContiguousOutageHours} ساعة`;
 
-  // Update hero stats live if visible
-  const heroPv = document.getElementById('hero-pv-stat');
-  if (heroPv && State.appliances.length > 0) {
-    const profile = SolarEngine.calculateLoadProfile(State.appliances, schedule, 96);
-    heroPv.textContent = `${(profile.peakContinuousKw * 1.3).toFixed(1)} kWp`;
-  }
+  // Trigger reactive calculation across loads and packages
+  triggerReactiveCalculation();
 }
 
 // ============================================================
@@ -511,17 +511,18 @@ function renderSelectedAppliancesTable() {
       <tr class="empty-placeholder">
         <td colspan="8" class="text-center py-5 text-muted">
           <i class="fa-solid fa-circle-exclamation fa-2x mb-3 text-secondary d-block"></i>
-          لم يتم إضافة أي أجهزة بعد. انقر على بطاقات الأجهزة بالأعلى للبدء في حساب منظومتك.
+          لم يتم إضافة أي أجهزة بعد. اختر من بطاقات الأجهزة السريعة أعلاه أو أضف جهازاً مخصصاً للبدء في حساب منظومتك.
         </td>
       </tr>
     `;
+    triggerReactiveCalculation();
     return;
   }
 
   State.appliances.forEach((app, idx) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>
+      <td data-label="الجهاز والتصنيف">
         <div class="d-flex align-center gap-2">
           <i class="fa-solid ${app.icon || 'fa-plug'} text-primary"></i>
           <div>
@@ -530,19 +531,19 @@ function renderSelectedAppliancesTable() {
           </div>
         </div>
       </td>
-      <td>
-        <input type="number" min="1" max="50" class="form-control font-num text-center app-qty-input" value="${app.quantity}" style="width: 70px;">
+      <td data-label="العدد">
+        <input type="number" min="1" max="100" class="form-control font-num text-center app-qty-input" value="${app.quantity}" style="width: 75px;">
       </td>
-      <td>
-        <input type="number" min="5" max="25000" class="form-control font-num text-center app-watt-input" value="${app.watt}" style="width: 85px;">
+      <td data-label="القدرة (واط)">
+        <input type="number" min="1" max="50000" class="form-control font-num text-center app-watt-input" value="${app.watt}" style="width: 90px;">
       </td>
-      <td>
+      <td data-label="ساعات النهار">
         <input type="number" min="0" max="12" step="0.5" class="form-control font-num text-center app-dh-input" value="${app.dayHours}" style="width: 75px;">
       </td>
-      <td>
+      <td data-label="ساعات الليل">
         <input type="number" min="0" max="12" step="0.5" class="form-control font-num text-center app-nh-input" value="${app.nightHours}" style="width: 75px;">
       </td>
-      <td>
+      <td data-label="دورة التشغيل">
         <select class="form-control app-duty-select font-num" style="width: 90px;">
           <option value="1.0" ${app.dutyCycle === 1.0 ? 'selected' : ''}>100%</option>
           <option value="0.7" ${app.dutyCycle === 0.7 ? 'selected' : ''}>70%</option>
@@ -550,50 +551,74 @@ function renderSelectedAppliancesTable() {
           <option value="0.3" ${app.dutyCycle === 0.3 ? 'selected' : ''}>30%</option>
         </select>
       </td>
-      <td>
+      <td data-label="الأولوية">
         <span class="badge-priority badge-${app.priority}">
           ${app.priority === 'essential' ? 'أساسي' : (app.priority === 'sheddable' ? 'قابل للفصل' : 'مهم')}
         </span>
       </td>
-      <td class="text-center">
+      <td data-label="حذف" class="text-center">
         <button type="button" class="btn-remove-interval app-delete-btn" title="حذف الجهاز">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </td>
     `;
 
-    // Bind row controls
-    tr.querySelector('.app-qty-input').addEventListener('change', (e) => {
+    const qtyInp = tr.querySelector('.app-qty-input');
+    const wattInp = tr.querySelector('.app-watt-input');
+    const dhInp = tr.querySelector('.app-dh-input');
+    const nhInp = tr.querySelector('.app-nh-input');
+    const dutySel = tr.querySelector('.app-duty-select');
+    const delBtn = tr.querySelector('.app-delete-btn');
+
+    const onQty = (e) => {
       app.quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
-      updateLoadsMetrics();
-    });
-    tr.querySelector('.app-watt-input').addEventListener('change', (e) => {
+      triggerReactiveCalculation();
+    };
+    qtyInp.addEventListener('input', onQty);
+    qtyInp.addEventListener('change', onQty);
+
+    const onWatt = (e) => {
       app.watt = Math.max(1, parseFloat(e.target.value) || 1);
-      updateLoadsMetrics();
-    });
-    tr.querySelector('.app-dh-input').addEventListener('change', (e) => {
+      triggerReactiveCalculation();
+    };
+    wattInp.addEventListener('input', onWatt);
+    wattInp.addEventListener('change', onWatt);
+
+    const onDh = (e) => {
       app.dayHours = Math.max(0, Math.min(12, parseFloat(e.target.value) || 0));
-      updateLoadsMetrics();
-    });
-    tr.querySelector('.app-nh-input').addEventListener('change', (e) => {
+      triggerReactiveCalculation();
+    };
+    dhInp.addEventListener('input', onDh);
+    dhInp.addEventListener('change', onDh);
+
+    const onNh = (e) => {
       app.nightHours = Math.max(0, Math.min(12, parseFloat(e.target.value) || 0));
-      updateLoadsMetrics();
-    });
-    tr.querySelector('.app-duty-select').addEventListener('change', (e) => {
+      triggerReactiveCalculation();
+    };
+    nhInp.addEventListener('input', onNh);
+    nhInp.addEventListener('change', onNh);
+
+    const onDuty = (e) => {
       app.dutyCycle = parseFloat(e.target.value) || 1.0;
-      updateLoadsMetrics();
-    });
-    tr.querySelector('.app-delete-btn').addEventListener('click', () => {
+      triggerReactiveCalculation();
+    };
+    dutySel.addEventListener('change', onDuty);
+
+    delBtn.addEventListener('click', () => {
       State.appliances.splice(idx, 1);
       renderSelectedAppliancesTable();
-      updateLoadsMetrics();
+      triggerReactiveCalculation();
     });
 
     tbody.appendChild(tr);
   });
 }
 
-function updateLoadsMetrics() {
+/**
+ * دالة التفاعل المركزية لحساب المنظومة وإعادة تقييم كافة المؤشرات فورياً
+ * يتم استدعاؤها مع كل حركة تعديل أو كتابة أو حذف لأي جهاز
+ */
+function triggerReactiveCalculation() {
   const sched = SolarEngine.parseGridSchedule({
     mode: State.grid.mode,
     intervals: State.grid.intervals,
@@ -603,11 +628,116 @@ function updateLoadsMetrics() {
 
   const profile = SolarEngine.calculateLoadProfile(State.appliances, sched, 96);
 
-  document.getElementById('summary-total-kwh').innerHTML = `${profile.totalDailyKwh} <small>kWh/يوم</small>`;
-  document.getElementById('summary-day-kwh').innerHTML = `${profile.totalDayKwh} <small>kWh</small>`;
-  document.getElementById('summary-outage-kwh').innerHTML = `${profile.totalOutageKwh} <small>kWh</small>`;
-  document.getElementById('summary-peak-kw').innerHTML = `${profile.peakContinuousKw} <small>kW</small>`;
-  document.getElementById('summary-surge-kw').innerHTML = `${profile.maxSurgeKw} <small>kW</small>`;
+  // 1. Calculate installed power (مجموع قدرات جميع الأجهزة المتصلة)
+  let installedWatts = 0;
+  State.appliances.forEach(a => {
+    const qty = Math.max(1, parseInt(a.quantity, 10) || 1);
+    const w = Math.max(0, parseFloat(a.watt) || 0);
+    installedWatts += (qty * w);
+  });
+  const installedKw = installedWatts / 1000;
+
+  // 2. Update Instantaneous Power & Inrush Elements
+  const elInstPower = document.getElementById('val-installed-power');
+  const elPeakPower = document.getElementById('val-peak-power');
+  const elSurgePower = document.getElementById('val-surge-power');
+
+  if (elInstPower) elInstPower.innerHTML = `${Math.round(installedWatts).toLocaleString()} <small>W</small> <span class="val-sub">(${installedKw.toFixed(2)} kW)</span>`;
+  if (elPeakPower) elPeakPower.innerHTML = `${profile.peakContinuousKw.toFixed(2)} <small>kW</small> <span class="val-sub">(${profile.peakContinuousKva.toFixed(2)} kVA)</span>`;
+  if (elSurgePower) elSurgePower.innerHTML = `${profile.maxSurgeKw.toFixed(2)} <small>kW</small>`;
+
+  // 3. Update Energy Consumption Over Time Elements
+  const elDailyKwh = document.getElementById('val-daily-kwh');
+  const elWeeklyKwh = document.getElementById('val-weekly-kwh');
+  const elMonthlyKwh = document.getElementById('val-monthly-kwh');
+  const elDayKwh = document.getElementById('val-day-kwh');
+  const elOutageKwh = document.getElementById('val-outage-kwh');
+
+  const dailyKwh = profile.totalDailyKwh;
+  const weeklyKwh = (dailyKwh * 7).toFixed(1);
+  const monthlyKwh = (dailyKwh * 30).toFixed(1);
+
+  if (elDailyKwh) elDailyKwh.innerHTML = `${dailyKwh.toFixed(2)} <small>kWh/يوم</small>`;
+  if (elWeeklyKwh) elWeeklyKwh.innerHTML = `${weeklyKwh} <small>kWh/أسبوع</small>`;
+  if (elMonthlyKwh) elMonthlyKwh.innerHTML = `${monthlyKwh} <small>kWh/شهر</small>`;
+  if (elDayKwh) elDayKwh.innerHTML = `${profile.totalDayKwh.toFixed(2)} <small>kWh</small>`;
+  if (elOutageKwh) elOutageKwh.innerHTML = `${profile.totalOutageKwh.toFixed(2)} <small>kWh</small>`;
+
+  // Legacy elements for backwards compat
+  const elLegacyTotal = document.getElementById('summary-total-kwh');
+  const elLegacyDay = document.getElementById('summary-day-kwh');
+  const elLegacyOutage = document.getElementById('summary-outage-kwh');
+  const elLegacyPeak = document.getElementById('summary-peak-kw');
+  const elLegacySurge = document.getElementById('summary-surge-kw');
+  if (elLegacyTotal) elLegacyTotal.innerHTML = `${dailyKwh} <small>kWh/يوم</small>`;
+  if (elLegacyDay) elLegacyDay.innerHTML = `${profile.totalDayKwh} <small>kWh</small>`;
+  if (elLegacyOutage) elLegacyOutage.innerHTML = `${profile.totalOutageKwh} <small>kWh</small>`;
+  if (elLegacyPeak) elLegacyPeak.innerHTML = `${profile.peakContinuousKw} <small>kW</small>`;
+  if (elLegacySurge) elLegacySurge.innerHTML = `${profile.maxSurgeKw} <small>kW</small>`;
+
+  // 4. Perform Automated Sizing & Matching
+  if (State.inventory.inverters.length > 0 && State.inventory.batteries.length > 0 && State.inventory.panels.length > 0) {
+    const matchResult = SolarEngine.sizeAndMatchSystem(profile, sched, State.inventory, State.designParams);
+    State.matchedPackages = matchResult;
+    State.activePackage = matchResult.packages[State.selectedPackageType] || matchResult.packages.recommended;
+
+    const rec = matchResult.packages.recommended;
+    const recQuote = SolarEngine.generateQuotation(rec, State.designParams);
+
+    // Update Live Recommended Sizing Card in Step 2
+    const elInvCap = document.getElementById('live-card-inv-cap');
+    const elInvName = document.getElementById('live-card-inv-name');
+    const elPvPanels = document.getElementById('live-card-pv-panels');
+    const elPvPower = document.getElementById('live-card-pv-power');
+    const elBatKwh = document.getElementById('live-card-bat-kwh');
+    const elBatAh = document.getElementById('live-card-bat-ah');
+    const elCostUsd = document.getElementById('live-card-cost-usd');
+    const elCostYer = document.getElementById('live-card-cost-yer');
+
+    if (elInvCap) elInvCap.textContent = `${rec.inverter.capacityKw} kW`;
+    if (elInvName) elInvName.textContent = rec.inverter.name;
+    if (elPvPanels) elPvPanels.textContent = `${rec.panel.quantity} ألواح`;
+    if (elPvPower) elPvPower.textContent = `${rec.panel.totalKw} kWp (${rec.panel.watt}W لكل لوح)`;
+    if (elBatKwh) elBatKwh.textContent = `${rec.battery.totalKwh} kWh`;
+    if (elBatAh) {
+      const batAh = Math.round((rec.battery.totalKwh * 1000) / (rec.inverter.systemVoltage || 48));
+      elBatAh.textContent = `${batAh} Ah @ ${rec.inverter.systemVoltage || 48}V (${rec.battery.quantity} وحدة)`;
+    }
+    if (elCostUsd) elCostUsd.textContent = formatPrice(recQuote.financials.totalCostUsd);
+    if (elCostYer) elCostYer.textContent = `${recQuote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+
+    // Pre-render Step 4 cards & MPPT validation
+    const recStringing = rec.panel.stringing;
+    const mpptVoc = document.getElementById('mppt-val-voc');
+    const mpptVmp = document.getElementById('mppt-val-vmp');
+    const mpptSurge = document.getElementById('mppt-val-surge');
+    if (mpptVoc) mpptVoc.textContent = `${recStringing.stringVocCold}V`;
+    if (mpptVmp) mpptVmp.textContent = `${recStringing.stringVmpHot}V`;
+    if (mpptSurge) mpptSurge.textContent = `${rec.inverter.surgeCapacityKw || (rec.inverter.capacityKw * 2)}kW`;
+
+    renderPackageCard('econ', matchResult.packages.economic);
+    renderPackageCard('rec', matchResult.packages.recommended);
+    renderPackageCard('high', matchResult.packages.highPerformance);
+    populateManualTuningSelects(rec);
+
+    // Update Hero Preview
+    const heroPv = document.getElementById('hero-pv-stat');
+    if (heroPv) heroPv.textContent = `${rec.panel.totalKw} kWp`;
+  }
+
+  // 5. Update Step 3 Simulation if active
+  if (State.currentStep === 3) {
+    render24hSimulation();
+  }
+
+  // 6. Update Step 5 Quotation if active
+  if (State.currentStep === 5) {
+    generateAndRenderQuotation();
+  }
+}
+
+function updateLoadsMetrics() {
+  triggerReactiveCalculation();
 }
 
 // ============================================================

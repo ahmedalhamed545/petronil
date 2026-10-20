@@ -1,9 +1,11 @@
-const CACHE_NAME = 'petronil-calc-v1';
+const CACHE_NAME = 'petronil-calc-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/styles.css',
   '/calculator.js',
+  '/engine/solar-engine.js',
+  '/logo.png',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
