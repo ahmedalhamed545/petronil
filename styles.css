@@ -3052,3 +3052,205 @@ body.light-theme .live-comp-box.highlight-cost {
 }
 
 
+
+
+/* ==========================================================================
+   MOBILE-FIRST & ULTRA-RESPONSIVE SYSTEM (320px, 360px, 390px, 430px)
+   Petronil Yemen Solar Platform - Mobile Web App Standard
+   ========================================================================== */
+
+/* Universal anti-overflow and mobile base */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Base touch targets & iOS input auto-zoom fix */
+@media (max-width: 768px) {
+    input, select, textarea, button {
+        font-size: 16px !important; /* Prevents unwanted iOS Safari viewport auto-zoom */
+    }
+    button, .btn, .cat-pill, .currency-select, .wizard-step-node {
+        min-height: 44px; /* Standard finger touch target */
+    }
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .quote-table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        display: block;
+        margin-bottom: 1rem;
+    }
+    .quote-table {
+        min-width: 580px;
+    }
+}
+
+/* Breakpoint 430px: iPhone 14/15/16 Pro Max, Samsung Galaxy S24 Ultra */
+@media (max-width: 430px) {
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    .hero-title {
+        font-size: 1.85rem !important;
+        line-height: 1.25;
+    }
+    .hero-subtitle {
+        font-size: 0.95rem;
+    }
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.75rem;
+    }
+    .hero-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .step-nav-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .step-nav-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .packages-comparison-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem;
+    }
+    .mppt-validation-banner {
+        flex-direction: column;
+        gap: 0.65rem;
+        padding: 0.85rem !important;
+    }
+    .mppt-check-item {
+        font-size: 0.85rem;
+    }
+    .analysis-cards-grid.grid-5-cols {
+        grid-template-columns: 1fr !important;
+    }
+    .analysis-cards-grid.grid-5-cols .analysis-card:last-child {
+        grid-column: span 1 !important;
+    }
+    .quote-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    .quote-doc-details {
+        text-align: center !important;
+    }
+    .quote-client-banner {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem;
+    }
+    .quote-tech-specs-summary {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem;
+    }
+}
+
+/* Breakpoint 390px: iPhone 12/13/14/15 standard */
+@media (max-width: 390px) {
+    .hero-title {
+        font-size: 1.65rem !important;
+    }
+    .step-card {
+        padding: 1rem 0.75rem !important;
+    }
+    .category-filters-pills {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        gap: 0.4rem;
+    }
+    .cat-pill {
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+        flex-shrink: 0;
+    }
+    .appliance-quick-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem;
+    }
+    .appliance-template-card {
+        padding: 0.65rem !important;
+    }
+    .appliance-template-card h4 {
+        font-size: 0.85rem;
+    }
+    .quote-client-banner {
+        grid-template-columns: 1fr !important;
+    }
+    .quote-tech-specs-summary {
+        grid-template-columns: 1fr !important;
+    }
+    .quote-totals-container {
+        flex-direction: column;
+    }
+    .quote-totals-box {
+        width: 100% !important;
+    }
+}
+
+/* Breakpoint 360px: Standard Yemen & Android Budget Devices */
+@media (max-width: 360px) {
+    .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .hero-title {
+        font-size: 1.45rem !important;
+    }
+    .appliance-quick-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .wizard-stepper-track {
+        gap: 0.25rem;
+    }
+    .wizard-step-node {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .pkg-pricing {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    .live-comp-box {
+        padding: 0.75rem !important;
+    }
+}
+
+/* Breakpoint 320px: Smallest Phones (iPhone SE 1st gen, compact devices) */
+@media (max-width: 320px) {
+    body {
+        font-size: 13px;
+    }
+    .hero-title {
+        font-size: 1.3rem !important;
+    }
+    .btn {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+    .brand-logo-img {
+        max-height: 34px !important;
+    }
+    .pkg-title {
+        font-size: 1rem !important;
+    }
+}

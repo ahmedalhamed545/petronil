@@ -486,6 +486,15 @@ function readDb() {
     });
   }
 
+  // Auto-migrate design parameters
+  if (data.designParams) {
+    if (data.designParams.quoteValidityDays === undefined) { data.designParams.quoteValidityDays = 15; modified = true; }
+    if (data.designParams.defaultCurrency === undefined) { data.designParams.defaultCurrency = 'USD'; modified = true; }
+    if (data.designParams.enableYerDisplay === undefined) { data.designParams.enableYerDisplay = false; modified = true; }
+    if (data.designParams.currencyExchangeRate === undefined) { data.designParams.currencyExchangeRate = 535; modified = true; }
+    if (data.designParams.deratingFactor === undefined) { data.designParams.deratingFactor = 0.78; modified = true; }
+  }
+
   if (modified) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
   }
@@ -516,13 +525,64 @@ module.exports = {
   // Content helper
   getContent() {
     const db = readDb();
+
+    // Normalize inverters
+    const inverters = (db.inverters || []).map(i => ({
+      ...i,
+      capacityKw: Number(i.capacityKw || i.ratedPowerKw || 0),
+      surgeCapacityKw: Number(i.surgeCapacityKw || i.surgeKw || ((Number(i.capacityKw) || 3) * 2)),
+      mpptMin: Number(i.mpptMin || i.mpptVoltageMin || 120),
+      mpptMax: Number(i.mpptMax || i.mpptVoltageMax || 450),
+      maxVocInput: Number(i.maxVocInput || i.maxPvVoltage || 500),
+      price: Number(i.price) || 0,
+      systemVoltage: Number(i.systemVoltage || i.batteryVoltage || 48),
+      available: i.available !== false
+    }));
+
+    // Normalize batteries
+    const batteries = (db.batteries || []).map(b => {
+      const cap = Number(b.capacityKwh || (b.usableKwh ? b.usableKwh / 0.9 : 0));
+      const dod = b.dod !== undefined ? Number(b.dod) : (b.dodPercent ? Number(b.dodPercent) / 100 : 0.9);
+      return {
+        ...b,
+        capacityKwh: cap,
+        dod: dod,
+        usableKwh: Number(b.usableKwh || (cap * dod)),
+        price: Number(b.price) || 0,
+        available: b.available !== false
+      };
+    });
+
+    // Normalize panels
+    const panels = (db.panels || []).map(p => {
+      const w = Number(p.watt) || 0;
+      const voc = Number(p.voc) || (w / 12);
+      const vmp = Number(p.vmp) || (voc * 0.82);
+      return {
+        ...p,
+        watt: w,
+        voc: voc,
+        vmp: vmp,
+        price: Number(p.price) || 0,
+        available: p.available !== false
+      };
+    });
+
+    const dParams = {
+      ...DEFAULT_DATA.designParams,
+      ...(db.designParams || {})
+    };
+    if (!dParams.quoteValidityDays) dParams.quoteValidityDays = 15;
+    if (!dParams.defaultCurrency) dParams.defaultCurrency = 'USD';
+    if (dParams.enableYerDisplay === undefined) dParams.enableYerDisplay = false;
+
     return {
       settings: db.settings,
-      designParams: db.designParams || DEFAULT_DATA.designParams,
+      designParams: dParams,
       appliances: db.appliances,
-      panels: db.panels || [],
-      batteries: db.batteries || [],
-      inverters: db.inverters || []
+      panels,
+      batteries,
+      inverters
     };
   },
 

@@ -1,6 +1,6 @@
 /**
  * Embedded Universal SolarEngine Fallback
- * تضمن تشغيل محرك الحسابات حتى لو لم يتم رفع مجلد engine
+ * تضمن تشغيل محرك الحسابات حتى لو تم رفع الملفات بدون مجلد engine
  */
 if (typeof SolarEngine === 'undefined') {
 /**
@@ -32,6 +32,9 @@ if (typeof SolarEngine === 'undefined') {
     dischargeEfficiency: 0.95,    // كفاءة تفريغ البطارية
     inverterEfficiency: 0.96,     // كفاءة تحويل الإنفرتر
     currencyExchangeRate: 535,    // سعر صرف الدولار مقابل الريال اليمني (صنعاء/عدن وسطي قابل للتعديل)
+    quoteValidityDays: 15,        // مدة صلاحية عرض السعر بالأيام (قابلة للتعديل من لوحة الإدارة)
+    defaultCurrency: 'USD',       // العملة الافتراضية
+    enableYerDisplay: false,      // إظهار الريال اليمني فقط عند التفعيل
     defaultPriorityOrder: ['essential', 'important', 'sheddable']
   };
 
@@ -206,11 +209,11 @@ if (typeof SolarEngine === 'undefined') {
     }
 
     appliances.forEach(app => {
-      const qty = Math.max(1, parseInt(app.quantity, 10) || 1);
+      const qty = Math.max(1, parseInt(app.quantity !== undefined ? app.quantity : (app.qty !== undefined ? app.qty : 1), 10) || 1);
       const watt = Math.max(0, parseFloat(app.watt) || 0);
       const pf = Math.min(1.0, Math.max(0.4, parseFloat(app.powerFactor) || 0.9));
-      const dutyCycle = Math.min(1.0, Math.max(0.1, parseFloat(app.dutyCycle) || 1.0));
-      const surgeMultiplier = Math.max(1.0, parseFloat(app.surgeMultiplier) || 1.0);
+      const dutyCycle = Math.min(1.0, Math.max(0.01, parseFloat(app.dutyCycle) || 1.0));
+      const surgeMultiplier = Math.max(1.0, parseFloat(app.surgeMultiplier !== undefined ? app.surgeMultiplier : (app.surgeFactor !== undefined ? app.surgeFactor : 1.0)) || 1.0);
       const priority = app.priority || 'important';
       const loadType = app.loadType || 'resistive';
 
@@ -595,10 +598,20 @@ if (typeof SolarEngine === 'undefined') {
 
     // نسبة التغطية الشمسية والاستقلالية (Solar Autonomy Rate)
     const totalLoadEnergy = loadProfile.totalDailyKwh;
-    const servedEnergy = Math.max(0, totalLoadEnergy - totalUnservedEnergyKwh);
-    const solarCoveragePercent = totalLoadEnergy > 0
-      ? Math.min(100, ((totalDirectSolarKwh + totalBatteryDischargedKwh) / totalLoadEnergy) * 100)
-      : 100;
+    const hasLoads = totalLoadEnergy > 0;
+    const hasDeficit = totalUnservedEnergyKwh > 0.05;
+    let solarCoveragePercent = 0;
+
+    if (!hasLoads) {
+      solarCoveragePercent = 0; // لا توجد أحمال مضافة: لا تعرض 100%!
+    } else if (hasDeficit) {
+      // عند وجود عجز فعلي، استقلالية الطاقة لا يمكن أن تكون 100%
+      const cleanEnergyServed = Math.max(0, totalDirectSolarKwh + totalBatteryDischargedKwh);
+      solarCoveragePercent = Math.max(0, Math.min(99.0, (cleanEnergyServed / totalLoadEnergy) * 100));
+    } else {
+      const cleanEnergyServed = totalDirectSolarKwh + totalBatteryDischargedKwh;
+      solarCoveragePercent = Math.min(100, Math.max(0, (cleanEnergyServed / totalLoadEnergy) * 100));
+    }
 
     return {
       timeLabels,
@@ -615,6 +628,8 @@ if (typeof SolarEngine === 'undefined') {
         solarCurtailedKw: solarCurtailedKwSeries
       },
       summary: {
+        hasLoads,
+        hasDeficit,
         totalDailyLoadKwh: parseFloat(totalLoadEnergy.toFixed(2)),
         totalSolarGeneratedKwh: parseFloat(totalSolarGeneratedKwh.toFixed(2)),
         totalDirectSolarKwh: parseFloat(totalDirectSolarKwh.toFixed(2)),
@@ -727,12 +742,56 @@ if (typeof SolarEngine === 'undefined') {
    * @param {Object} designParams المعايير الهندسية
    */
   function sizeAndMatchSystem(loadProfile, gridSchedule, inventory = {}, designParams = DEFAULT_DESIGN_PARAMS) {
-    const inverters = (inventory.inverters || []).filter(i => i.available !== false);
-    const batteries = (inventory.batteries || []).filter(b => b.available !== false);
-    const panels = (inventory.panels || []).filter(p => p.available !== false);
+    // 0. التحقق من وجود أحمال فعلية
+    if (!loadProfile || !loadProfile.totalDailyKwh || loadProfile.totalDailyKwh <= 0 || loadProfile.peakContinuousKw <= 0) {
+      return {
+        success: false,
+        error: 'NO_LOADS',
+        message: 'لم يتم إضافة أحمال كهربائية بعد. يرجى إضافة أجهزتك الكهربائية في الخطوة الأولى لحساب الباقة المناسبة بدقة.',
+        sizingRequirements: {
+          minInverterContinuousKw: 0,
+          minInverterSurgeKw: 0,
+          targetUsableBatteryKwh: 0,
+          minPvKwPeak: 0
+        },
+        packages: null
+      };
+    }
+
+    // فلترة المنتجات المكتملة هندسياً ومالياً واستبعاد أي منتج سعره صفر أو اسمه فارغ
+    function isValidItem(item, type) {
+      if (!item || typeof item !== 'object') return false;
+      if (!item.name || typeof item.name !== 'string' || item.name.trim() === '') return false;
+      if (typeof item.price !== 'number' || isNaN(item.price) || item.price <= 0) return false;
+      if (item.available === false) return false;
+
+      if (type === 'inverter') {
+        const cap = item.capacityKw || item.ratedPowerKw || 0;
+        return cap > 0;
+      }
+      if (type === 'battery') {
+        const cap = item.capacityKwh || 0;
+        return cap > 0;
+      }
+      if (type === 'panel') {
+        const w = item.watt || 0;
+        return w > 0;
+      }
+      return true;
+    }
+
+    const inverters = (inventory.inverters || []).filter(i => isValidItem(i, 'inverter'));
+    const batteries = (inventory.batteries || []).filter(b => isValidItem(b, 'battery'));
+    const panels = (inventory.panels || []).filter(p => isValidItem(p, 'panel'));
 
     if (inverters.length === 0 || batteries.length === 0 || panels.length === 0) {
-      throw new Error("بيانات المخزون غير كافية لإجراء المطابقة الهندسية");
+      return {
+        success: false,
+        error: 'INCOMPLETE_INVENTORY',
+        message: 'بيانات المخزون غير مكتملة أو تحتوي على منتجات بدون أسعار محددة. يرجى مراجعة وتحديث أسعار المنتجات في لوحة الإدارة.',
+        sizingRequirements: null,
+        packages: null
+      };
     }
 
     // 1. المتطلبات الهندسية الدنيا
@@ -745,22 +804,18 @@ if (typeof SolarEngine === 'undefined') {
     const minInverterSurgeKw = loadProfile.maxSurgeKw;
 
     // ب) سعة البطارية المطلوبة لتغطية أوقات الانقطاع
-    // في النظام المعزول: تغطية استهلاك الليل والغيوم
-    // في نظام الشبكة: تغطية أسوأ مدة انقطاع متواصلة
     let energyToStoreKwh = 0;
     if (gridSchedule.mode === 'offgrid') {
       energyToStoreKwh = loadProfile.totalNightKwh + (loadProfile.totalDayKwh * 0.3);
     } else {
       energyToStoreKwh = loadProfile.totalOutageKwh;
       if (energyToStoreKwh === 0 && loadProfile.totalNightKwh > 0) {
-        energyToStoreKwh = loadProfile.totalNightKwh; // احتياطي عند الانقطاع
+        energyToStoreKwh = loadProfile.totalNightKwh;
       }
     }
-    // إضافة هامش أمان لتفريغ البطارية 15%
     const targetUsableBatteryKwh = Math.max(2.4, energyToStoreKwh * 1.15);
 
     // ج) قدرة الألواح الشمسية المطلوبة (kWp)
-    // تغطية استهلاك اليوم + طاقة شحن البطارية
     const batteryRechargeKwh = targetUsableBatteryKwh / (designParams.chargeEfficiency || 0.95);
     const dailyTargetEnergyKwh = (loadProfile.totalDayKwh) + batteryRechargeKwh;
     const minPvKwPeak = Math.max(1.0, dailyTargetEnergyKwh / (psh * derating));
@@ -769,34 +824,30 @@ if (typeof SolarEngine === 'undefined') {
     const validInverters = inverters.filter(inv => {
       const ratedKw = inv.capacityKw || inv.ratedPowerKw || 0;
       const surgeKw = inv.surgeCapacityKw || inv.surgePowerKw || (ratedKw * 2);
-      return ratedKw >= (loadProfile.peakContinuousKw * 1.05) && surgeKw >= (minInverterSurgeKw * 0.95);
+      return ratedKw >= (loadProfile.peakContinuousKw * 1.0) && surgeKw >= (minInverterSurgeKw * 0.9);
     });
 
     const chosenInverterList = validInverters.length > 0 ? validInverters : inverters;
-    // ترتيب الإنفرترات حسب السعة والسعر
-    chosenInverterList.sort((a, b) => a.capacityKw - b.capacityKw || a.price - b.price);
+    chosenInverterList.sort((a, b) => (a.capacityKw - b.capacityKw) || (a.price - b.price));
 
     // 3. بناء وتوليد الباقات الثلاث
     const packages = {};
 
-    // --- باقة 1: الخيار الاقتصادي (Economic) ---
-    // يختار أصغر إنفرتر يغطي الأحمال مع بطارية LiFePO4 أو أنبوبية بأقل تكلفة
-    const econInv = chosenInverterList[0] || inverters[0];
+    // --- باقة 1: الخيار الاقتصادي (Economic) - يبرز إنفرترات Crown Micro أو الخيار الأقل تكلفة ---
+    const crownEcoInv = chosenInverterList.find(i => (i.brand || '').includes('Crown') && (i.capacityKw || 0) >= loadProfile.peakContinuousKw);
+    const econInv = crownEcoInv || chosenInverterList[0] || inverters[0];
     const econPanel = panels.slice().sort((a, b) => a.price - b.price)[0] || panels[0];
     const econBattery = batteries.slice().sort((a, b) => a.price - b.price)[0] || batteries[0];
 
-    // حساب عدد البطاريات المطلوبة
     const econBatDod = econBattery.dod || 0.85;
     const econBatUsableKwh = econBattery.capacityKwh * econBatDod;
     const econBatCount = Math.max(1, Math.ceil(targetUsableBatteryKwh / econBatUsableKwh));
-
-    // مطابقة الألواح للإنفرتر الاقتصادي
     const econStringing = calculateElectricalStringing(econPanel, econInv, minPvKwPeak, designParams);
 
     packages.economic = {
       type: 'economic',
       title: 'الباقة الاقتصادية الذكية',
-      badge: 'أقل تكلفة مع الالتزام بالمواصفات الهندسية',
+      badge: (econInv.brand || '').includes('Crown') ? 'وكالة Crown Micro الرسمية - اقتصادية وعملية' : 'أقل تكلفة مع الالتزام بالمواصفات الهندسية',
       inverter: {
         ...econInv,
         quantity: 1,
@@ -819,7 +870,6 @@ if (typeof SolarEngine === 'undefined') {
     };
 
     // --- باقة 2: الخيار الموصى به (Recommended) ---
-    // يختار إنفرتر Deye ممتاز بهامش أمان كامل + بطاريات ليثيوم Narada/BYD + ألواح N-Type عالية الكفاءة
     const recInv = chosenInverterList.find(i => (i.capacityKw || 0) >= minInverterContinuousKw)
       || chosenInverterList[Math.min(1, chosenInverterList.length - 1)];
 
@@ -830,8 +880,6 @@ if (typeof SolarEngine === 'undefined') {
     const recBatDod = recBattery.dod || 0.90;
     const recBatUsableKwh = recBattery.capacityKwh * recBatDod;
     const recBatCount = Math.max(1, Math.ceil(targetUsableBatteryKwh / recBatUsableKwh));
-
-    // الألواح بهامش احتياطي 15% لضمان شحن سريع في الأيام الغائمة
     const recStringing = calculateElectricalStringing(recPanel, recInv, minPvKwPeak * 1.15, designParams);
 
     packages.recommended = {
@@ -860,7 +908,6 @@ if (typeof SolarEngine === 'undefined') {
     };
 
     // --- باقة 3: خيار الأداء العالي (High Performance) ---
-    // سعة إنفرتر أكبر + استقلالية بطارية تدوم أطول بنسبة 35% + ألواح شمسية بأقصى سعة MPPT
     const highInv = chosenInverterList[chosenInverterList.length - 1] || recInv;
     const highPanel = panels.slice().sort((a, b) => b.watt - a.watt)[0] || recPanel;
     const highBattery = batteries.slice().sort((a, b) => b.capacityKwh - a.capacityKwh)[0] || recBattery;
@@ -868,7 +915,6 @@ if (typeof SolarEngine === 'undefined') {
     const highBatDod = highBattery.dod || 0.90;
     const highBatUsableKwh = highBattery.capacityKwh * highBatDod;
     const highBatCount = Math.max(1, Math.ceil((targetUsableBatteryKwh * 1.35) / highBatUsableKwh));
-
     const highStringing = calculateElectricalStringing(highPanel, highInv, minPvKwPeak * 1.35, designParams);
 
     packages.highPerformance = {
@@ -897,6 +943,7 @@ if (typeof SolarEngine === 'undefined') {
     };
 
     return {
+      success: true,
       sizingRequirements: {
         minInverterContinuousKw: parseFloat(minInverterContinuousKw.toFixed(2)),
         minInverterSurgeKw: parseFloat(minInverterSurgeKw.toFixed(2)),
@@ -907,16 +954,14 @@ if (typeof SolarEngine === 'undefined') {
     };
   }
 
-  /**
-   * 7. مولد عرض السعر وجدول الكميات (BOM & Quotation Generator)
-   * يحسب التكلفة الإجمالية ومكونات التركيب والحماية ويوفر تقريراً مالياً وفنياً متكاملاً
-   *
-   * @param {Object} pkg الباقة المختارة (من sizeAndMatchSystem)
-   * @param {Object} designParams المعايير الهندسية
-   * @param {Object} customerInfo معلومات العميل
-   */
   function generateQuotation(pkg, designParams = DEFAULT_DESIGN_PARAMS, customerInfo = {}) {
+    if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
+      return null;
+    }
     const exchangeRate = designParams.currencyExchangeRate || 535;
+    const validityDays = parseInt(designParams.quoteValidityDays, 10) || 15;
+    const defaultCurr = designParams.defaultCurrency || 'USD';
+    const showYer = Boolean(designParams.enableYerDisplay);
 
     // المكونات الرئيسية
     const inverter = pkg.inverter;
@@ -924,14 +969,12 @@ if (typeof SolarEngine === 'undefined') {
     const panel = pkg.panel;
 
     // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح
-    // تقدير 20$ لكل لوح شمسي
     const structureUnitPrice = 20;
     const structureCost = panel.quantity * structureUnitPrice;
 
     // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC
-    // صلب هندسي: صندوق حماية DC مدمج بقواطع 1000V + مانعات صواعق SPD + فيوزات + قاطع AC ومفتاح تحويل ATS
     const protectionBoxCost = inverter.capacityKw <= 6 ? 220 : 380;
-    const cablingCost = Math.round(panel.totalKw * 1000 * 0.08); // 0.08$ لكل واط كابلات نحاسية معتمدة
+    const cablingCost = Math.round(panel.totalKw * 1000 * 0.08);
 
     // 3. أجور التركيب والبرمجة والفحص الهندسي
     const installationFee = Math.round(Math.max(150, panel.totalKw * 1000 * 0.07));
@@ -942,12 +985,12 @@ if (typeof SolarEngine === 'undefined') {
         itemNumber: 1,
         category: 'الإنفرتر',
         name: inverter.name,
-        specs: `قدرة ${inverter.capacityKw}kW موجة جيبية نقية، جهد بطارية ${inverter.systemVoltage || 48}V، تتبع MPPT مزدوج`,
+        specs: `قدرة ${inverter.capacityKw}kW موجة جيبية نقية، جهد بطارية ${inverter.systemVoltage || 48}V، تتبع MPPT ذكي`,
         quantity: inverter.quantity,
         unit: 'جهاز',
         unitPrice: inverter.price,
         totalPrice: inverter.totalCost,
-        warranty: `${inverter.warranty || 5} سنوات`
+        warranty: `${inverter.warranty || inverter.warrantyYears || 5} سنوات`
       },
       {
         itemNumber: 2,
@@ -958,18 +1001,18 @@ if (typeof SolarEngine === 'undefined') {
         unit: 'لوح',
         unitPrice: panel.price,
         totalPrice: panel.totalCost,
-        warranty: `${panel.warranty || 25} سنة ضمان أداء`
+        warranty: `${panel.warranty || panel.warrantyYears || 25} سنة ضمان أداء`
       },
       {
         itemNumber: 3,
         category: 'تخزين الطاقة (البطاريات)',
         name: battery.name,
-        specs: `سعة ${battery.capacityKwh}kWh كيمياء LiFePO4 آمنة، نظام إدارة ذكي BMS يدعم 6000 دورة`,
+        specs: `سعة ${battery.capacityKwh}kWh كيمياء ${battery.chemistry || 'LiFePO4'} آمنة، نظام إدارة ذكي BMS يدعم 6000 دورة`,
         quantity: battery.quantity,
         unit: 'وحدة',
         unitPrice: battery.price,
         totalPrice: battery.totalCost,
-        warranty: `${battery.warranty || 5} سنوات`
+        warranty: `${battery.warranty || battery.warrantyYears || 5} سنوات`
       },
       {
         itemNumber: 4,
@@ -1029,9 +1072,12 @@ if (typeof SolarEngine === 'undefined') {
     return {
       quoteId,
       date: currentDate,
-      validUntilDays: 14,
+      validUntilDays: validityDays,
+      defaultCurrency: defaultCurr,
+      enableYerDisplay: showYer,
       company: {
         name: "بترونيل يمن للطاقة",
+        agency: "الوكيل المعتمد لمنتجات Crown Micro العالمية في الجمهورية اليمنية",
         commercialReg: "شركة رائدة في أنظمة الطاقة الشمسية والحلول الذكية",
         phone: "783999039",
         address: "عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان",
@@ -1062,9 +1108,10 @@ if (typeof SolarEngine === 'undefined') {
       },
       terms: [
         "الأسعار تشمل التوريد والتركيب والفحص الهندسي في نطاق فروع الشركة.",
-        "عرض السعر ساري المفعول لمدة 14 يوماً من تاريخ إصداره نظراً لتقلبات أسعار الصرف العالمية.",
+        `عرض السعر ساري المفعول لمدة ${validityDays} يوماً من تاريخ إصداره نظراً لتقلبات أسعار الصرف العالمية.`,
+        "بترونيل يمن للطاقة الوكيل المعتمد لإنفرترات Crown Micro العالمية في اليمن مع ضمان ودعم فني معتمد.",
         "ضمان شامل للإنفرتر والبطاريات لمدة 5 سنوات، وضمان أداء الألواح لمدة 25 سنة وفق شروط المصنع.",
-        "توفر بترونيل يمن الصيانة الدورية والدعم الفني وقطع الغيار الأصلية."
+        "هذه الدراسة الفنية والحسابات تقديرية مبنية على البيانات المدخلة، وتعتبر أساساً للتصميم ولا تغني عن المعاينة الميدانية للموقع واعتماد المهندس المختص."
       ]
     };
   }
@@ -1085,12 +1132,6 @@ if (typeof SolarEngine === 'undefined') {
 
 }
 
-/**
- * Petronil Yemen Solar Calculator - Client Controller (v2.0)
- * نظام التحكم بحاسبة وتصميم المنظومات الشمسية لشركة بترونيل يمن للطاقة
- */
-
-// --- Global State ---
 const State = {
   currentStep: 1,
   currency: 'USD',
@@ -1145,6 +1186,8 @@ const FALLBACK_TEMPLATES = [
 // Fallback Inventory if API is offline
 const FALLBACK_INVENTORY = {
   inverters: [
+    { id: 'inv_crown_32', name: 'انفرتر كراون مايكرو Crown Elego 3.2kW 24V', brand: 'Crown Micro', capacityKw: 3.2, ratedPowerKw: 3.2, surgeCapacityKw: 6.4, systemVoltage: 24, mpptMin: 90, mpptMax: 430, maxVocInput: 450, price: 380, warranty: 2, available: true },
+    { id: 'inv_crown_60', name: 'انفرتر كراون مايكرو Crown Elego Pro 6kW 48V', brand: 'Crown Micro', capacityKw: 6.0, ratedPowerKw: 6.0, surgeCapacityKw: 12.0, systemVoltage: 48, mpptMin: 120, mpptMax: 450, maxVocInput: 500, price: 680, warranty: 2, available: true },
     { id: 'inv_deye_36', name: 'انفرتر Deye SUN-3.6K-SG04LP1 3.6kW', capacityKw: 3.6, ratedPowerKw: 3.6, surgeCapacityKw: 7.2, systemVoltage: 48, mpptMin: 80, mpptMax: 430, maxVocInput: 500, price: 550, warranty: 5, available: true },
     { id: 'inv_deye_50', name: 'انفرتر Deye SUN-5K-SG04LP1 5kW', capacityKw: 5.0, ratedPowerKw: 5.0, surgeCapacityKw: 10.0, systemVoltage: 48, mpptMin: 120, mpptMax: 430, maxVocInput: 500, price: 820, warranty: 5, available: true },
     { id: 'inv_deye_80', name: 'انفرتر Deye SUN-8K-SG01LP1 8kW', capacityKw: 8.0, ratedPowerKw: 8.0, surgeCapacityKw: 16.0, systemVoltage: 48, mpptMin: 125, mpptMax: 425, maxVocInput: 500, price: 1300, warranty: 5, available: true },
@@ -1254,6 +1297,27 @@ async function fetchBackendData() {
   } catch (err) {
     console.warn("Backend API unavailable, using local engineering defaults", err);
     useFallbackData();
+  }
+
+  // Apply Currency Preferences from Settings
+  if (State.designParams) {
+    State.currency = State.designParams.defaultCurrency || 'USD';
+    const currSelect = document.getElementById('currency-select');
+    if (currSelect) {
+      currSelect.value = State.currency;
+      const yerOption = currSelect.querySelector('option[value="YER"]');
+      if (yerOption) {
+        if (State.designParams.enableYerDisplay) {
+          yerOption.style.display = '';
+        } else {
+          yerOption.style.display = 'none';
+          if (currSelect.value === 'YER') {
+            currSelect.value = 'USD';
+            State.currency = 'USD';
+          }
+        }
+      }
+    }
   }
 
   // Render initial appliance buttons
@@ -2057,6 +2121,41 @@ function calculateAndRenderPackages() {
   const matchResult = SolarEngine.sizeAndMatchSystem(profile, sched, State.inventory, State.designParams);
   State.matchedPackages = matchResult;
 
+  const mpptBanner = document.querySelector('.mppt-validation-banner');
+  const packagesGrid = document.querySelector('.packages-comparison-grid');
+  let errorBanner = document.getElementById('packages-error-banner');
+
+  if (!matchResult || !matchResult.success || !matchResult.packages) {
+    State.activePackage = null;
+    if (!errorBanner) {
+      errorBanner = document.createElement('div');
+      errorBanner.id = 'packages-error-banner';
+      errorBanner.className = 'glass p-4 rounded-xl text-center mb-6 border border-amber-500/30 bg-amber-500/10';
+      if (packagesGrid && packagesGrid.parentNode) {
+        packagesGrid.parentNode.insertBefore(errorBanner, packagesGrid);
+      }
+    }
+    const errMsg = (matchResult && matchResult.message) ? matchResult.message : 'يرجى إضافة الأجهزة وتحديد استهلاكك في الخطوة الأولى لحساب الباقات المناسبة.';
+    errorBanner.innerHTML = `<div style="padding: 16px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; margin-bottom: 20px; text-align: center;">
+      <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+      <h4 style="font-size: 1.15rem; font-weight: bold; margin-bottom: 6px; color: #f59e0b;">تنبيه هندسي</h4>
+      <p style="margin-bottom: 12px; font-size: 0.95rem; opacity: 0.9;">${errMsg}</p>
+      <button type="button" class="btn btn-primary btn-sm" onclick="goToStep(2)">
+        <i class="fa-solid fa-arrow-right"></i> الذهاب إلى قائمة الأجهزة
+      </button>
+    </div>`;
+    errorBanner.style.display = 'block';
+
+    if (mpptBanner) mpptBanner.style.opacity = '0.4';
+    renderPackageCard('econ', null);
+    renderPackageCard('rec', null);
+    renderPackageCard('high', null);
+    return;
+  }
+
+  if (errorBanner) errorBanner.style.display = 'none';
+  if (mpptBanner) mpptBanner.style.opacity = '1';
+
   // Set default active package
   State.activePackage = matchResult.packages[State.selectedPackageType] || matchResult.packages.recommended;
 
@@ -2064,9 +2163,9 @@ function calculateAndRenderPackages() {
 
   // Render MPPT validation banner for recommended package
   const recStringing = recommended.panel.stringing;
-  document.getElementById('mppt-val-voc').textContent = `${recStringing.stringVocCold}V`;
-  document.getElementById('mppt-val-vmp').textContent = `${recStringing.stringVmpHot}V`;
-  document.getElementById('mppt-val-surge').textContent = `${recommended.inverter.surgeCapacityKw || (recommended.inverter.capacityKw * 2)}kW`;
+  if (document.getElementById('mppt-val-voc')) document.getElementById('mppt-val-voc').textContent = `${recStringing.stringVocCold}V`;
+  if (document.getElementById('mppt-val-vmp')) document.getElementById('mppt-val-vmp').textContent = `${recStringing.stringVmpHot}V`;
+  if (document.getElementById('mppt-val-surge')) document.getElementById('mppt-val-surge').textContent = `${recommended.inverter.surgeCapacityKw || (recommended.inverter.capacityKw * 2)}kW`;
 
   // Render Package 1: Economic
   renderPackageCard('econ', economic);
@@ -2088,14 +2187,39 @@ function renderPackageCard(prefix, pkg) {
   const usdElem = document.getElementById(`${prefix}-price-usd`);
   const yerElem = document.getElementById(`${prefix}-price-yer`);
 
+  if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
+    if (invElem) invElem.textContent = 'غير متوفر';
+    if (panElem) panElem.textContent = 'غير متوفر';
+    if (batElem) batElem.textContent = 'غير متوفر';
+    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
+    if (yerElem) yerElem.textContent = '';
+    return;
+  }
+
   const quote = SolarEngine.generateQuotation(pkg, State.designParams);
 
-  if (invElem) invElem.textContent = `${pkg.inverter.name} (${pkg.inverter.capacityKw}kW)`;
+  if (invElem) {
+    const isCrown = (pkg.inverter.brand || '').includes('Crown') || (pkg.inverter.name || '').includes('كراون');
+    const crownBadge = isCrown ? ' <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; display: inline-block;">وكالة Crown Micro</span>' : '';
+    invElem.innerHTML = `${pkg.inverter.name} (${pkg.inverter.capacityKw}kW)${crownBadge}`;
+  }
   if (panElem) panElem.textContent = `${pkg.panel.quantity} ألواح × ${pkg.panel.watt}W (${pkg.panel.totalKw} kWp)`;
   if (batElem) batElem.textContent = `${pkg.battery.quantity} × ${pkg.battery.name} (${pkg.battery.totalKwh} kWh)`;
 
-  if (usdElem) usdElem.textContent = `$${Math.round(quote.financials.totalCostUsd).toLocaleString('en-US')}`;
-  if (yerElem) yerElem.textContent = `${quote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+  if (quote && quote.financials && quote.financials.totalCostUsd > 0) {
+    if (usdElem) usdElem.textContent = `${Math.round(quote.financials.totalCostUsd).toLocaleString('en-US')}`;
+    if (yerElem) {
+      if (State.designParams.enableYerDisplay || State.currency === 'YER') {
+        yerElem.textContent = `${quote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+        yerElem.style.display = 'block';
+      } else {
+        yerElem.style.display = 'none';
+      }
+    }
+  } else {
+    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
+    if (yerElem) yerElem.style.display = 'none';
+  }
 }
 
 function populateManualTuningSelects(defaultPkg) {
@@ -2173,7 +2297,16 @@ function generateAndRenderQuotation() {
   // Doc references
   document.getElementById('quote-ref-code').textContent = quotation.quoteId;
   document.getElementById('quote-issue-date').textContent = `التاريخ: ${quotation.date}`;
+  if (document.getElementById('quote-validity-text')) {
+    document.getElementById('quote-validity-text').textContent = `صلاحية العرض: ${quotation.validUntilDays || 15} يوماً`;
+  }
   document.getElementById('doc-package-type').textContent = State.activePackage.title;
+
+  // Render Dynamic Terms & Disclaimers
+  const termsList = document.getElementById('quote-terms-list');
+  if (termsList && Array.isArray(quotation.terms)) {
+    termsList.innerHTML = quotation.terms.map(t => `<li>${t}</li>`).join('');
+  }
 
   // Technical specs bar
   document.getElementById('doc-inv-kw').textContent = `${quotation.systemOverview.inverterCapacityKw} kW`;
@@ -2205,7 +2338,15 @@ function generateAndRenderQuotation() {
   document.getElementById('doc-cost-accessories').textContent = `$${quotation.financials.accessoriesCostUsd.toLocaleString('en-US')}`;
   document.getElementById('doc-cost-install').textContent = `$${quotation.financials.installationFeeUsd.toLocaleString('en-US')}`;
   document.getElementById('doc-total-usd').textContent = `$${quotation.financials.totalCostUsd.toLocaleString('en-US')}`;
-  document.getElementById('doc-total-yer').textContent = `${quotation.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+  const docYerElem = document.getElementById('doc-total-yer');
+  if (docYerElem) {
+    if (State.designParams.enableYerDisplay || State.currency === 'YER') {
+      docYerElem.textContent = `${quotation.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+      docYerElem.parentElement ? (docYerElem.parentElement.style.display = '') : (docYerElem.style.display = 'block');
+    } else {
+      docYerElem.parentElement ? (docYerElem.parentElement.style.display = 'none') : (docYerElem.style.display = 'none');
+    }
+  }
 }
 
 function downloadQuotationPdf() {

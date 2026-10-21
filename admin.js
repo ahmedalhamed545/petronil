@@ -1052,6 +1052,9 @@ async function fetchDesignParams() {
             if (document.getElementById('param-exchange-rate')) document.getElementById('param-exchange-rate').value = p.currencyExchangeRate || 535;
             if (document.getElementById('param-temp-min')) document.getElementById('param-temp-min').value = p.tempMinC || 15;
             if (document.getElementById('param-temp-max')) document.getElementById('param-temp-max').value = p.tempMaxCellC || 65;
+            if (document.getElementById('param-quote-validity')) document.getElementById('param-quote-validity').value = p.quoteValidityDays || 15;
+            if (document.getElementById('param-default-currency')) document.getElementById('param-default-currency').value = p.defaultCurrency || 'USD';
+            if (document.getElementById('param-enable-yer')) document.getElementById('param-enable-yer').checked = Boolean(p.enableYerDisplay);
         }
     } catch (err) {
         console.error("Failed to fetch design params", err);
@@ -1067,7 +1070,10 @@ document.getElementById('design-params-form')?.addEventListener('submit', async 
         inverterSafetyMargin: parseFloat(document.getElementById('param-inverter-margin').value),
         currencyExchangeRate: parseFloat(document.getElementById('param-exchange-rate').value),
         tempMinC: parseFloat(document.getElementById('param-temp-min').value),
-        tempMaxCellC: parseFloat(document.getElementById('param-temp-max').value)
+        tempMaxCellC: parseFloat(document.getElementById('param-temp-max').value),
+        quoteValidityDays: parseInt(document.getElementById('param-quote-validity')?.value, 10) || 15,
+        defaultCurrency: document.getElementById('param-default-currency')?.value || 'USD',
+        enableYerDisplay: Boolean(document.getElementById('param-enable-yer')?.checked)
     };
     try {
         const res = await fetch('/api/design-params', {
