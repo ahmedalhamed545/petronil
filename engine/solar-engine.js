@@ -654,9 +654,12 @@
     const isc = panel.isc || (panelWatt / vmpStc);
     const imp = panel.imp || (isc * 0.94);
 
-    // معاملات الحرارة (النسب المئوية لكل درجة مئوية)
-    const gammaVoc = panel.tempCoefficientVoc || panel.tempCoeffVoc || -0.0026; // -0.26%/C
-    const gammaVmp = panel.tempCoefficientVmp || -0.0030; // -0.30%/C
+    // معاملات الحرارة (النسب المئوية لكل درجة مئوية - دعم التنسيق المئوي أو العشري)
+    let gammaVoc = panel.tempCoefficientVoc || panel.tempCoeffVoc || -0.0026; // -0.26%/C
+    if (Math.abs(gammaVoc) > 0.05) gammaVoc = gammaVoc / 100;
+
+    let gammaVmp = panel.tempCoefficientVmp || panel.tempCoeffVmp || -0.0030; // -0.30%/C
+    if (Math.abs(gammaVmp) > 0.05) gammaVmp = gammaVmp / 100;
 
     // أقصى جهد دائرة مفتوحة عند أبرد حرارة متوقعة (Winter Morning Voc Cold)
     // Voc(Tmin) = Voc_STC * [1 + gamma_Voc * (Tmin - 25)]
@@ -667,11 +670,11 @@
     const vmpHot = vmpStc * (1 + gammaVmp * (tMaxCell - stcTemp));
 
     // حدود الإنفرتر
-    const invMaxVoc = inverter.maxVocInput || inverter.maxPvVoc || 500;
+    const invMaxVoc = inverter.maxVocInput || inverter.maxPvVoc || inverter.maxPvVoltage || 500;
     const invMpptMin = inverter.mpptMin || inverter.mpptVoltageMin || 120;
     const invMpptMax = inverter.mpptMax || inverter.mpptVoltageMax || 450;
     const invMpptTrackers = inverter.mpptTrackers || 2;
-    const invMaxPvPower = inverter.maxPvPower || (inverter.capacityKw * 1.3 * 1000);
+    const invMaxPvPower = inverter.maxPvPower || (inverter.maxPvInputKw ? inverter.maxPvInputKw * 1000 : (inverter.capacityKw * 1.3 * 1000));
 
     // أقصى عدد ألواح في السلسلة (Series String Max): يجب ألا يتجاوز Voc Cold جهد الإنفرتر الأقصى أو حد MPPT الأعلى
     const maxPanelsSeriesByVoc = Math.floor(invMaxVoc / vocCold);
@@ -1111,6 +1114,254 @@
     };
   }
 
+  /**
+   * 8. فحص وتدقيق التوافق الهندسي بين الإنفرتر وبنك البطاريات (Inverter-Battery Matrix)
+   * يفحص:
+   * 1. توافق جهد النظام (System Voltage) بين الإنفرتر والبطاريات (12V/24V/48V)
+   * 2. قدرة الشحن المتاحة للإنفرتر (Charging Power kW)
+   * 3. زمن إعادة الشحن الشمسي بالساعات ومقارنته بساعات ذروة الشمس في اليمن (PSH)
+   * 4. قدرة تفريغ البطارية القصوى مقارنة بالقدرة المستمرة المطلوبة للإنفرتر
+   * 5. توافق كيمياء البطارية ودعم بروتوكول الاتصال الذكي BMS
+   */
+  function validateInverterBatteryCompatibility(inverter, battery, batteryCount = 1, psh = 5.8) {
+    if (!inverter || !battery) {
+      return {
+        isCompatible: false,
+        status: 'CRITICAL',
+        badge: 'بيانات ناقصة',
+        warnings: ['بيانات الإنفرتر أو البطارية غير مكتملة'],
+        recommendations: []
+      };
+    }
+
+    const warnings = [];
+    const recommendations = [];
+    let isCompatible = true;
+    let status = 'OPTIMAL'; // 'OPTIMAL' | 'WARNING' | 'CRITICAL'
+
+    // 1. فحص الجهد الاسمي للمنظومة (System Voltage Check)
+    const invVoltage = inverter.batteryVoltage || inverter.systemVoltage || 48;
+    const batNominalVoltage = battery.nominalVoltage || battery.systemVoltage || 48;
+    const qty = Math.max(1, parseInt(batteryCount, 10) || 1);
+
+    let effectiveBatteryVoltage = batNominalVoltage;
+    let seriesCount = 1;
+    let parallelCount = qty;
+
+    if (batNominalVoltage === 12 && invVoltage === 48) {
+      seriesCount = 4;
+      if (qty % 4 !== 0) {
+        warnings.push(`البطارية بجهد 12V وتتطلب التوصيل على التوالي بمضاعفات 4 وحدات (4، 8، 12) للوصول لجهد الإنفرتر 48V. العدد الحالي: ${qty}.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 4);
+      effectiveBatteryVoltage = 48;
+    } else if (batNominalVoltage === 12 && invVoltage === 24) {
+      seriesCount = 2;
+      if (qty % 2 !== 0) {
+        warnings.push(`البطارية بجهد 12V وتتطلب التوصيل على التوالي بمضاعفات بطاريتين (2، 4، 6) للوصول لجهد الإنفرتر 24V. العدد الحالي: ${qty}.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 2);
+      effectiveBatteryVoltage = 24;
+    } else if (batNominalVoltage === 24 && invVoltage === 48) {
+      seriesCount = 2;
+      if (qty % 2 !== 0) {
+        warnings.push(`البطارية بجهد 24V وتتطلب زوج بطاريات على التوالي لتطابق جهد الإنفرتر 48V.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 2);
+      effectiveBatteryVoltage = 48;
+    } else if (batNominalVoltage !== invVoltage) {
+      warnings.push(`جهد البطارية (${batNominalVoltage}V) غير متوافق مع جهد دخل بطاريات الإنفرتر (${invVoltage}V).`);
+      isCompatible = false;
+      status = 'CRITICAL';
+    }
+
+    // 2. حساب الطاقة الإجمالية والقابلة للاستخدام (kWh)
+    const totalCapacityKwh = parseFloat(((battery.capacityKwh || 0) * qty).toFixed(2));
+    const dod = battery.dod || battery.recommendedDoD || 0.90;
+    const usableCapacityKwh = parseFloat((totalCapacityKwh * dod).toFixed(2));
+
+    // 3. قدرة الشحن القصوى للإنفرتر (Inverter Max Charging Power)
+    const maxChargeCurrentA = inverter.maxChargeCurrent || (inverter.capacityKw * 1000 / invVoltage) * 0.8;
+    const maxChargePowerKw = parseFloat(((invVoltage * maxChargeCurrentA) / 1000).toFixed(2));
+
+    // 4. زمن إعادة الشحن الشمسي الكامل بالساعات (Recharge Time Hours)
+    const chargeEfficiency = 0.95;
+    const effectiveRechargePowerKw = Math.max(0.5, Math.min(maxChargePowerKw, (inverter.capacityKw || 5) * 1.2));
+    const rechargeTimeHours = parseFloat((usableCapacityKwh / (effectiveRechargePowerKw * chargeEfficiency)).toFixed(1));
+
+    const maxAllowedRechargeHours = psh * 1.25;
+    if (usableCapacityKwh > 0 && rechargeTimeHours > maxAllowedRechargeHours) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      warnings.push(
+        `قدرة شحن الإنفرتر (${maxChargePowerKw} kW عبر ${maxChargeCurrentA}A) محدودة مقارنة بسعة البطارية الكبيرة (${totalCapacityKwh} kWh). ستستغرق إعادة الشحن الكاملة حوالي ${rechargeTimeHours} ساعات، مما يتجاوز ساعات ذروة الشمس اليومية (${psh}h).`
+      );
+      recommendations.push(
+        `يُوصى باختيار إنفرتر بقدرة شحن أعلى (مثل Crown Elego Pro 6kW أو Deye 8kW/10kW) لضمان الشحن السريع في فترات السطوع الشمسي المحدودة.`
+      );
+    }
+
+    // 5. قدرة التفريغ القصوى للبطارية مقارنة بالقدرة المستمرة للإنفرتر
+    const batteryMaxDischargeA = battery.maxContinuousDischargeA || (battery.capacityAh ? battery.capacityAh : (battery.capacityKwh * 1000 / batNominalVoltage));
+    const totalMaxDischargeKw = parseFloat(((invVoltage * batteryMaxDischargeA * Math.max(1, parallelCount)) / 1000).toFixed(2));
+    const inverterRatedKw = inverter.capacityKw || inverter.ratedPowerKw || 0;
+
+    if (totalMaxDischargeKw < inverterRatedKw * 0.85) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      warnings.push(
+        `أقصى تيار تفريغ مستمر للبطارية (${totalMaxDischargeKw} kW) أقل من استطاعة الإنفرتر (${inverterRatedKw} kW)، وقد تفصل حماية الـ BMS عند تشغيل الأحمال الكاملة.`
+      );
+      recommendations.push(`إضافة وحدة بطارية إضافية بالتوازي لزيادة قدرة تفريغ التيار.`);
+    }
+
+    return {
+      isCompatible: isCompatible && status !== 'CRITICAL',
+      status,
+      badge: status === 'OPTIMAL' ? 'مطابقة مثالية' : (status === 'WARNING' ? 'متوافق مع قيود فنية' : 'غير متوافق كهربائياً'),
+      invVoltage,
+      batNominalVoltage,
+      seriesCount,
+      parallelCount,
+      totalCapacityKwh,
+      usableCapacityKwh,
+      maxChargeCurrentA,
+      maxChargePowerKw,
+      rechargeTimeHours,
+      totalMaxDischargeKw,
+      inverterRatedKw,
+      warnings,
+      recommendations
+    };
+  }
+
+  /**
+   * 9. الفحص الهندسي الشامل للمنظومة متضمنة تخصيص وتبديل المكونات يدوياً
+   */
+  function validateFullSystemConfiguration(params = {}) {
+    const {
+      inverter,
+      battery,
+      batteryCount = 1,
+      panel,
+      panelsCount = 1,
+      loadProfile,
+      designParams = DEFAULT_DESIGN_PARAMS
+    } = params;
+
+    const checks = {
+      inverterPower: { ok: true, status: 'pass', label: 'قدرة الإنفرتر المستمرة', message: '' },
+      motorSurge: { ok: true, status: 'pass', label: 'تيار إقلاع المحركات (Surge)', message: '' },
+      batteryCharging: { ok: true, status: 'pass', label: 'توافق وقدرة شحن البطارية', message: '' },
+      batteryAutonomy: { ok: true, status: 'pass', label: 'تغطية فترة انقطاع الشبكة', message: '' },
+      mpptLimits: { ok: true, status: 'pass', label: 'مطابقة جهد الألواح والـ MPPT', message: '' }
+    };
+
+    const warnings = [];
+    const errors = [];
+    const recommendations = [];
+
+    // 1. Inverter continuous power
+    const invContinuousKw = inverter ? (inverter.capacityKw || inverter.ratedPowerKw || 0) : 0;
+    const peakLoadKw = loadProfile ? loadProfile.peakContinuousKw : 0;
+    const safetyMargin = designParams.inverterSafetyMargin || 1.25;
+
+    if (invContinuousKw < peakLoadKw) {
+      checks.inverterPower.ok = false;
+      checks.inverterPower.status = 'fail';
+      checks.inverterPower.message = `قدرة الإنفرتر (${invContinuousKw} kW) أقل من ذروة الأحمال المستمرة (${peakLoadKw} kW).`;
+      errors.push(checks.inverterPower.message);
+    } else if (invContinuousKw < peakLoadKw * safetyMargin) {
+      checks.inverterPower.ok = true;
+      checks.inverterPower.status = 'warn';
+      checks.inverterPower.message = `قدرة الإنفرتر (${invContinuousKw} kW) تغطي الأحمال ولكن دون هامش الأمان الموصى به (${parseFloat((peakLoadKw * safetyMargin).toFixed(1))} kW).`;
+      warnings.push(checks.inverterPower.message);
+    } else {
+      checks.inverterPower.message = `القدرة كافية ومحمية بهامش أمان ${(safetyMargin * 100 - 100).toFixed(0)}%.`;
+    }
+
+    // 2. Inverter Surge vs Motors
+    const invSurgeKw = inverter ? (inverter.surgeCapacityKw || inverter.surgeKw || invContinuousKw * 2) : 0;
+    const maxSurgeKw = loadProfile ? loadProfile.maxSurgeKw : 0;
+
+    if (invSurgeKw < maxSurgeKw) {
+      checks.motorSurge.ok = false;
+      checks.motorSurge.status = 'fail';
+      checks.motorSurge.message = `أقصى قدرة إقلاع للإنفرتر (${invSurgeKw} kW) لا تكفي لبدء تشغيل المحركات والمكيفات (${maxSurgeKw} kW).`;
+      errors.push(checks.motorSurge.message);
+    } else {
+      checks.motorSurge.message = `الإنفرتر يستوعب تيار إقلاع المحركات حتى ${invSurgeKw} kW.`;
+    }
+
+    // 3. Inverter-Battery Compatibility Matrix
+    const psh = designParams.psh || 5.8;
+    const batCompat = validateInverterBatteryCompatibility(inverter, battery, batteryCount, psh);
+    if (!batCompat.isCompatible) {
+      checks.batteryCharging.ok = false;
+      checks.batteryCharging.status = 'fail';
+      checks.batteryCharging.message = batCompat.warnings.join(' | ');
+      errors.push(...batCompat.warnings);
+    } else if (batCompat.status === 'WARNING') {
+      checks.batteryCharging.ok = true;
+      checks.batteryCharging.status = 'warn';
+      checks.batteryCharging.message = batCompat.warnings.join(' | ');
+      warnings.push(...batCompat.warnings);
+      recommendations.push(...batCompat.recommendations);
+    } else {
+      checks.batteryCharging.message = `توافق تام في الجهد (${batCompat.invVoltage}V) وزمن شحن قياسي (${batCompat.rechargeTimeHours}h).`;
+    }
+
+    // 4. Battery Storage vs Outage
+    const usableBatKwh = batCompat.usableCapacityKwh;
+    const outageKwh = loadProfile ? (loadProfile.totalOutageKwh || loadProfile.totalNightKwh) : 0;
+
+    if (usableBatKwh < outageKwh * 0.9) {
+      checks.batteryAutonomy.ok = false;
+      checks.batteryAutonomy.status = 'fail';
+      checks.batteryAutonomy.message = `سعة البطاريات القابلة للاستخدام (${usableBatKwh} kWh) لا تكفي لتغطية فترة الانقطاع (${outageKwh} kWh).`;
+      errors.push(checks.batteryAutonomy.message);
+    } else if (usableBatKwh < outageKwh * 1.15) {
+      checks.batteryAutonomy.ok = true;
+      checks.batteryAutonomy.status = 'warn';
+      checks.batteryAutonomy.message = `سعة البطاريات (${usableBatKwh} kWh) تغطي الانقطاع تماماً بهامش احتياطي محدود.`;
+      warnings.push(checks.batteryAutonomy.message);
+    } else {
+      checks.batteryAutonomy.message = `سعة البطاريات تغطي فترة الانقطاع مع هامش أمان ممتاز.`;
+    }
+
+    // 5. MPPT and Stringing
+    if (inverter && panel && panelsCount > 0) {
+      const targetPvKw = (panelsCount * (panel.watt || 580)) / 1000;
+      const stringing = calculateElectricalStringing(panel, inverter, targetPvKw, designParams);
+      if (!stringing.withinLimits || !stringing.isMpptFeasible) {
+        checks.mpptLimits.ok = false;
+        checks.mpptLimits.status = 'fail';
+        checks.mpptLimits.message = `تكوين الألواح خارج نطاق جهد MPPT للإنفرتر (${stringing.mpptWindow}). Voc Cold: ${stringing.stringVocCold}V.`;
+        errors.push(checks.mpptLimits.message);
+      } else {
+        checks.mpptLimits.message = `الجهد ضمن حدود MPPT المثالية (${stringing.stringVmpHot}V - ${stringing.stringVocCold}V).`;
+      }
+    }
+
+    const overallStatus = errors.length > 0 ? 'critical' : (warnings.length > 0 ? 'warning' : 'optimal');
+    const badge = overallStatus === 'optimal' ? 'منظومة مثالية ومعتمدة هندسياً 100%' : (overallStatus === 'warning' ? 'متوافقة تشغيلياً مع ملاحظات هندسية' : 'غير متوافقة فنياً - تتطلب تصحيح المكونات');
+
+    return {
+      isFeasible: errors.length === 0,
+      overallStatus,
+      badge,
+      checks,
+      warnings,
+      errors,
+      recommendations,
+      batCompat
+    };
+  }
+
   // --- دوال مساعدة ومُصدّرة ---
   return {
     DEFAULT_DESIGN_PARAMS,
@@ -1120,7 +1371,9 @@
     runSimulation,
     calculateElectricalStringing,
     sizeAndMatchSystem,
-    generateQuotation
+    generateQuotation,
+    validateInverterBatteryCompatibility,
+    validateFullSystemConfiguration
   };
 
 }));

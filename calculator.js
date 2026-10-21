@@ -659,9 +659,12 @@ if (typeof SolarEngine === 'undefined') {
     const isc = panel.isc || (panelWatt / vmpStc);
     const imp = panel.imp || (isc * 0.94);
 
-    // معاملات الحرارة (النسب المئوية لكل درجة مئوية)
-    const gammaVoc = panel.tempCoefficientVoc || panel.tempCoeffVoc || -0.0026; // -0.26%/C
-    const gammaVmp = panel.tempCoefficientVmp || -0.0030; // -0.30%/C
+    // معاملات الحرارة (النسب المئوية لكل درجة مئوية - دعم التنسيق المئوي أو العشري)
+    let gammaVoc = panel.tempCoefficientVoc || panel.tempCoeffVoc || -0.0026; // -0.26%/C
+    if (Math.abs(gammaVoc) > 0.05) gammaVoc = gammaVoc / 100;
+
+    let gammaVmp = panel.tempCoefficientVmp || panel.tempCoeffVmp || -0.0030; // -0.30%/C
+    if (Math.abs(gammaVmp) > 0.05) gammaVmp = gammaVmp / 100;
 
     // أقصى جهد دائرة مفتوحة عند أبرد حرارة متوقعة (Winter Morning Voc Cold)
     // Voc(Tmin) = Voc_STC * [1 + gamma_Voc * (Tmin - 25)]
@@ -672,11 +675,11 @@ if (typeof SolarEngine === 'undefined') {
     const vmpHot = vmpStc * (1 + gammaVmp * (tMaxCell - stcTemp));
 
     // حدود الإنفرتر
-    const invMaxVoc = inverter.maxVocInput || inverter.maxPvVoc || 500;
+    const invMaxVoc = inverter.maxVocInput || inverter.maxPvVoc || inverter.maxPvVoltage || 500;
     const invMpptMin = inverter.mpptMin || inverter.mpptVoltageMin || 120;
     const invMpptMax = inverter.mpptMax || inverter.mpptVoltageMax || 450;
     const invMpptTrackers = inverter.mpptTrackers || 2;
-    const invMaxPvPower = inverter.maxPvPower || (inverter.capacityKw * 1.3 * 1000);
+    const invMaxPvPower = inverter.maxPvPower || (inverter.maxPvInputKw ? inverter.maxPvInputKw * 1000 : (inverter.capacityKw * 1.3 * 1000));
 
     // أقصى عدد ألواح في السلسلة (Series String Max): يجب ألا يتجاوز Voc Cold جهد الإنفرتر الأقصى أو حد MPPT الأعلى
     const maxPanelsSeriesByVoc = Math.floor(invMaxVoc / vocCold);
@@ -1116,6 +1119,254 @@ if (typeof SolarEngine === 'undefined') {
     };
   }
 
+  /**
+   * 8. فحص وتدقيق التوافق الهندسي بين الإنفرتر وبنك البطاريات (Inverter-Battery Matrix)
+   * يفحص:
+   * 1. توافق جهد النظام (System Voltage) بين الإنفرتر والبطاريات (12V/24V/48V)
+   * 2. قدرة الشحن المتاحة للإنفرتر (Charging Power kW)
+   * 3. زمن إعادة الشحن الشمسي بالساعات ومقارنته بساعات ذروة الشمس في اليمن (PSH)
+   * 4. قدرة تفريغ البطارية القصوى مقارنة بالقدرة المستمرة المطلوبة للإنفرتر
+   * 5. توافق كيمياء البطارية ودعم بروتوكول الاتصال الذكي BMS
+   */
+  function validateInverterBatteryCompatibility(inverter, battery, batteryCount = 1, psh = 5.8) {
+    if (!inverter || !battery) {
+      return {
+        isCompatible: false,
+        status: 'CRITICAL',
+        badge: 'بيانات ناقصة',
+        warnings: ['بيانات الإنفرتر أو البطارية غير مكتملة'],
+        recommendations: []
+      };
+    }
+
+    const warnings = [];
+    const recommendations = [];
+    let isCompatible = true;
+    let status = 'OPTIMAL'; // 'OPTIMAL' | 'WARNING' | 'CRITICAL'
+
+    // 1. فحص الجهد الاسمي للمنظومة (System Voltage Check)
+    const invVoltage = inverter.batteryVoltage || inverter.systemVoltage || 48;
+    const batNominalVoltage = battery.nominalVoltage || battery.systemVoltage || 48;
+    const qty = Math.max(1, parseInt(batteryCount, 10) || 1);
+
+    let effectiveBatteryVoltage = batNominalVoltage;
+    let seriesCount = 1;
+    let parallelCount = qty;
+
+    if (batNominalVoltage === 12 && invVoltage === 48) {
+      seriesCount = 4;
+      if (qty % 4 !== 0) {
+        warnings.push(`البطارية بجهد 12V وتتطلب التوصيل على التوالي بمضاعفات 4 وحدات (4، 8، 12) للوصول لجهد الإنفرتر 48V. العدد الحالي: ${qty}.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 4);
+      effectiveBatteryVoltage = 48;
+    } else if (batNominalVoltage === 12 && invVoltage === 24) {
+      seriesCount = 2;
+      if (qty % 2 !== 0) {
+        warnings.push(`البطارية بجهد 12V وتتطلب التوصيل على التوالي بمضاعفات بطاريتين (2، 4، 6) للوصول لجهد الإنفرتر 24V. العدد الحالي: ${qty}.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 2);
+      effectiveBatteryVoltage = 24;
+    } else if (batNominalVoltage === 24 && invVoltage === 48) {
+      seriesCount = 2;
+      if (qty % 2 !== 0) {
+        warnings.push(`البطارية بجهد 24V وتتطلب زوج بطاريات على التوالي لتطابق جهد الإنفرتر 48V.`);
+        isCompatible = false;
+        status = 'CRITICAL';
+      }
+      parallelCount = Math.floor(qty / 2);
+      effectiveBatteryVoltage = 48;
+    } else if (batNominalVoltage !== invVoltage) {
+      warnings.push(`جهد البطارية (${batNominalVoltage}V) غير متوافق مع جهد دخل بطاريات الإنفرتر (${invVoltage}V).`);
+      isCompatible = false;
+      status = 'CRITICAL';
+    }
+
+    // 2. حساب الطاقة الإجمالية والقابلة للاستخدام (kWh)
+    const totalCapacityKwh = parseFloat(((battery.capacityKwh || 0) * qty).toFixed(2));
+    const dod = battery.dod || battery.recommendedDoD || 0.90;
+    const usableCapacityKwh = parseFloat((totalCapacityKwh * dod).toFixed(2));
+
+    // 3. قدرة الشحن القصوى للإنفرتر (Inverter Max Charging Power)
+    const maxChargeCurrentA = inverter.maxChargeCurrent || (inverter.capacityKw * 1000 / invVoltage) * 0.8;
+    const maxChargePowerKw = parseFloat(((invVoltage * maxChargeCurrentA) / 1000).toFixed(2));
+
+    // 4. زمن إعادة الشحن الشمسي الكامل بالساعات (Recharge Time Hours)
+    const chargeEfficiency = 0.95;
+    const effectiveRechargePowerKw = Math.max(0.5, Math.min(maxChargePowerKw, (inverter.capacityKw || 5) * 1.2));
+    const rechargeTimeHours = parseFloat((usableCapacityKwh / (effectiveRechargePowerKw * chargeEfficiency)).toFixed(1));
+
+    const maxAllowedRechargeHours = psh * 1.25;
+    if (usableCapacityKwh > 0 && rechargeTimeHours > maxAllowedRechargeHours) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      warnings.push(
+        `قدرة شحن الإنفرتر (${maxChargePowerKw} kW عبر ${maxChargeCurrentA}A) محدودة مقارنة بسعة البطارية الكبيرة (${totalCapacityKwh} kWh). ستستغرق إعادة الشحن الكاملة حوالي ${rechargeTimeHours} ساعات، مما يتجاوز ساعات ذروة الشمس اليومية (${psh}h).`
+      );
+      recommendations.push(
+        `يُوصى باختيار إنفرتر بقدرة شحن أعلى (مثل Crown Elego Pro 6kW أو Deye 8kW/10kW) لضمان الشحن السريع في فترات السطوع الشمسي المحدودة.`
+      );
+    }
+
+    // 5. قدرة التفريغ القصوى للبطارية مقارنة بالقدرة المستمرة للإنفرتر
+    const batteryMaxDischargeA = battery.maxContinuousDischargeA || (battery.capacityAh ? battery.capacityAh : (battery.capacityKwh * 1000 / batNominalVoltage));
+    const totalMaxDischargeKw = parseFloat(((invVoltage * batteryMaxDischargeA * Math.max(1, parallelCount)) / 1000).toFixed(2));
+    const inverterRatedKw = inverter.capacityKw || inverter.ratedPowerKw || 0;
+
+    if (totalMaxDischargeKw < inverterRatedKw * 0.85) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      warnings.push(
+        `أقصى تيار تفريغ مستمر للبطارية (${totalMaxDischargeKw} kW) أقل من استطاعة الإنفرتر (${inverterRatedKw} kW)، وقد تفصل حماية الـ BMS عند تشغيل الأحمال الكاملة.`
+      );
+      recommendations.push(`إضافة وحدة بطارية إضافية بالتوازي لزيادة قدرة تفريغ التيار.`);
+    }
+
+    return {
+      isCompatible: isCompatible && status !== 'CRITICAL',
+      status,
+      badge: status === 'OPTIMAL' ? 'مطابقة مثالية' : (status === 'WARNING' ? 'متوافق مع قيود فنية' : 'غير متوافق كهربائياً'),
+      invVoltage,
+      batNominalVoltage,
+      seriesCount,
+      parallelCount,
+      totalCapacityKwh,
+      usableCapacityKwh,
+      maxChargeCurrentA,
+      maxChargePowerKw,
+      rechargeTimeHours,
+      totalMaxDischargeKw,
+      inverterRatedKw,
+      warnings,
+      recommendations
+    };
+  }
+
+  /**
+   * 9. الفحص الهندسي الشامل للمنظومة متضمنة تخصيص وتبديل المكونات يدوياً
+   */
+  function validateFullSystemConfiguration(params = {}) {
+    const {
+      inverter,
+      battery,
+      batteryCount = 1,
+      panel,
+      panelsCount = 1,
+      loadProfile,
+      designParams = DEFAULT_DESIGN_PARAMS
+    } = params;
+
+    const checks = {
+      inverterPower: { ok: true, status: 'pass', label: 'قدرة الإنفرتر المستمرة', message: '' },
+      motorSurge: { ok: true, status: 'pass', label: 'تيار إقلاع المحركات (Surge)', message: '' },
+      batteryCharging: { ok: true, status: 'pass', label: 'توافق وقدرة شحن البطارية', message: '' },
+      batteryAutonomy: { ok: true, status: 'pass', label: 'تغطية فترة انقطاع الشبكة', message: '' },
+      mpptLimits: { ok: true, status: 'pass', label: 'مطابقة جهد الألواح والـ MPPT', message: '' }
+    };
+
+    const warnings = [];
+    const errors = [];
+    const recommendations = [];
+
+    // 1. Inverter continuous power
+    const invContinuousKw = inverter ? (inverter.capacityKw || inverter.ratedPowerKw || 0) : 0;
+    const peakLoadKw = loadProfile ? loadProfile.peakContinuousKw : 0;
+    const safetyMargin = designParams.inverterSafetyMargin || 1.25;
+
+    if (invContinuousKw < peakLoadKw) {
+      checks.inverterPower.ok = false;
+      checks.inverterPower.status = 'fail';
+      checks.inverterPower.message = `قدرة الإنفرتر (${invContinuousKw} kW) أقل من ذروة الأحمال المستمرة (${peakLoadKw} kW).`;
+      errors.push(checks.inverterPower.message);
+    } else if (invContinuousKw < peakLoadKw * safetyMargin) {
+      checks.inverterPower.ok = true;
+      checks.inverterPower.status = 'warn';
+      checks.inverterPower.message = `قدرة الإنفرتر (${invContinuousKw} kW) تغطي الأحمال ولكن دون هامش الأمان الموصى به (${parseFloat((peakLoadKw * safetyMargin).toFixed(1))} kW).`;
+      warnings.push(checks.inverterPower.message);
+    } else {
+      checks.inverterPower.message = `القدرة كافية ومحمية بهامش أمان ${(safetyMargin * 100 - 100).toFixed(0)}%.`;
+    }
+
+    // 2. Inverter Surge vs Motors
+    const invSurgeKw = inverter ? (inverter.surgeCapacityKw || inverter.surgeKw || invContinuousKw * 2) : 0;
+    const maxSurgeKw = loadProfile ? loadProfile.maxSurgeKw : 0;
+
+    if (invSurgeKw < maxSurgeKw) {
+      checks.motorSurge.ok = false;
+      checks.motorSurge.status = 'fail';
+      checks.motorSurge.message = `أقصى قدرة إقلاع للإنفرتر (${invSurgeKw} kW) لا تكفي لبدء تشغيل المحركات والمكيفات (${maxSurgeKw} kW).`;
+      errors.push(checks.motorSurge.message);
+    } else {
+      checks.motorSurge.message = `الإنفرتر يستوعب تيار إقلاع المحركات حتى ${invSurgeKw} kW.`;
+    }
+
+    // 3. Inverter-Battery Compatibility Matrix
+    const psh = designParams.psh || 5.8;
+    const batCompat = validateInverterBatteryCompatibility(inverter, battery, batteryCount, psh);
+    if (!batCompat.isCompatible) {
+      checks.batteryCharging.ok = false;
+      checks.batteryCharging.status = 'fail';
+      checks.batteryCharging.message = batCompat.warnings.join(' | ');
+      errors.push(...batCompat.warnings);
+    } else if (batCompat.status === 'WARNING') {
+      checks.batteryCharging.ok = true;
+      checks.batteryCharging.status = 'warn';
+      checks.batteryCharging.message = batCompat.warnings.join(' | ');
+      warnings.push(...batCompat.warnings);
+      recommendations.push(...batCompat.recommendations);
+    } else {
+      checks.batteryCharging.message = `توافق تام في الجهد (${batCompat.invVoltage}V) وزمن شحن قياسي (${batCompat.rechargeTimeHours}h).`;
+    }
+
+    // 4. Battery Storage vs Outage
+    const usableBatKwh = batCompat.usableCapacityKwh;
+    const outageKwh = loadProfile ? (loadProfile.totalOutageKwh || loadProfile.totalNightKwh) : 0;
+
+    if (usableBatKwh < outageKwh * 0.9) {
+      checks.batteryAutonomy.ok = false;
+      checks.batteryAutonomy.status = 'fail';
+      checks.batteryAutonomy.message = `سعة البطاريات القابلة للاستخدام (${usableBatKwh} kWh) لا تكفي لتغطية فترة الانقطاع (${outageKwh} kWh).`;
+      errors.push(checks.batteryAutonomy.message);
+    } else if (usableBatKwh < outageKwh * 1.15) {
+      checks.batteryAutonomy.ok = true;
+      checks.batteryAutonomy.status = 'warn';
+      checks.batteryAutonomy.message = `سعة البطاريات (${usableBatKwh} kWh) تغطي الانقطاع تماماً بهامش احتياطي محدود.`;
+      warnings.push(checks.batteryAutonomy.message);
+    } else {
+      checks.batteryAutonomy.message = `سعة البطاريات تغطي فترة الانقطاع مع هامش أمان ممتاز.`;
+    }
+
+    // 5. MPPT and Stringing
+    if (inverter && panel && panelsCount > 0) {
+      const targetPvKw = (panelsCount * (panel.watt || 580)) / 1000;
+      const stringing = calculateElectricalStringing(panel, inverter, targetPvKw, designParams);
+      if (!stringing.withinLimits || !stringing.isMpptFeasible) {
+        checks.mpptLimits.ok = false;
+        checks.mpptLimits.status = 'fail';
+        checks.mpptLimits.message = `تكوين الألواح خارج نطاق جهد MPPT للإنفرتر (${stringing.mpptWindow}). Voc Cold: ${stringing.stringVocCold}V.`;
+        errors.push(checks.mpptLimits.message);
+      } else {
+        checks.mpptLimits.message = `الجهد ضمن حدود MPPT المثالية (${stringing.stringVmpHot}V - ${stringing.stringVocCold}V).`;
+      }
+    }
+
+    const overallStatus = errors.length > 0 ? 'critical' : (warnings.length > 0 ? 'warning' : 'optimal');
+    const badge = overallStatus === 'optimal' ? 'منظومة مثالية ومعتمدة هندسياً 100%' : (overallStatus === 'warning' ? 'متوافقة تشغيلياً مع ملاحظات هندسية' : 'غير متوافقة فنياً - تتطلب تصحيح المكونات');
+
+    return {
+      isFeasible: errors.length === 0,
+      overallStatus,
+      badge,
+      checks,
+      warnings,
+      errors,
+      recommendations,
+      batCompat
+    };
+  }
+
   // --- دوال مساعدة ومُصدّرة ---
   return {
     DEFAULT_DESIGN_PARAMS,
@@ -1125,7 +1376,9 @@ if (typeof SolarEngine === 'undefined') {
     runSimulation,
     calculateElectricalStringing,
     sizeAndMatchSystem,
-    generateQuotation
+    generateQuotation,
+    validateInverterBatteryCompatibility,
+    validateFullSystemConfiguration
   };
 
 }));
@@ -1322,6 +1575,8 @@ async function fetchBackendData() {
 
   // Render initial appliance buttons
   renderAppliancePicker('all');
+  renderProductsCatalog('all');
+  initPwaAndMobileNav();
 
   // Load initial demo appliances so the user sees a friendly starting point
   if (State.appliances.length === 0) {
@@ -1342,6 +1597,211 @@ function useFallbackData() {
 }
 
 // --- Wizard Stepper Controller ---
+
+// ============================================================
+// PRODUCTS CATALOG & PWA CONTROLLER
+// ============================================================
+
+function renderProductsCatalog(filter = 'all') {
+  const container = document.getElementById('products-catalog-container');
+  if (!container) return;
+
+  const inverters = State.inventory.inverters || [];
+  const batteries = State.inventory.batteries || [];
+  const panels = State.inventory.panels || [];
+
+  let items = [];
+
+  if (filter === 'all' || filter === 'crown') {
+    const crownInverters = inverters.filter(i => (i.brand || '').includes('Crown') || (i.name || '').includes('كراون'));
+    items.push(...crownInverters.map(i => ({ ...i, category: 'inverter', subCat: 'crown' })));
+  }
+
+  if (filter === 'all' || filter === 'deye') {
+    const deyeInverters = inverters.filter(i => (i.brand || '').includes('Deye') || (i.name || '').includes('داي'));
+    items.push(...deyeInverters.map(i => ({ ...i, category: 'inverter', subCat: 'deye' })));
+  }
+
+  if (filter === 'all' || filter === 'batteries') {
+    items.push(...batteries.map(b => ({ ...b, category: 'battery', subCat: 'battery' })));
+  }
+
+  if (filter === 'all' || filter === 'panels') {
+    items.push(...panels.map(p => ({ ...p, category: 'panel', subCat: 'panel' })));
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="text-center p-4 text-muted col-span-full">لا توجد منتجات متطابقة في المخزون حالياً.</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => {
+    let brandBadge = '';
+    let iconClass = 'fa-bolt';
+    let specsHtml = '';
+
+    if (item.subCat === 'crown') {
+      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown"></i> وكالة Crown Micro</span>';
+      iconClass = 'fa-solar-panel';
+      specsHtml = `
+        <div class="prod-spec-item"><span class="prod-spec-label">القدرة الاسمية:</span><span class="prod-spec-val font-num">${item.capacityKw} kW</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">جهد البطارية:</span><span class="prod-spec-val font-num">${item.batteryVoltage || item.systemVoltage || 48}V</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">أقصى تيار شحن:</span><span class="prod-spec-val font-num">${item.maxChargeCurrent || 80}A</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">نطاق MPPT:</span><span class="prod-spec-val font-num">${item.mpptMin || 90}V - ${item.mpptMax || 450}V</span></div>
+      `;
+    } else if (item.subCat === 'deye') {
+      brandBadge = '<span class="prod-brand-badge prod-brand-deye"><i class="fa-solid fa-bolt"></i> Deye Hybrid</span>';
+      iconClass = 'fa-gauge-high';
+      specsHtml = `
+        <div class="prod-spec-item"><span class="prod-spec-label">القدرة الاسمية:</span><span class="prod-spec-val font-num">${item.capacityKw} kW</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">عدد أطوار التشغيل:</span><span class="prod-spec-val">${item.phase || '1-Phase'}</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">أقصى تيار شحن:</span><span class="prod-spec-val font-num">${item.maxChargeCurrent || 120}A</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">الضمان:</span><span class="prod-spec-val font-num">${item.warrantyYears || 5} سنوات</span></div>
+      `;
+    } else if (item.category === 'battery') {
+      brandBadge = '<span class="prod-brand-badge prod-brand-bat"><i class="fa-solid fa-battery-full"></i> LiFePO4</span>';
+      iconClass = 'fa-battery-three-quarters';
+      specsHtml = `
+        <div class="prod-spec-item"><span class="prod-spec-label">السعة التخزينية:</span><span class="prod-spec-val font-num">${item.capacityKwh} kWh</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">الجهد الاسمي:</span><span class="prod-spec-val font-num">${item.nominalVoltage || 48}V</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">عمق التفريغ DoD:</span><span class="prod-spec-val font-num">${((item.dod || 0.9) * 100).toFixed(0)}%</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">العمر الافتراضي:</span><span class="prod-spec-val">6000 دورة (+10 سنوات)</span></div>
+      `;
+    } else if (item.category === 'panel') {
+      brandBadge = '<span class="prod-brand-badge" style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.35);"><i class="fa-solid fa-sun"></i> Tier-1 N-Type</span>';
+      iconClass = 'fa-solar-panel';
+      specsHtml = `
+        <div class="prod-spec-item"><span class="prod-spec-label">القدرة القصوى:</span><span class="prod-spec-val font-num">${item.watt} Watt</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">جهد الدائرة Voc:</span><span class="prod-spec-val font-num">${item.voc || '--'}V</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">كفاءة الخلية:</span><span class="prod-spec-val font-num">22.5%+</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">ضمان الأداء:</span><span class="prod-spec-val font-num">25 سنة</span></div>
+      `;
+    }
+
+    const priceUsdFormatted = `${Math.round(item.price).toLocaleString('en-US')}`;
+    const rate = State.designParams.currencyExchangeRate || 535;
+    const yerPrice = Math.round(item.price * rate).toLocaleString('ar-YE');
+
+    return `
+      <div class="prod-card glass hover-lift" data-item-id="${item.id}" data-item-cat="${item.category}">
+        <div class="prod-card-top">
+          ${brandBadge}
+          <div class="prod-card-icon"><i class="fa-solid ${iconClass}"></i></div>
+        </div>
+        <h3 class="prod-card-title">${item.name}</h3>
+        <div class="prod-card-model">${item.model || ''}</div>
+        <div class="prod-specs-pills">
+          ${specsHtml}
+        </div>
+        <div class="prod-card-footer">
+          <div class="prod-price-box">
+            <span class="prod-price-usd font-num">${priceUsdFormatted}</span>
+            ${State.designParams.enableYerDisplay ? `<span class="prod-price-sub font-num">${yerPrice} ر.ي</span>` : '<span class="prod-price-sub">سعر الوكيل المعتمد</span>'}
+          </div>
+          <button type="button" class="btn btn-primary btn-sm btn-select-product-calc" data-item-id="${item.id}" data-item-cat="${item.category}">
+            <i class="fa-solid fa-calculator"></i> صمم منظومة به
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add click handlers on product buttons
+  container.querySelectorAll('.btn-select-product-calc').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-item-id');
+      const cat = e.currentTarget.getAttribute('data-item-cat');
+
+      if (cat === 'inverter') {
+        const invSel = document.getElementById('custom-select-inverter');
+        if (invSel) invSel.value = id;
+      } else if (cat === 'battery') {
+        const batSel = document.getElementById('custom-select-battery');
+        if (batSel) batSel.value = id;
+      } else if (cat === 'panel') {
+        const panSel = document.getElementById('custom-select-panel');
+        if (panSel) panSel.value = id;
+      }
+
+      // Open tuning accordion if hidden
+      const tuningBody = document.getElementById('tuning-content');
+      if (tuningBody && tuningBody.classList.contains('hidden')) {
+        tuningBody.classList.remove('hidden');
+        document.getElementById('toggle-tuning-section')?.querySelector('.toggle-icon')?.classList.add('fa-chevron-up');
+      }
+
+      updateLiveCompatibilityCard();
+
+      // Scroll smoothly to calculator step 4
+      goToStep(4);
+      document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+}
+
+function initPwaAndMobileNav() {
+  // 1. Mobile bottom navigation active state on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 120;
+      if (window.pageYOffset >= sectionTop) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navItems.forEach(item => {
+      item.classList.remove('active');
+      if (item.getAttribute('data-target') === current) {
+        item.classList.add('active');
+      }
+    });
+  }, { passive: true });
+
+  // 2. Filter buttons for products catalog
+  document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(b => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const filter = e.currentTarget.getAttribute('data-filter');
+      renderProductsCatalog(filter);
+    });
+  });
+
+  // 3. PWA install prompt handler
+  let deferredPrompt;
+  const pwaBanner = document.getElementById('pwa-install-banner');
+  const btnInstall = document.getElementById('btn-pwa-install');
+  const btnDismiss = document.getElementById('btn-pwa-dismiss');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!localStorage.getItem('pwa_dismissed')) {
+      if (pwaBanner) pwaBanner.style.display = 'flex';
+    }
+  });
+
+  btnInstall?.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (pwaBanner) pwaBanner.style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+  });
+
+  btnDismiss?.addEventListener('click', () => {
+    if (pwaBanner) pwaBanner.style.display = 'none';
+    localStorage.setItem('pwa_dismissed', 'true');
+  });
+}
+
 function initWizardNavigation() {
   const stepNodes = document.querySelectorAll('.wizard-step-node');
   stepNodes.forEach(node => {
@@ -2057,6 +2517,131 @@ function render24hSimulation() {
 // ============================================================
 // STEP 4: مطابقة واختيار المنظومة (3 Packages)
 // ============================================================
+function updateLiveCompatibilityCard() {
+  const invSel = document.getElementById('custom-select-inverter');
+  const panSel = document.getElementById('custom-select-panel');
+  const batSel = document.getElementById('custom-select-battery');
+  const pCountInp = document.getElementById('custom-panels-count');
+  const bCountInp = document.getElementById('custom-batteries-count');
+  const compatCard = document.getElementById('tuning-compatibility-card');
+
+  if (!invSel || !compatCard) return;
+
+  const invId = invSel.value;
+  const panId = panSel ? panSel.value : null;
+  const batId = batSel ? batSel.value : null;
+  const panelsCount = parseInt(pCountInp?.value, 10) || 8;
+  const batCount = parseInt(bCountInp?.value, 10) || 1;
+
+  const chosenInv = State.inventory.inverters.find(i => i.id === invId) || State.inventory.inverters[0];
+  const chosenPan = State.inventory.panels.find(p => p.id === panId) || State.inventory.panels[0];
+  const chosenBat = State.inventory.batteries.find(b => b.id === batId) || State.inventory.batteries[0];
+
+  const sched = SolarEngine.parseGridSchedule({
+    mode: State.grid.mode,
+    intervals: State.grid.intervals,
+    dailyHours: State.grid.dailyHours,
+    worstOutageHours: State.grid.worstOutageHours
+  }, 96);
+  const profile = SolarEngine.calculateLoadProfile(State.appliances, sched, 96);
+
+  const evalResult = SolarEngine.validateFullSystemConfiguration({
+    inverter: chosenInv,
+    battery: chosenBat,
+    batteryCount: batCount,
+    panel: chosenPan,
+    panelsCount,
+    loadProfile: profile,
+    designParams: State.designParams
+  });
+
+  compatCard.className = `tuning-compat-card status-${evalResult.overallStatus} mt-3`;
+  compatCard.style.display = 'block';
+
+  let statusBadgeHtml = '';
+  if (evalResult.overallStatus === 'optimal') {
+    statusBadgeHtml = '<span class="tcc-badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);"><i class="fa-solid fa-circle-check"></i> مطابقة هندسية معتمدة 100%</span>';
+  } else if (evalResult.overallStatus === 'warning') {
+    statusBadgeHtml = '<span class="tcc-badge" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4);"><i class="fa-solid fa-triangle-exclamation"></i> متوافقة تشغيلياً مع قيود فنية</span>';
+  } else {
+    statusBadgeHtml = '<span class="tcc-badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-circle-xmark"></i> غير متوافقة فنياً - تتطلب تصحيحاً</span>';
+  }
+
+  const { checks, batCompat } = evalResult;
+
+  compatCard.innerHTML = `
+    <div class="tcc-header">
+      <div>
+        <strong style="font-size: 0.95rem; display: block; color: var(--text-primary);"><i class="fa-solid fa-microchip text-primary"></i> تقرير التوافق والمطابقة الهندسية</strong>
+        <small style="color: var(--text-secondary);">فحص مصفوفة الشحن والتفريغ وتيار الإقلاع وجهود الـ MPPT</small>
+      </div>
+      ${statusBadgeHtml}
+    </div>
+
+    <div class="tcc-checks-grid">
+      <div class="tcc-check-item">
+        <div class="tcc-check-title">
+          <i class="fa-solid ${checks.inverterPower.status === 'pass' ? 'fa-check text-success' : (checks.inverterPower.status === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-xmark text-danger')}"></i>
+          <span>${checks.inverterPower.label}</span>
+        </div>
+        <div class="tcc-check-detail">${checks.inverterPower.message}</div>
+      </div>
+
+      <div class="tcc-check-item">
+        <div class="tcc-check-title">
+          <i class="fa-solid ${checks.motorSurge.status === 'pass' ? 'fa-check text-success' : 'fa-xmark text-danger'}"></i>
+          <span>${checks.motorSurge.label}</span>
+        </div>
+        <div class="tcc-check-detail">${checks.motorSurge.message}</div>
+      </div>
+
+      <div class="tcc-check-item">
+        <div class="tcc-check-title">
+          <i class="fa-solid ${checks.batteryCharging.status === 'pass' ? 'fa-check text-success' : (checks.batteryCharging.status === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-xmark text-danger')}"></i>
+          <span>${checks.batteryCharging.label}</span>
+        </div>
+        <div class="tcc-check-detail">${checks.batteryCharging.message}</div>
+      </div>
+
+      <div class="tcc-check-item">
+        <div class="tcc-check-title">
+          <i class="fa-solid ${checks.batteryAutonomy.status === 'pass' ? 'fa-check text-success' : (checks.batteryAutonomy.status === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-xmark text-danger')}"></i>
+          <span>${checks.batteryAutonomy.label}</span>
+        </div>
+        <div class="tcc-check-detail">${checks.batteryAutonomy.message}</div>
+      </div>
+
+      <div class="tcc-check-item">
+        <div class="tcc-check-title">
+          <i class="fa-solid ${checks.mpptLimits.status === 'pass' ? 'fa-check text-success' : 'fa-xmark text-danger'}"></i>
+          <span>${checks.mpptLimits.label}</span>
+        </div>
+        <div class="tcc-check-detail">${checks.mpptLimits.message}</div>
+      </div>
+    </div>
+
+    ${evalResult.warnings.length > 0 ? `
+      <div class="tcc-messages-box warn mb-2">
+        <strong><i class="fa-solid fa-triangle-exclamation"></i> ملاحظات وتحذيرات فنية:</strong>
+        <ul style="margin: 4px 0 0 16px; padding: 0;">
+          ${evalResult.warnings.map(w => `<li>${w}</li>`).join('')}
+        </ul>
+      </div>
+    ` : ''}
+
+    ${evalResult.recommendations.length > 0 ? `
+      <div class="tcc-messages-box warn" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.3); color: #60a5fa;">
+        <strong><i class="fa-solid fa-lightbulb"></i> البدائل والتوصيات المقترحة من المخزون:</strong>
+        <ul style="margin: 4px 0 0 16px; padding: 0;">
+          ${evalResult.recommendations.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+    ` : ''}
+  `;
+
+  return evalResult;
+}
+
 function initStep4Packages() {
   document.querySelectorAll('.btn-select-pkg').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -2076,11 +2661,29 @@ function initStep4Packages() {
     toggleTuning.addEventListener('click', () => {
       tuningBody.classList.toggle('hidden');
       toggleTuning.querySelector('.toggle-icon')?.classList.toggle('fa-chevron-up');
+      updateLiveCompatibilityCard();
     });
   }
 
+  // Live input & change events on tuning controls
+  ['custom-select-inverter', 'custom-select-panel', 'custom-select-battery', 'custom-panels-count', 'custom-batteries-count'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateLiveCompatibilityCard);
+      el.addEventListener('change', updateLiveCompatibilityCard);
+    }
+  });
+
   // Apply manual tuning button
   document.getElementById('btn-apply-custom-tuning')?.addEventListener('click', () => {
+    const evalRes = updateLiveCompatibilityCard();
+    if (!evalRes) return;
+
+    if (evalRes.overallStatus === 'critical') {
+      const confirmContinue = confirm("تحذير هندسي: التركيب المختار يحتوي على تعارضات كهربائية قد تسبب فصلاً أو خطراً على الأجهزة.\n\nهل ترغب بالاستمرار رغم ذلك لمعاينة عرض السعر؟");
+      if (!confirmContinue) return;
+    }
+
     const invId = document.getElementById('custom-select-inverter').value;
     const panId = document.getElementById('custom-select-panel').value;
     const batId = document.getElementById('custom-select-battery').value;
@@ -2093,16 +2696,19 @@ function initStep4Packages() {
 
     const stringing = SolarEngine.calculateElectricalStringing(chosenPan, chosenInv, (panelsCount * chosenPan.watt) / 1000, State.designParams);
 
+    const isCrown = (chosenInv.brand || '').includes('Crown') || (chosenInv.name || '').includes('كراون');
+
     State.activePackage = {
       type: 'custom',
       title: 'باقة مخصصة يدوياً',
-      badge: 'تم اختيار المكونات يدوياً من لوحة التخصيص',
+      badge: isCrown ? 'تخصيص وكالة Crown Micro المعتمدة' : 'تم اختيار المكونات يدوياً من لوحة التخصيص',
       inverter: { ...chosenInv, quantity: 1, totalCost: chosenInv.price },
-      battery: { ...chosenBat, quantity: batCount, totalKwh: chosenBat.capacityKwh * batCount, usableKwh: chosenBat.capacityKwh * (chosenBat.dod || 0.9) * batCount, totalCost: chosenBat.price * batCount },
-      panel: { ...chosenPan, quantity: panelsCount, totalKw: (panelsCount * chosenPan.watt) / 1000, stringing, totalCost: chosenPan.price * panelsCount }
+      battery: { ...chosenBat, quantity: batCount, totalKwh: parseFloat((chosenBat.capacityKwh * batCount).toFixed(2)), usableKwh: parseFloat((chosenBat.usableKwh * batCount).toFixed(2)), totalCost: chosenBat.price * batCount },
+      panel: { ...chosenPan, quantity: panelsCount, totalKw: parseFloat(((panelsCount * chosenPan.watt) / 1000).toFixed(2)), stringing, totalCost: chosenPan.price * panelsCount },
+      compatibility: evalRes
     };
 
-    alert("تم تحديث مواصفات المنظومة بنجاح! انتقل إلى الخطوة 5 لمعاينة عرض السعر.");
+    alert("✅ تم تحديث وتدقيق مواصفات المنظومة بنجاح! جارٍ نقلك إلى الخطوة 5 لمعاينة وثيقة عرض السعر الرسمية.");
     goToStep(5);
   });
 }

@@ -43,7 +43,8 @@
             <nav class="nav-menu">
                 <a href="#hero" class="nav-link active">الرئيسية</a>
                 <a href="#services" class="nav-link">خدماتنا</a>
-                <a href="#calculator" class="nav-link highlight-btn">احسب منظومتك</a>
+                <a href="#products" class="nav-link">منتجات الوكالة</a>
+                <a href="#calculator" class="nav-link highlight-btn"><i class="fa-solid fa-bolt"></i> احسب منظومتك</a>
                 <a href="#contact" class="nav-link">اتصل بنا</a>
             </nav>
             <div class="nav-actions">
@@ -176,6 +177,36 @@
                     <h3 id="service4-title">صيانة ودعم فني مستمر</h3>
                     <p id="service4-desc">فريق متكامل من المهندسين والفنيين لضمان التركيب الاحترافي الآمن وتقديم خدمات الصيانة الدورية.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==============================================
+         قسم منتجات الوكالة والمخزون الحي (Products Catalog)
+         ============================================== -->
+    <section id="products" class="products-section">
+        <div class="container">
+            <div class="section-header text-center">
+                <div class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #f59e0b; margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>المخزون المعتمد والأسعار المباشرة</span>
+                </div>
+                <h2 class="section-title">منتجات وكالة <span class="gradient-text">Crown Micro</span> والحلول العالمية</h2>
+                <p class="section-subtitle">نوفر إنفرترات كراون مايكرو الأصلية، إنفرترات داي الهجينة، بطاريات الليثيوم LiFePO4، وألواح الفئة الأولى Tier-1 بضمانات رسمية معتمدة.</p>
+                
+                <!-- Category Filters -->
+                <div class="products-filter-bar" id="products-filter-bar">
+                    <button type="button" class="prod-filter-btn active" data-filter="all">جميع المنتجات</button>
+                    <button type="button" class="prod-filter-btn" data-filter="crown"><i class="fa-solid fa-crown text-warning"></i> إنفرترات Crown Micro</button>
+                    <button type="button" class="prod-filter-btn" data-filter="deye"><i class="fa-solid fa-bolt text-primary"></i> إنفرترات Deye</button>
+                    <button type="button" class="prod-filter-btn" data-filter="batteries"><i class="fa-solid fa-battery-full text-success"></i> بطاريات الليثيوم</button>
+                    <button type="button" class="prod-filter-btn" data-filter="panels"><i class="fa-solid fa-solar-panel text-warning"></i> ألواح الطاقة N-Type</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Products Grid -->
+            <div class="products-catalog-grid" id="products-catalog-container">
+                <!-- Dynamically populated from State.inventory -->
             </div>
         </div>
     </section>
@@ -964,6 +995,11 @@
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Live Engineering Compatibility Card -->
+                                <div id="tuning-compatibility-card" class="tuning-compat-card mt-3">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
                             </div>
                         </div>
 
@@ -1293,5 +1329,44 @@
             });
         }
     </script>
+
+    <!-- Mobile App Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <a href="#hero" class="mobile-nav-item active" data-target="hero">
+            <i class="fa-solid fa-house"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="#products" class="mobile-nav-item" data-target="products">
+            <i class="fa-solid fa-box-open"></i>
+            <span>المنتجات</span>
+        </a>
+        <a href="#calculator" class="mobile-nav-item highlight-nav-item" data-target="calculator">
+            <i class="fa-solid fa-bolt"></i>
+            <span>الحاسبة</span>
+        </a>
+        <a href="#contact" class="mobile-nav-item" data-target="contact">
+            <i class="fa-solid fa-headset"></i>
+            <span>اتصل بنا</span>
+        </a>
+        <a href="https://wa.me/967783999039" target="_blank" rel="noopener" class="mobile-nav-item text-success">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>واتساب</span>
+        </a>
+    </nav>
+
+    <!-- PWA Install Prompt Banner -->
+    <div class="pwa-install-banner" id="pwa-install-banner" style="display: none;">
+        <div class="pwa-banner-content">
+            <img src="icon-192.png" alt="Petronil App" class="pwa-banner-icon">
+            <div class="pwa-banner-text">
+                <strong>تطبيق بترونيل يمن للطاقة</strong>
+                <small>ثبّت التطبيق على شاشة هاتفك لحساب منظومتك في أي وقت أوفلاين</small>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-pwa-install">تثبيت التطبيق</button>
+            <button type="button" class="btn btn-secondary-outline btn-sm" id="btn-pwa-dismiss">لاحقاً</button>
+        </div>
+    </div>
 </body>
 </html>
