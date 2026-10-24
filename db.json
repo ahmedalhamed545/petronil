@@ -71,9 +71,9 @@
       "phase": "1-Phase",
       "batteryVoltage": 12,
       "mpptVoltageMin": 30,
-      "mpptVoltageMax": 100,
+      "mpptVoltageMax": 400,
       "maxPvVoltage": 105,
-      "maxPvInputKw": 1.8,
+      "maxPvInputKw": 3,
       "maxPvCurrent": 15,
       "mpptTrackers": 1,
       "maxChargeCurrent": 60,
@@ -86,7 +86,9 @@
       "warrantyYears": 2,
       "price": 725,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 2.5,
+      "maxAcInputCurrent": 10.8
     },
     {
       "id": "inv_crown_xavier_4k",
@@ -114,7 +116,9 @@
       "warrantyYears": 2,
       "price": 1200,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 5,
+      "maxAcInputCurrent": 22
     },
     {
       "id": "inv_crown_xavier_6k",
@@ -142,7 +146,9 @@
       "warrantyYears": 2,
       "price": 1400,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 7,
+      "maxAcInputCurrent": 30
     },
     {
       "id": "inv_crown_arceus_3_6k",
@@ -157,10 +163,10 @@
       "mpptVoltageMin": 60,
       "mpptVoltageMax": 450,
       "maxPvVoltage": 500,
-      "maxPvInputKw": 4,
+      "maxPvInputKw": 4.5,
       "maxPvCurrent": 18,
       "mpptTrackers": 1,
-      "maxChargeCurrent": 80,
+      "maxChargeCurrent": 100,
       "maxDischargeCurrent": 150,
       "supportedBatteries": [
         "LiFePO4",
@@ -170,7 +176,9 @@
       "warrantyYears": 2,
       "price": 900,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 4.5,
+      "maxAcInputCurrent": 20
     },
     {
       "id": "inv_crown_arceus_6_5k",
@@ -183,9 +191,9 @@
       "phase": "1-Phase",
       "batteryVoltage": 48,
       "mpptVoltageMin": 90,
-      "mpptVoltageMax": 450,
+      "mpptVoltageMax": 550,
       "maxPvVoltage": 500,
-      "maxPvInputKw": 7,
+      "maxPvInputKw": 8,
       "maxPvCurrent": 22,
       "mpptTrackers": 1,
       "maxChargeCurrent": 120,
@@ -198,7 +206,9 @@
       "warrantyYears": 2,
       "price": 1400,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 7.5,
+      "maxAcInputCurrent": 32.6
     },
     {
       "id": "inv_crown_nova_8_6k",
@@ -213,7 +223,7 @@
       "mpptVoltageMin": 120,
       "mpptVoltageMax": 500,
       "maxPvVoltage": 550,
-      "maxPvInputKw": 9.5,
+      "maxPvInputKw": 11,
       "maxPvCurrent": 25,
       "mpptTrackers": 2,
       "maxChargeCurrent": 140,
@@ -226,7 +236,9 @@
       "warrantyYears": 3,
       "price": 3200,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 10,
+      "maxAcInputCurrent": 45
     },
     {
       "id": "inv_crown_nova_9_8k",
@@ -241,7 +253,7 @@
       "mpptVoltageMin": 120,
       "mpptVoltageMax": 500,
       "maxPvVoltage": 550,
-      "maxPvInputKw": 11,
+      "maxPvInputKw": 13,
       "maxPvCurrent": 26,
       "mpptTrackers": 2,
       "maxChargeCurrent": 150,
@@ -254,7 +266,9 @@
       "warrantyYears": 3,
       "price": 3870,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 12,
+      "maxAcInputCurrent": 50
     },
     {
       "id": "inv_crown_nova_12_6k",
@@ -269,7 +283,7 @@
       "mpptVoltageMin": 120,
       "mpptVoltageMax": 500,
       "maxPvVoltage": 550,
-      "maxPvInputKw": 14,
+      "maxPvInputKw": 16,
       "maxPvCurrent": 30,
       "mpptTrackers": 2,
       "maxChargeCurrent": 180,
@@ -282,7 +296,9 @@
       "warrantyYears": 3,
       "price": 4520,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 16,
+      "maxAcInputCurrent": 60
     },
     {
       "id": "inv_crown_elego_star_6_5k",
@@ -297,9 +313,9 @@
       "mpptVoltageMin": 90,
       "mpptVoltageMax": 450,
       "maxPvVoltage": 500,
-      "maxPvInputKw": 7,
+      "maxPvInputKw": 8,
       "maxPvCurrent": 22,
-      "mpptTrackers": 1,
+      "mpptTrackers": 2,
       "maxChargeCurrent": 120,
       "maxDischargeCurrent": 135,
       "supportedBatteries": [
@@ -310,7 +326,9 @@
       "warrantyYears": 2,
       "price": 1860,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 8,
+      "maxAcInputCurrent": 35
     },
     {
       "id": "inv_crown_elego_oyster_6_5k",
@@ -322,13 +340,13 @@
       "surgeDurationSec": 10,
       "phase": "1-Phase",
       "batteryVoltage": 48,
-      "mpptVoltageMin": 90,
-      "mpptVoltageMax": 500,
+      "mpptVoltageMin": 80,
+      "mpptVoltageMax": 400,
       "maxPvVoltage": 550,
-      "maxPvInputKw": 7.5,
+      "maxPvInputKw": 12,
       "maxPvCurrent": 22,
       "mpptTrackers": 2,
-      "maxChargeCurrent": 130,
+      "maxChargeCurrent": 140,
       "maxDischargeCurrent": 135,
       "supportedBatteries": [
         "LiFePO4",
@@ -338,7 +356,9 @@
       "warrantyYears": 3,
       "price": 3100,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 9,
+      "maxAcInputCurrent": 60
     },
     {
       "id": "inv_crown_elego_oyster_10k",
@@ -353,9 +373,9 @@
       "mpptVoltageMin": 120,
       "mpptVoltageMax": 500,
       "maxPvVoltage": 550,
-      "maxPvInputKw": 12,
+      "maxPvInputKw": 15,
       "maxPvCurrent": 26,
-      "mpptTrackers": 2,
+      "mpptTrackers": 3,
       "maxChargeCurrent": 180,
       "maxDischargeCurrent": 200,
       "supportedBatteries": [
@@ -366,7 +386,9 @@
       "warrantyYears": 3,
       "price": 5820,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 12,
+      "maxAcInputCurrent": 52
     },
     {
       "id": "inv_crown_elego_oyster_15k",
@@ -381,9 +403,9 @@
       "mpptVoltageMin": 160,
       "mpptVoltageMax": 650,
       "maxPvVoltage": 800,
-      "maxPvInputKw": 18,
+      "maxPvInputKw": 20,
       "maxPvCurrent": 32,
-      "mpptTrackers": 2,
+      "mpptTrackers": 3,
       "maxChargeCurrent": 200,
       "maxDischargeCurrent": 300,
       "supportedBatteries": [
@@ -394,7 +416,9 @@
       "warrantyYears": 5,
       "price": 8260,
       "currency": "SAR",
-      "available": true
+      "available": true,
+      "maxAcInputKw": 18,
+      "maxAcInputCurrent": 65
     }
   ],
   "batteries": [
@@ -783,6 +807,998 @@
   ],
   "quotes": [
     {
+      "id": "quote_1792860596792_9806",
+      "quoteNo": "PET-2026-9806",
+      "customerName": "الشيخ عبد الله بن محفوظ",
+      "customerPhone": "777654321",
+      "customerAddress": "حضرموت - المكلا",
+      "notes": "عرض سعر خاص معتمد من الإدارة",
+      "items": [
+        {
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "quantity": 1,
+          "price": 1400,
+          "total": 1400
+        },
+        {
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "quantity": 2,
+          "price": 3000,
+          "total": 6000
+        },
+        {
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "quantity": 10,
+          "price": 420,
+          "total": 4200
+        },
+        {
+          "name": "طبلون حماية وتوزيع AC/DC كراون مايكرو قياسي",
+          "quantity": 1,
+          "price": 1200,
+          "total": 1200
+        },
+        {
+          "name": "قواعد تثبيت مجلفنة للألواح مقاومة للرياح",
+          "quantity": 10,
+          "price": 350,
+          "total": 3500
+        }
+      ],
+      "subtotal": 16300,
+      "discount": 300,
+      "grandTotal": 16000,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T16:49:56.792Z",
+      "status": "AdminCustom",
+      "validityDays": 15,
+      "isPrivateAdmin": true,
+      "source": "admin",
+      "specsSummary": [
+        "كم يسحب من الكهرباء: سحب شبكة ومولد حتى 7.0kW يدعم الشحن السريع.",
+        "المجموعات الشمسية: منظم MPPT باستطاعة شمسية حتى 6.5kW ونطاق جهد 120-450V.",
+        "القدرة التشغيلية: قدرة مستمرة 6kW بموجة جيبية نقية وتحمل إقلاع 12kW.",
+        "نظام البطاريات والشحن: بطاريات ليثيوم كراون 10kWh جهد 48V شحن في 1.8 ساعة."
+      ]
+    },
+    {
+      "id": "quote_1792857534491_3305",
+      "quoteNo": "PET-2026-NOVA-05",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر نوفا كراون مايكرو 8.6 كيلو هايبرد 48V",
+          "specs": "قدرة مستمرة 8.6kW، تيار إقلاع 17.2kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 3200,
+          "totalPrice": 3200
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 8,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 3360
+        }
+      ],
+      "subtotal": 12560,
+      "discount": 0,
+      "grandTotal": 12560,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T15:58:54.491Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792857512819_8832",
+      "quoteNo": "PET-2026-ELEGO_OYSTER-04",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر ايليقو اويستر كراون مايكرو 6.5 كيلو الذكي 48V",
+          "specs": "قدرة مستمرة 6.5kW، تيار إقلاع 13kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 3100,
+          "totalPrice": 3100
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 8,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 3360
+        }
+      ],
+      "subtotal": 12460,
+      "discount": 0,
+      "grandTotal": 12460,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T15:58:32.819Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792857491261_8373",
+      "quoteNo": "PET-2026-ELEGO_STAR-03",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر ايليقو ستار كراون مايكرو 6.5 كيلو 48V",
+          "specs": "قدرة مستمرة 6.5kW، تيار إقلاع 13kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1860,
+          "totalPrice": 1860
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 8,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 3360
+        }
+      ],
+      "subtotal": 11220,
+      "discount": 0,
+      "grandTotal": 11220,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T15:58:11.261Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792857469290_2821",
+      "quoteNo": "PET-2026-ARCEUS-02",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اركيوس كراون مايكرو 6.5 كيلو 48V",
+          "specs": "قدرة مستمرة 6.5kW، تيار إقلاع 13kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 7,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2940
+        }
+      ],
+      "subtotal": 10340,
+      "discount": 0,
+      "grandTotal": 10340,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T15:57:49.290Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792857448052_2583",
+      "quoteNo": "PET-2026-XAVIER-01",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "specs": "قدرة مستمرة 6kW، تيار إقلاع 12kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 7,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2940
+        }
+      ],
+      "subtotal": 10340,
+      "discount": 0,
+      "grandTotal": 10340,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T15:57:28.052Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792853096562_6131",
+      "quoteNo": "PET-2026-8842",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "specs": "قدرة مستمرة 6kW، تيار إقلاع 12kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 8,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 3360
+        }
+      ],
+      "subtotal": 10760,
+      "discount": 0,
+      "grandTotal": 10760,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T14:44:56.562Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792852919889_6208",
+      "quoteNo": "PET-2026-6208",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "specs": "قدرة مستمرة 6kW، تيار إقلاع 12kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 5,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2100
+        }
+      ],
+      "subtotal": 9500,
+      "discount": 0,
+      "grandTotal": 9500,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T14:41:59.889Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792849552315_3519",
+      "quoteNo": "PET-2026-8842",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "specs": "قدرة مستمرة 6kW، تيار إقلاع 12kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 8,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 3360
+        }
+      ],
+      "subtotal": 10760,
+      "discount": 0,
+      "grandTotal": 10760,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:45:52.315Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792849482036_3581",
+      "quoteNo": "PET-2026-3581",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+          "specs": "قدرة مستمرة 6kW، تيار إقلاع 12kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 1400,
+          "totalPrice": 1400
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 5,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2100
+        }
+      ],
+      "subtotal": 9500,
+      "discount": 0,
+      "grandTotal": 9500,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:44:42.036Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792849430278_1399",
+      "quoteNo": "PET-2026-1399",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 1.5 كيلو 12V",
+          "specs": "قدرة مستمرة 1.5kW، تيار إقلاع 3kW، جهد بطارية 12V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 725,
+          "totalPrice": 725,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+          "specs": "سعة 1.2kWh كيمياء LiFePO4، جهد 12V ونظام BMS ذكي",
+          "quantity": 6,
+          "unit": "حبة",
+          "unitPrice": 1400,
+          "totalPrice": 8400,
+          "warranty": "3 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 2,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 840,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 1227,
+          "totalPrice": 1227,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 2,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 150,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 500,
+          "totalPrice": 500,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 11842,
+      "discount": 0,
+      "grandTotal": 11842,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:43:50.278Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792848946066_5746",
+      "quoteNo": "PET-2026-5746",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 1.5 كيلو 12V",
+          "specs": "قدرة مستمرة 1.5kW، تيار إقلاع 3kW، جهد بطارية 12V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 725,
+          "totalPrice": 725,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+          "specs": "سعة 1.2kWh كيمياء LiFePO4، جهد 12V ونظام BMS ذكي",
+          "quantity": 6,
+          "unit": "حبة",
+          "unitPrice": 1400,
+          "totalPrice": 8400,
+          "warranty": "3 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 2,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 840,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 1227,
+          "totalPrice": 1227,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 2,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 150,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 500,
+          "totalPrice": 500,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 11842,
+      "discount": 0,
+      "grandTotal": 11842,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:35:46.066Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792847591211_6675",
+      "quoteNo": "PET-2026-8842",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اركيوس كراون مايكرو 3.6 كيلو 24V",
+          "specs": "قدرة مستمرة 3.6kW، تيار إقلاع 7.2kW، جهد بطارية 24V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 900,
+          "totalPrice": 900,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 24V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 24V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 2000,
+          "totalPrice": 4000,
+          "warranty": "5 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 6,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2520,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 2081,
+          "totalPrice": 2081,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 6,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 450,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 915,
+          "totalPrice": 915,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 10866,
+      "discount": 0,
+      "grandTotal": 10866,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:13:11.211Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792847466928_2229",
+      "quoteNo": "PET-2026-8842",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اركيوس كراون مايكرو 3.6 كيلو 24V",
+          "specs": "قدرة مستمرة 3.6kW، تيار إقلاع 7.2kW، جهد بطارية 24V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 900,
+          "totalPrice": 900,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 24V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 24V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 2000,
+          "totalPrice": 4000,
+          "warranty": "5 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 6,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2520,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 2081,
+          "totalPrice": 2081,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 6,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 450,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 915,
+          "totalPrice": 915,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 10866,
+      "discount": 0,
+      "grandTotal": 10866,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:11:06.928Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792847301521_4927",
+      "quoteNo": "PET-2026-4927",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 1.5 كيلو 12V",
+          "specs": "قدرة مستمرة 1.5kW، تيار إقلاع 3kW، جهد بطارية 12V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 725,
+          "totalPrice": 725,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+          "specs": "سعة 1.2kWh كيمياء LiFePO4، جهد 12V ونظام BMS ذكي",
+          "quantity": 6,
+          "unit": "حبة",
+          "unitPrice": 1400,
+          "totalPrice": 8400,
+          "warranty": "3 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 2,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 840,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 1227,
+          "totalPrice": 1227,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 2,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 150,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 500,
+          "totalPrice": 500,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 11842,
+      "discount": 0,
+      "grandTotal": 11842,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T13:08:21.521Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792844738668_4504",
+      "quoteNo": "PET-2026-4504",
+      "customerName": "علوي السقاف",
+      "customerPhone": "733271572",
+      "customerAddress": "عدن",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اركيوس كراون مايكرو 3.6 كيلو 24V",
+          "specs": "قدرة مستمرة 3.6kW، تيار إقلاع 7.2kW، جهد بطارية 24V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 900,
+          "totalPrice": 900,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+          "specs": "سعة 1.2kWh كيمياء LiFePO4، جهد 12V ونظام BMS ذكي",
+          "quantity": 15,
+          "unit": "حبة",
+          "unitPrice": 1400,
+          "totalPrice": 21000,
+          "warranty": "3 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 6,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2520,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 2081,
+          "totalPrice": 2081,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 6,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 450,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 915,
+          "totalPrice": 915,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 27866,
+      "discount": 0,
+      "grandTotal": 27866,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T12:25:38.668Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
       "id": "quote_1792844189498_4927",
       "quoteNo": "PET-2026-4927",
       "customerName": "فحص حي للمنظومة",
@@ -941,6 +1957,39 @@
       "currency": "SAR",
       "createdAt": "2026-10-24T03:53:20.869Z",
       "status": "Draft"
+    }
+  ],
+  "distributionBoards": [
+    {
+      "id": "board_crown_dc_ac_standard",
+      "brand": "Crown Micro",
+      "name": "طبلون حماية وتوزيع AC/DC كراون مايكرو قياسي",
+      "specs": "قواطع تيار مستمر DC، قواطع AC، فيوزات حماية، ومانع صواعق SPD فئة ثانية",
+      "price": 1200,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "board_crown_dc_ac_heavy",
+      "brand": "Crown Micro",
+      "name": "طبلون حماية وتوزيع AC/DC كراون مايكرو صناعي عالي التحمل",
+      "specs": "قواطع Schneider/ABB، قاطع تحويل ATS أوتوماتيكي، مانعات صواعق SPD وحماية زيادة الجهد",
+      "price": 2400,
+      "currency": "SAR",
+      "available": true
+    }
+  ],
+  "customProducts": [
+    {
+      "id": "cp_1792860596784_360",
+      "name": "قواعد تثبيت مجلفنة للألواح مقاومة للرياح",
+      "category": "custom",
+      "categoryName": "ملحقات وتوصيلات مخصصة",
+      "specs": "هيكل تركيبي حديد مجلفن ساخن مقاوم للأعاصير",
+      "price": 350,
+      "currency": "SAR",
+      "available": true,
+      "createdAt": "2026-10-24T16:49:56.784Z"
     }
   ]
 }

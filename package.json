@@ -13,6 +13,11 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "localtunnel": "^2.0.2"
+    "jpeg-js": "^0.4.4",
+    "localtunnel": "^2.0.2",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "pdf-parse": "^2.4.5"
   }
 }

@@ -2,7 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const db = require('./database');
+const { generatePdfFile } = require('./generate_official_pdf');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -323,6 +325,63 @@ app.delete('/api/inventory/inverters/:id', requireAuth, hasPermission('inventory
   res.json({ success: true });
 });
 
+// Distribution Boards (الطبالين وقواطع الحماية والتوزيع)
+app.get('/api/inventory/boards', (req, res) => {
+  res.json(db.getDistributionBoards(req.query.all === '1'));
+});
+app.post('/api/inventory/boards', requireAuth, hasPermission('inventory'), (req, res) => {
+  const { name, brand, specs, price, available } = req.body;
+  if (!name || isNaN(price)) {
+    return res.status(400).json({ error: 'يرجى إدخال اسم الطبلون والسعر بشكل صحيح' });
+  }
+  const board = db.addDistributionBoard({ name, brand, specs, price: Number(price), available });
+  res.json({ success: true, board });
+});
+app.put('/api/inventory/boards/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const board = db.updateDistributionBoard(req.params.id, req.body);
+  if (!board) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true, board });
+});
+app.put('/api/inventory/boards/:id/toggle', requireAuth, hasPermission('inventory'), (req, res) => {
+  const board = db.toggleDistributionBoardAvailability(req.params.id);
+  if (!board) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true, board });
+});
+app.delete('/api/inventory/boards/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const success = db.deleteDistributionBoard(req.params.id);
+  if (!success) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true });
+});
+
+// Custom Products (المنتجات المخصصة لعروض الأسعار)
+app.get('/api/inventory/custom-products', (req, res) => {
+  const includeUnavailable = req.query.all === 'true';
+  res.json(db.getCustomProducts(includeUnavailable));
+});
+app.post('/api/inventory/custom-products', requireAuth, hasPermission('inventory'), (req, res) => {
+  const { name, price } = req.body;
+  if (!name || price === undefined) {
+    return res.status(400).json({ error: 'اسم المنتج وسعره مطلوبان' });
+  }
+  const item = db.addCustomProduct(req.body);
+  res.json({ success: true, item });
+});
+app.put('/api/inventory/custom-products/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const item = db.updateCustomProduct(req.params.id, req.body);
+  if (!item) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true, item });
+});
+app.put('/api/inventory/custom-products/:id/toggle', requireAuth, hasPermission('inventory'), (req, res) => {
+  const item = db.toggleCustomProductAvailability(req.params.id);
+  if (!item) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true, item });
+});
+app.delete('/api/inventory/custom-products/:id', requireAuth, hasPermission('inventory'), (req, res) => {
+  const success = db.deleteCustomProduct(req.params.id);
+  if (!success) return res.status(404).json({ error: 'المنتج غير موجود' });
+  res.json({ success: true });
+});
+
 // Design Parameters
 app.get('/api/design-params', (req, res) => {
   res.json(db.getDesignParams());
@@ -345,10 +404,64 @@ app.post('/api/quotes', (req, res) => {
   const quote = db.addQuote(req.body);
   res.json({ success: true, quote });
 });
+app.put('/api/quotes/:id/status', (req, res) => {
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'الحالة مطلوبة' });
+  const updated = db.updateQuoteStatus(req.params.id, status);
+  if (!updated) return res.status(404).json({ error: 'عرض السعر غير موجود' });
+  res.json({ success: true, quote: updated });
+});
 app.delete('/api/quotes/:id', requireAuth, hasPermission('leads'), (req, res) => {
   const success = db.deleteQuote(req.params.id);
   if (!success) return res.status(404).json({ error: 'عرض السعر غير موجود' });
   res.json({ success: true });
+});
+
+// Download / View official PDF for a stored quote
+app.get('/api/quotes/:id/pdf', (req, res) => {
+  const quote = db.getQuotes().find(q => q.id === req.params.id || q.quoteNo === req.params.id);
+  if (!quote) return res.status(404).json({ error: 'عرض السعر غير موجود' });
+
+  const quotesPdfDir = path.join(__dirname, 'quotes_pdf');
+  if (!fs.existsSync(quotesPdfDir)) fs.mkdirSync(quotesPdfDir, { recursive: true });
+
+  const safeName = (quote.customerName || 'عميل').replace(/[\s\/\\:]+/g, '_');
+  const pdfFileName = `عرض_سعر_بترونيل_يمن_${safeName}_${quote.quoteNo}.pdf`;
+  const pdfPath = path.join(quotesPdfDir, `${quote.id}.pdf`);
+
+  try {
+    generatePdfFile(quote, pdfPath);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(pdfFileName)}`);
+    fs.createReadStream(pdfPath).pipe(res);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).json({ error: 'فشل في إنشاء ملف الـ PDF: ' + err.message });
+  }
+});
+
+// Generate and stream official PDF on the fly from current calculator state
+app.post('/api/quotes/generate-pdf', (req, res) => {
+  const quoteData = req.body;
+  if (!quoteData) return res.status(400).json({ error: 'بيانات العرض ناقصة' });
+
+  const tempPdfPath = path.join(__dirname, `temp_quote_${Date.now()}_${Math.floor(Math.random()*1000)}.pdf`);
+  const safeName = (quoteData.customerName || 'عميل').replace(/[\s\/\\:]+/g, '_');
+  const pdfFileName = `عرض_سعر_بترونيل_يمن_${safeName}.pdf`;
+
+  try {
+    generatePdfFile(quoteData, tempPdfPath);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(pdfFileName)}`);
+    const stream = fs.createReadStream(tempPdfPath);
+    stream.pipe(res);
+    stream.on('finish', () => {
+      try { fs.unlinkSync(tempPdfPath); } catch (e) {}
+    });
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).json({ error: 'فشل في إنشاء ملف الـ PDF: ' + err.message });
+  }
 });
 
 // Serve admin dashboard at /admin path explicitly

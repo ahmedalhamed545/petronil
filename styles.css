@@ -4372,3 +4372,261 @@ html, body {
         width: 100% !important;
     }
 }
+
+
+/* ==========================================================================
+   Enhanced Elegant Products Catalog (Clean, Neat & Uncluttered)
+   ========================================================================== */
+
+.product-card.glass {
+    background: rgba(18, 24, 36, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.product-card.glass:hover {
+    transform: translateY(-5px);
+    border-color: rgba(245, 158, 11, 0.45);
+    box-shadow: 0 12px 35px rgba(245, 158, 11, 0.12), 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.prod-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.prod-brand-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.prod-brand-crown {
+    background: rgba(245, 158, 11, 0.18);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.prod-stock-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.prod-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.prod-icon-wrap.battery {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.prod-icon-wrap.panel {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.prod-title {
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+}
+
+.prod-highlight-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 1rem;
+    width: fit-content;
+}
+
+.prod-pricing-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.prod-price-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.prod-price-val {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #f59e0b;
+    letter-spacing: -0.5px;
+}
+
+.prod-warranty-pill {
+    font-size: 0.7rem;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Toggle Specs Button */
+.btn-toggle-specs {
+    width: 100%;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.25s ease;
+    margin-bottom: 0.8rem;
+}
+
+.btn-toggle-specs:hover, .btn-toggle-specs.active {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #f59e0b;
+}
+
+/* Collapsible Specs Drawer */
+.prod-specs-drawer {
+    animation: fadeIn 0.25s ease;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 1rem;
+}
+
+.prod-specs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prod-spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.prod-spec-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.prod-spec-key {
+    color: var(--text-secondary);
+}
+
+.prod-spec-val {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+/* Card Actions */
+.prod-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-whatsapp-order {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    padding: 7px 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-whatsapp-order:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.btn-use-in-calc {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 7px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+@media (max-width: 640px) {
+    .products-catalog-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .product-card.glass {
+        padding: 1.1rem;
+    }
+    .prod-card-actions {
+        grid-template-columns: 1fr;
+    }
+}

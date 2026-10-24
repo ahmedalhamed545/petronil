@@ -215,13 +215,13 @@ test("5.1 حساب Voc Cold و Vmp Hot وقيود سلاسل الألواح", ()
 test("6.1 مطابقة المنظومة وتوليد الباقات (Recommended, Economic, HighPerformance)", () => {
   const sampleInventory = {
     inverters: [
-      { id: "inv_35", name: "Deye 3.6kW", capacityKw: 3.6, price: 550, available: true },
-      { id: "inv_50", name: "Deye 5kW", capacityKw: 5.0, price: 800, available: true },
-      { id: "inv_80", name: "Deye 8kW", capacityKw: 8.0, price: 1250, available: true }
+      { id: "inv_35", name: "Deye 3.6kW", capacityKw: 3.6, batteryVoltage: 48, maxChargeCurrent: 100, price: 550, available: true },
+      { id: "inv_50", name: "Deye 5kW", capacityKw: 5.0, batteryVoltage: 48, maxChargeCurrent: 120, price: 800, available: true },
+      { id: "inv_80", name: "Deye 8kW", capacityKw: 8.0, batteryVoltage: 48, maxChargeCurrent: 150, price: 1250, available: true }
     ],
     batteries: [
-      { id: "bat_5", name: "Narada 5.12kWh", capacityKwh: 5.12, dod: 0.90, price: 1150, available: true, chemistry: "LiFePO4" },
-      { id: "bat_10", name: "BYD 10.24kWh", capacityKwh: 10.24, dod: 0.90, price: 2100, available: true, chemistry: "LiFePO4" }
+      { id: "bat_5", name: "Narada 5.12kWh", capacityKwh: 5.12, voltage: 48, dod: 0.90, price: 1150, available: true, chemistry: "LiFePO4" },
+      { id: "bat_10", name: "BYD 10.24kWh", capacityKwh: 10.24, voltage: 48, dod: 0.90, price: 2100, available: true, chemistry: "LiFePO4" }
     ],
     panels: [
       { id: "pan_610", name: "Jinko 610W", watt: 610, voc: 56.0, vmp: 47.0, price: 110, available: true }
@@ -247,12 +247,14 @@ test("6.1 مطابقة المنظومة وتوليد الباقات (Recommended
   assert.strictEqual(recPkg.inverter.capacityKw >= profile.peakContinuousKw, true);
   assert.strictEqual(recPkg.battery.usableKwh > 0, true);
   assert.strictEqual(recPkg.panel.totalKw > 0, true);
+  // فحص تطابق الجهد التام بين الإنفرتر والبطارية
+  assert.strictEqual(recPkg.inverter.batteryVoltage, recPkg.battery.voltage);
 });
 
 // ----------------------------------------------------
 // 7. اختبار مولد عرض السعر وجدول الكميات BOM
 // ----------------------------------------------------
-test("7.1 إنشاء عرض السعر مع الحماية والهياكل والضمانات", () => {
+test("7.1 إنشاء عرض السعر لمكونات المنظومة الثلاثة حصراً دون ملحقات أو تركيب أو ضمانات", () => {
   const pkg = {
     title: "الباقة الموصى بها",
     inverter: { name: "Deye 5kW", capacityKw: 5.0, price: 800, totalCost: 800, quantity: 1 },
@@ -265,9 +267,15 @@ test("7.1 إنشاء عرض السعر مع الحماية والهياكل وا
     phone: "777123456"
   });
 
-  assert.strictEqual(quotation.items.length >= 6, true);
-  assert.strictEqual(quotation.financials.totalCostUsd > (800 + 1150 + 880), true); // يشمل الملحقات والتركيب
-  assert.strictEqual(quotation.financials.totalCostYer, quotation.financials.totalCostUsd * 535);
+  // جدول الكميات يجب أن يحتوي حصراً على المكونات الثلاثة (إنفرتر، بطاريات، ألواح)
+  assert.strictEqual(quotation.items.length, 3);
+  // السعر الإجمالي يساوي حصراً مجموع الأجهزة الثلاثة
+  assert.strictEqual(quotation.financials.grandTotal, 800 + 1150 + 880);
+  assert.strictEqual(quotation.financials.accessoriesCost, 0);
+  assert.strictEqual(quotation.financials.installationFee, 0);
+  // يحتوي على ملخص المواصفات الفنية الأربعة من الكتالوج (سحب الكهرباء، الألواح، القدرة والإقلاع، البطارية والشحن) دون شروط ضمانات
+  assert.strictEqual(quotation.terms.length, 4);
+  assert.ok(quotation.terms[0].includes("كم يسحب من الكهرباء"));
   assert.strictEqual(quotation.company.name, "بترونيل يمن للطاقة");
   assert.strictEqual(quotation.customer.name, "م. محمد اليمني");
 });

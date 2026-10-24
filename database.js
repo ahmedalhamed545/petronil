@@ -618,8 +618,11 @@ module.exports = {
       currency: quote.currency || (db.designParams && db.designParams.defaultCurrency) || 'SAR',
       date: quote.date || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
-      status: quote.status || 'New',
-      validityDays: quote.validityDays || 7
+      status: quote.status || (quote.isPrivateAdmin || quote.source === 'admin' ? 'AdminCustom' : 'New'),
+      validityDays: quote.validityDays || 15,
+      isPrivateAdmin: !!quote.isPrivateAdmin || quote.source === 'admin',
+      source: quote.source || (quote.isPrivateAdmin ? 'admin' : 'calculator'),
+      specsSummary: Array.isArray(quote.specsSummary) ? quote.specsSummary : []
     };
     if (!db.quotes) db.quotes = [];
     db.quotes.unshift(newQuote);
@@ -633,6 +636,15 @@ module.exports = {
     db.quotes = filtered;
     writeDb(db);
     return deleted;
+  },
+  updateQuoteStatus(id, status) {
+    const db = readDb();
+    const quote = (db.quotes || []).find(q => q.id === id || q.quoteNo === id);
+    if (!quote) return null;
+    quote.status = status;
+    quote.updatedAt = new Date().toISOString();
+    writeDb(db);
+    return quote;
   },
 
   // Appliances CRUD
@@ -954,6 +966,107 @@ module.exports = {
     const filtered = db.inverters.filter(i => i.id !== id);
     const deleted = db.inverters.length !== filtered.length;
     db.inverters = filtered;
+    writeDb(db);
+    return deleted;
+  },
+
+  // --- Distribution Boards Inventory (الطبالين وقواطع الحماية) ---
+  getDistributionBoards(includeUnavailable = false) {
+    const list = readDb().distributionBoards || [];
+    if (includeUnavailable) return list;
+    return list.filter(b => b.available !== false && b.price > 0);
+  },
+  addDistributionBoard(board) {
+    const db = readDb();
+    const newBoard = {
+      id: 'board_' + Math.random().toString(36).substr(2, 9),
+      name: board.name,
+      brand: board.brand || 'Crown Micro',
+      specs: board.specs || '',
+      price: Number(board.price),
+      currency: board.currency || 'SAR',
+      available: board.available !== undefined ? board.available : true
+    };
+    if (!db.distributionBoards) db.distributionBoards = [];
+    db.distributionBoards.push(newBoard);
+    writeDb(db);
+    return newBoard;
+  },
+  updateDistributionBoard(id, fields) {
+    const db = readDb();
+    if (!db.distributionBoards) db.distributionBoards = [];
+    const idx = db.distributionBoards.findIndex(b => b.id === id);
+    if (idx === -1) return null;
+    db.distributionBoards[idx] = { ...db.distributionBoards[idx], ...fields };
+    writeDb(db);
+    return db.distributionBoards[idx];
+  },
+  toggleDistributionBoardAvailability(id) {
+    const db = readDb();
+    if (!db.distributionBoards) db.distributionBoards = [];
+    const board = db.distributionBoards.find(b => b.id === id);
+    if (!board) return null;
+    board.available = !board.available;
+    writeDb(db);
+    return board;
+  },
+  deleteDistributionBoard(id) {
+    const db = readDb();
+    if (!db.distributionBoards) db.distributionBoards = [];
+    const filtered = db.distributionBoards.filter(b => b.id !== id);
+    const deleted = db.distributionBoards.length !== filtered.length;
+    db.distributionBoards = filtered;
+    writeDb(db);
+    return deleted;
+  },
+  // --- Custom Products & Quotation Items (المنتجات المخصصة لعروض الأسعار) ---
+  getCustomProducts(includeUnavailable = false) {
+    const list = readDb().customProducts || [];
+    if (includeUnavailable) return list;
+    return list.filter(p => p.available !== false && p.price > 0);
+  },
+  addCustomProduct(prod) {
+    const db = readDb();
+    const newProd = {
+      id: 'cp_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      name: prod.name,
+      category: prod.category || 'custom',
+      categoryName: prod.categoryName || 'منتجات مخصصة',
+      specs: prod.specs || '',
+      price: Number(prod.price),
+      currency: prod.currency || 'SAR',
+      available: prod.available !== undefined ? prod.available : true,
+      createdAt: new Date().toISOString()
+    };
+    if (!db.customProducts) db.customProducts = [];
+    db.customProducts.push(newProd);
+    writeDb(db);
+    return newProd;
+  },
+  updateCustomProduct(id, fields) {
+    const db = readDb();
+    if (!db.customProducts) db.customProducts = [];
+    const idx = db.customProducts.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    db.customProducts[idx] = { ...db.customProducts[idx], ...fields };
+    writeDb(db);
+    return db.customProducts[idx];
+  },
+  toggleCustomProductAvailability(id) {
+    const db = readDb();
+    if (!db.customProducts) db.customProducts = [];
+    const prod = db.customProducts.find(p => p.id === id);
+    if (!prod) return null;
+    prod.available = !prod.available;
+    writeDb(db);
+    return prod;
+  },
+  deleteCustomProduct(id) {
+    const db = readDb();
+    if (!db.customProducts) db.customProducts = [];
+    const filtered = db.customProducts.filter(p => p.id !== id);
+    const deleted = db.customProducts.length !== filtered.length;
+    db.customProducts = filtered;
     writeDb(db);
     return deleted;
   }

@@ -698,7 +698,7 @@
                                     </div>
                                     <div class="lcb-main-val font-num text-warning" id="live-card-cost-usd">$0</div>
                                     <div class="lcb-sub-val font-num" id="live-card-cost-yer">0 ر.ي</div>
-                                    <div class="lcb-footer">شاملة الإنفرتر والألواح والبطاريات والقواطع والهياكل والتوصيل</div>
+                                    <div class="lcb-footer">شاملة مكونات المنظومة الأساسية (الإنفرتر والبطاريات والألواح) فقط</div>
                                 </div>
                             </div>
 
@@ -923,10 +923,10 @@
                                         </div>
                                     </div>
                                     <div class="opt-spec-item">
-                                        <i class="fa-solid fa-shield-halved text-secondary"></i>
+                                        <i class="fa-solid fa-certificate text-warning"></i>
                                         <div>
-                                            <span class="s-label">الملحقات والحماية:</span>
-                                            <span class="s-val">لوحة قواطع DC/AC، كابلات نحاسية، هيكل مجلفن ساخن مقاوم للرياح</span>
+                                            <span class="s-label">الجودة والاعتماد:</span>
+                                            <span class="s-val">مكونات كراون مايكرو ولونجي الأصلية 100% المعتمدة من الوكيل الحصري</span>
                                         </div>
                                     </div>
                                 </div>
@@ -940,6 +940,26 @@
                                         <i class="fa-solid fa-file-invoice-dollar"></i> طلب وإصدار عرض السعر الرسمي (PDF)
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Qualifying Crown Micro Model Offers Grid (Click to Approve) -->
+                        <div class="step4-model-offers-section glass mt-4" id="step4-models-section" style="padding: 20px; border-radius: 16px;">
+                            <div class="sm-section-header" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 1.15rem; color: var(--text-main); font-weight: 800;">
+                                        <i class="fa-solid fa-crown text-warning"></i> عروض أسعار كراون مايكرو المؤهلة لأحمالك:
+                                    </h4>
+                                    <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.88rem;">
+                                        جميع هذه المنظومات متوافقة كهربائياً مع أحمالك وتدعم الشحن السريع في أقل من ساعتين. اضغط على العرض الذي يناسبك للموافقة عليه:
+                                    </p>
+                                </div>
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-hand-pointer"></i> اضغط لاختيار العرض الموافق عليه
+                                </span>
+                            </div>
+                            <div class="step4-models-grid" id="step4-models-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <!-- Injected dynamically via JS -->
                             </div>
                         </div>
 
@@ -1035,9 +1055,38 @@
                         </div>
                     </div>
 
+                    <!-- Multi-Model Crown Micro Quotes Switcher -->
+                    <div class="model-quote-tabs-wrapper mb-3" id="model-quotes-container">
+                        <div class="mq-title" style="font-weight: 700; margin-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-layer-group text-warning"></i> اختر موديل إنفرتر كراون مايكرو لعرض السعر:
+                        </div>
+                        <div class="model-quote-buttons" id="model-quotes-tabs" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <!-- Injected dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Customer Approval Action Card -->
+                    <div class="quote-approval-banner glass p-3 mb-3" id="quote-approval-box" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; background: rgba(16, 185, 129, 0.08); padding: 14px 18px;">
+                        <div class="qab-info" style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fa-solid fa-circle-check text-success" style="font-size: 2rem;"></i>
+                            <div>
+                                <h4 style="margin: 0; color: #10b981; font-weight: 800; font-size: 1.05rem;" id="quote-approval-title">الموافقة على هذا العرض واعتماده:</h4>
+                                <p style="margin: 2px 0 0; color: var(--text-muted); font-size: 0.85rem;" id="quote-approval-subtitle">إذا ناسبك هذا الموديل والسعر، اضغط الزر لاعتماده رسمياً وإشعار إدارة بترونيل فورياً</p>
+                            </div>
+                        </div>
+                        <div class="qab-actions" style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn btn-success btn-lg" id="btn-approve-current-quote" style="font-weight: 800; padding: 10px 24px; border-radius: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); cursor: pointer;">
+                                <i class="fa-solid fa-check-double"></i> اعتماد والموافقة على هذا العرض
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Printable / PDF Official Quotation Sheet -->
-                    <!-- Printable / PDF Official Quotation Sheet (Matching Official Template) -->
-                    <div class="quotation-print-sheet official-petronil-sheet" id="printable-quotation-area">
+                    <div class="quotation-print-sheet official-petronil-sheet" id="printable-quotation-area" style="position: relative;">
+                        <!-- Client Approved Stamp -->
+                        <div class="approved-watermark-stamp hidden" id="quote-approved-badge" style="position: absolute; top: 18.2%; left: 38%; transform: rotate(-6deg); background: rgba(16, 185, 129, 0.95); color: #fff; padding: 6px 20px; border-radius: 8px; font-weight: 900; font-size: 13px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 2px solid #fff;">
+                            <i class="fa-solid fa-circle-check"></i> معتمد وموافق عليه من العميل
+                        </div>
                         <!-- Top Official Ribbon & Header -->
                         <div class="op-header-wrap">
                             <div class="op-brand-right">
@@ -1067,19 +1116,11 @@
                             </div>
                         </div>
 
-                        <!-- Customer Info Box -->
+                        <!-- Customer Info Box (Name only on quotation sheet per directives) -->
                         <div class="op-customer-banner">
-                            <div class="op-c-item">
+                            <div class="op-c-item" style="width: 100%;">
                                 <span class="op-c-label">مطلوب من الأخ:</span>
                                 <strong class="op-c-val" id="doc-client-name">عميل بترونيل المميز</strong>
-                            </div>
-                            <div class="op-c-item">
-                                <span class="op-c-label">هاتف:</span>
-                                <strong class="op-c-val font-num" id="doc-client-phone">--</strong>
-                            </div>
-                            <div class="op-c-item">
-                                <span class="op-c-label">العنوان:</span>
-                                <strong class="op-c-val" id="doc-client-location">حضرموت - سيئون</strong>
                             </div>
                         </div>
 
@@ -1106,12 +1147,9 @@
                         <div class="op-bottom-split">
                             <div class="op-terms-column">
                                 <div class="op-box-card">
-                                    <h4 class="op-box-title"><i class="fa-solid fa-shield-halved text-warning"></i> الضمان وشروطه:</h4>
-                                    <ol class="op-box-list" id="quote-terms-list">
-                                        <li>ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.</li>
-                                        <li>ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس سنوات كفاءة وتشغيل من تاريخ التركيب.</li>
-                                        <li>ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.</li>
-                                        <li>توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة.</li>
+                                    <h4 class="op-box-title"><i class="fa-solid fa-microchip text-warning"></i> ملخص المواصفات الفنية المعتمدة للمنظومة (Crown Micro 2026):</h4>
+                                    <ol class="op-box-list font-sm" id="quote-specs-summary-list">
+                                        <!-- Injected dynamically from Crown catalog -->
                                     </ol>
                                 </div>
                                 <div class="op-box-card mt-2">
@@ -1204,7 +1242,7 @@
                             <i class="fa-brands fa-whatsapp"></i> إرسال عبر واتساب
                         </button>
                         <button type="button" class="btn btn-secondary btn-lg" id="btn-request-installation">
-                            <i class="fa-solid fa-paper-plane"></i> اعتماد الطلب والتركيب
+                            <i class="fa-solid fa-paper-plane"></i> تأكيد وحفظ الطلب رسمياً
                         </button>
                     </div>
 

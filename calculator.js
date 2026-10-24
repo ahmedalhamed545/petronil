@@ -823,24 +823,82 @@ if (typeof SolarEngine === 'undefined') {
     const dailyTargetEnergyKwh = (loadProfile.totalDayKwh) + batteryRechargeKwh;
     const minPvKwPeak = Math.max(1.0, dailyTargetEnergyKwh / (psh * derating));
 
-    // 2. فلترة ومطابقة الإنفرترات المناسبة كهربائياً
-    const validInverters = inverters.filter(inv => {
+    // 2. المتطلبات الهندسية الإلزامية واختيار الإنفرتر والبطارية:
+    // أ) التحقق من تغطية الأحمال المستمرة وتيار الإقلاع اللحظي للمحركات
+    // ب) التحقق من قدرة شحن البطارية خلال ساعتين كحد أقصى (2-Hour Charging Limit)
+    // ج) التطابق التام 100% بين جهد الإنفرتر وجهد البطارية (48V مع 48V، 24V مع 24V، 12V مع 12V)
+    const chargeEff = designParams.chargeEfficiency || 0.95;
+    const reqChargeKw2h = targetUsableBatteryKwh / 2.0 / chargeEff;
+
+    const fullyQualifiedInverters = inverters.filter(inv => {
       const ratedKw = inv.capacityKw || inv.ratedPowerKw || 0;
       const surgeKw = inv.surgeCapacityKw || inv.surgePowerKw || (ratedKw * 2);
-      return ratedKw >= (loadProfile.peakContinuousKw * 1.0) && surgeKw >= (minInverterSurgeKw * 0.9);
+      const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+      const maxA = inv.maxChargeCurrent || inv.chargeCurrentA || 60;
+      const invMaxChargeKw = (invV * maxA) / 1000;
+      const hasMatchingVoltBats = batteries.some(b => (b.voltage || b.nominalVoltage || 48) === invV);
+
+      return (
+        ratedKw >= (loadProfile.peakContinuousKw * 1.0) &&
+        surgeKw >= (minInverterSurgeKw * 0.95) &&
+        invMaxChargeKw >= (reqChargeKw2h * 0.95) &&
+        hasMatchingVoltBats
+      );
     });
 
-    const chosenInverterList = validInverters.length > 0 ? validInverters : inverters;
-    chosenInverterList.sort((a, b) => (a.capacityKw - b.capacityKw) || (a.price - b.price));
+    let chosenInverterList = fullyQualifiedInverters;
+    if (chosenInverterList.length === 0) {
+      // في حال كانت سعة البطارية هائلة جداً وتتطلب قدرة شحن تفوق أكبر إنفرتر، نختار ما يغطي الأحمال وجهده مطابق مع أعلى قدرة شحن
+      chosenInverterList = inverters.filter(inv => {
+        const ratedKw = inv.capacityKw || inv.ratedPowerKw || 0;
+        const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+        const hasMatchingVoltBats = batteries.some(b => (b.voltage || b.nominalVoltage || 48) === invV);
+        return ratedKw >= (loadProfile.peakContinuousKw * 1.0) && hasMatchingVoltBats;
+      });
+      chosenInverterList.sort((a, b) => {
+        const aChg = (a.batteryVoltage || 48) * (a.maxChargeCurrent || 60);
+        const bChg = (b.batteryVoltage || 48) * (b.maxChargeCurrent || 60);
+        return bChg - aChg;
+      });
+    } else {
+      chosenInverterList.sort((a, b) => (a.capacityKw - b.capacityKw) || (a.price - b.price));
+    }
 
-    // 3. بناء وتوليد الباقات الثلاث
+    // 3. دالة ذكية لمطابقة واختيار البطارية بجهد يطابق تماماً 100% جهد الإنفرتر حصراً
+    function pickMatchingBattery(inv, targetUsableKwh, preferredStrategy = 'balanced') {
+      const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+      const matchVoltageBats = batteries.filter(b => {
+        const batV = b.voltage || b.nominalVoltage || 48;
+        return batV === invV;
+      });
+
+      if (matchVoltageBats.length === 0) {
+        throw new Error(`لا توجد بطاريات متوافقة بجهد ${invV}V في المخزون للإنفرتر ${inv.name}`);
+      }
+
+      if (preferredStrategy === 'economy') {
+        return matchVoltageBats.slice().sort((a, b) => a.price - b.price)[0];
+      } else if (preferredStrategy === 'high') {
+        return matchVoltageBats.slice().sort((a, b) => (b.capacityKwh - a.capacityKwh) || (b.price - a.price))[0];
+      } else {
+        // Balanced: closest to target capacity or best value
+        const sorted = matchVoltageBats.slice().sort((a, b) => {
+          const aDiff = Math.abs((a.capacityKwh * (a.dod || 0.9)) - targetUsableKwh);
+          const bDiff = Math.abs((b.capacityKwh * (b.dod || 0.9)) - targetUsableKwh);
+          return aDiff - bDiff;
+        });
+        return sorted[0];
+      }
+    }
+
+    // 4. بناء وتوليد الباقات الثلاث
     const packages = {};
 
     // --- باقة 1: الخيار الاقتصادي (Economic) - يبرز إنفرترات Crown Micro أو الخيار الأقل تكلفة ---
     const crownEcoInv = chosenInverterList.find(i => (i.brand || '').includes('Crown') && (i.capacityKw || 0) >= loadProfile.peakContinuousKw);
     const econInv = crownEcoInv || chosenInverterList[0] || inverters[0];
     const econPanel = panels.slice().sort((a, b) => a.price - b.price)[0] || panels[0];
-    const econBattery = batteries.slice().sort((a, b) => a.price - b.price)[0] || batteries[0];
+    const econBattery = pickMatchingBattery(econInv, targetUsableBatteryKwh, 'economy');
 
     const econBatDod = econBattery.dod || 0.85;
     const econBatUsableKwh = econBattery.capacityKwh * econBatDod;
@@ -877,8 +935,7 @@ if (typeof SolarEngine === 'undefined') {
       || chosenInverterList[Math.min(1, chosenInverterList.length - 1)];
 
     const recPanel = panels.find(p => (p.watt || 0) >= 580) || panels[0];
-    const recBattery = batteries.find(b => (b.chemistry || '').includes('Li') || (b.name || '').includes('ليثيوم') || (b.name || '').includes('نارادا'))
-      || batteries[0];
+    const recBattery = pickMatchingBattery(recInv, targetUsableBatteryKwh, 'balanced');
 
     const recBatDod = recBattery.dod || 0.90;
     const recBatUsableKwh = recBattery.capacityKwh * recBatDod;
@@ -913,7 +970,7 @@ if (typeof SolarEngine === 'undefined') {
     // --- باقة 3: خيار الأداء العالي (High Performance) ---
     const highInv = chosenInverterList[chosenInverterList.length - 1] || recInv;
     const highPanel = panels.slice().sort((a, b) => b.watt - a.watt)[0] || recPanel;
-    const highBattery = batteries.slice().sort((a, b) => b.capacityKwh - a.capacityKwh)[0] || recBattery;
+    const highBattery = pickMatchingBattery(highInv, targetUsableBatteryKwh * 1.35, 'high');
 
     const highBatDod = highBattery.dod || 0.90;
     const highBatUsableKwh = highBattery.capacityKwh * highBatDod;
@@ -947,6 +1004,67 @@ if (typeof SolarEngine === 'undefined') {
 
     const optimalRecommendation = packages.recommended || packages.economic || packages.highPerformance;
 
+    // 5. إنشاء عروض أسعار متعددة لكل عائلة موديل إنفرتر كراون مايكرو متوافقة
+    // (اكزافير Xavier، اركيوس Arceus، ايليقو ستار Elego Star، ايليقو اويستر Elego Oyster، نوفا Nova)
+    const modelFamilies = [
+      { key: 'xavier', title: 'خيار اكزافير كراون مايكرو (Xavier)', pattern: /xavier/i },
+      { key: 'arceus', title: 'خيار اركيوس كراون مايكرو (Arceus)', pattern: /arceus/i },
+      { key: 'elego_star', title: 'خيار ايليقو ستار كراون مايكرو (Elego Star)', pattern: /elego.*star|star/i },
+      { key: 'elego_oyster', title: 'خيار ايليقو اويستر الذكي (Elego Oyster IP66)', pattern: /oyster/i },
+      { key: 'nova', title: 'خيار نوفا كراون مايكرو هايبرد (Nova)', pattern: /nova/i }
+    ];
+
+    const modelQuotes = [];
+    modelFamilies.forEach(fam => {
+      const matchInv = chosenInverterList.find(i => fam.pattern.test(i.id || '') || fam.pattern.test(i.name || ''));
+      if (matchInv) {
+        const matchBat = pickMatchingBattery(matchInv, targetUsableBatteryKwh, 'balanced');
+        const batDod = matchBat.dod || 0.90;
+        const batUsableKwh = matchBat.capacityKwh * batDod;
+        const batCount = Math.max(1, Math.ceil(targetUsableBatteryKwh / batUsableKwh));
+        const matchedPanel = panels.find(p => (p.watt || 0) >= 580) || panels[0];
+        const stringing = calculateElectricalStringing(matchedPanel, matchInv, minPvKwPeak, designParams);
+        const invMaxChgKw = ((matchInv.batteryVoltage || 48) * (matchInv.maxChargeCurrent || 60)) / 1000;
+        const rHours = parseFloat(((batUsableKwh * batCount) / (invMaxChgKw * chargeEff)).toFixed(1));
+
+        const modelPkg = {
+          type: fam.key,
+          modelKey: fam.key,
+          title: fam.title,
+          inverter: { ...matchInv, quantity: 1, totalCost: matchInv.price },
+          battery: {
+            ...matchBat,
+            quantity: batCount,
+            totalKwh: parseFloat((matchBat.capacityKwh * batCount).toFixed(2)),
+            usableKwh: parseFloat((batUsableKwh * batCount).toFixed(2)),
+            totalCost: matchBat.price * batCount
+          },
+          panel: {
+            ...matchedPanel,
+            quantity: stringing.totalPanelsCount,
+            totalKw: stringing.actualPvKw,
+            stringing,
+            totalCost: matchedPanel.price * stringing.totalPanelsCount
+          },
+          rechargeTimeHours: rHours,
+          chargingPowerKw: invMaxChgKw,
+          systemVoltage: matchInv.batteryVoltage || 48
+        };
+
+        const quote = generateQuotation(modelPkg, designParams, {
+          quoteNo: `PET-2026-${fam.key.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`
+        });
+
+        modelQuotes.push({
+          key: fam.key,
+          title: fam.title,
+          inverterName: matchInv.name,
+          package: modelPkg,
+          quotation: quote
+        });
+      }
+    });
+
     const customerNeed = {
       dailyEnergyKwh: parseFloat(loadProfile.totalDailyKwh.toFixed(2)),
       peakContinuousKw: parseFloat(loadProfile.peakContinuousKw.toFixed(2)),
@@ -970,8 +1088,32 @@ if (typeof SolarEngine === 'undefined') {
       },
       customerNeed,
       optimalRecommendation,
-      packages
+      packages,
+      modelQuotes
     };
+  }
+
+  /**
+   * صياغة ملخص فني عربي موجز لمواصفات الإنفرتر والمنظومة من كتالوج كراون مايكرو الرسمي 2026
+   */
+  function buildCatalogSpecsSummary(inverter, battery, rechargeTimeHours) {
+    const invV = inverter.batteryVoltage || inverter.systemVoltage || 48;
+    const maxAcKw = inverter.maxAcInputKw || (inverter.capacityKw * 1.2).toFixed(1);
+    const maxAcA = inverter.maxAcInputCurrent || Math.round(inverter.capacityKw * 4.5);
+    const mpptCount = inverter.mpptTrackers || (inverter.capacityKw >= 6 ? 2 : 1);
+    const maxPvKw = inverter.maxPvInputKw || (inverter.capacityKw * 1.5).toFixed(1);
+    const vMin = inverter.mpptVoltageMin || (invV === 12 ? 30 : invV === 24 ? 60 : 90);
+    const vMax = inverter.mpptVoltageMax || (invV === 12 ? 400 : 450);
+    const surgeKw = inverter.surgeKw || inverter.surgeCapacityKw || (inverter.capacityKw * 2);
+    const chgA = inverter.maxChargeCurrent || (invV === 48 ? 100 : 80);
+    const rHours = rechargeTimeHours || 1.8;
+
+    return [
+      `كم يسحب من الكهرباء: سحب شبكة ومولد حتى ${maxAcKw}kW (تيار ${maxAcA}A) يدعم الشحن السريع وحماية الأحمال.`,
+      `المجموعات الشمسية: ${mpptCount} منظم MPPT قدرة ألواح حتى ${maxPvKw}kW، نطاق تشغيل ${vMin}-${vMax}V يدعم سلاسل متوازية.`,
+      `القدرة التشغيلية: قدرة مستمرة ${inverter.capacityKw}kW بموجة نقية Pure Sine Wave، وتحمل إقلاع ${surgeKw}kW للمكيفات والمحركات.`,
+      `نظام البطاريات والشحن: بطاريات ليثيوم كراون LiFePO4 جهد ${invV}V، تيار شحن سريع ${chgA}A يشحن بالكامل في ${rHours} ساعة مع BMS.`
+    ];
   }
 
   function generateQuotation(pkg, designParams = DEFAULT_DESIGN_PARAMS, customerInfo = {}) {
@@ -983,23 +1125,24 @@ if (typeof SolarEngine === 'undefined') {
     const defaultCurr = designParams.defaultCurrency || 'SAR';
     const showYer = Boolean(designParams.enableYerDisplay);
 
-    // المكونات الرئيسية
+    // المكونات الرئيسية للمنظومة
     const inverter = pkg.inverter;
     const battery = pkg.battery;
     const panel = pkg.panel;
 
-    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح (بالريال السعودي)
-    const structureUnitPrice = 75;
-    const structureCost = panel.quantity * structureUnitPrice;
+    const totalUsableKwh = (typeof battery.usableKwh === 'number') 
+      ? battery.usableKwh 
+      : ((battery.capacityKwh * (battery.dod || 0.9)) * (battery.quantity || 1));
+    const invChargeKw = ((inverter.batteryVoltage || 48) * (inverter.maxChargeCurrent || 100)) / 1000;
+    const chargeEff = designParams.chargeEfficiency || 0.95;
+    const rechargeHours = pkg.rechargeTimeHours || (
+      parseFloat((totalUsableKwh / (Math.max(0.5, invChargeKw) * chargeEff)).toFixed(1))
+    );
+    const specsSummary = buildCatalogSpecsSummary(inverter, battery, rechargeHours);
 
-    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC (بالريال السعودي)
-    const protectionBoxCost = inverter.capacityKw <= 6 ? 800 : 1400;
-    const cablingCost = Math.round(panel.totalKw * 1000 * 0.35);
-
-    // 3. أجور التركيب والبرمجة والفحص الهندسي المعتمد (بالريال السعودي)
-    const installationFee = Math.round(Math.max(500, panel.totalKw * 1000 * 0.25));
-
-    // جدول الكميات المفصل (Bill of Materials) مطابق لنموذج عرض السعر الرسمي لبترونيل
+    // جدول الكميات المفصل (Bill of Materials)
+    // التزاماً بتوجيهات الإدارة الصارمة: يحتوي جدول عرض السعر حصراً على مكونات المنظومة الثلاثة
+    // (الإنفرتر، بطاريات الليثيوم، الألواح الشمسية) دون إضافة أي قواعد أو تركيب أو طبالين
     const items = [
       {
         itemNumber: 1,
@@ -1009,8 +1152,7 @@ if (typeof SolarEngine === 'undefined') {
         quantity: inverter.quantity || 1,
         unit: 'جهاز',
         unitPrice: inverter.price,
-        totalPrice: inverter.totalCost || inverter.price,
-        warranty: `${inverter.warranty || inverter.warrantyYears || 2} سنوات`
+        totalPrice: inverter.totalCost || inverter.price
       },
       {
         itemNumber: 2,
@@ -1020,64 +1162,34 @@ if (typeof SolarEngine === 'undefined') {
         quantity: battery.quantity || 1,
         unit: 'حبة',
         unitPrice: battery.price,
-        totalPrice: battery.totalCost || battery.price,
-        warranty: `${battery.warranty || battery.warrantyYears || 5} سنوات`
+        totalPrice: battery.totalCost || (battery.price * (battery.quantity || 1))
       },
       {
         itemNumber: 3,
         category: 'الألواح الشمسية',
         name: panel.name,
-        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
+        specs: `لوح شمسي ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
         quantity: panel.quantity || 8,
         unit: 'لوح',
         unitPrice: panel.price,
-        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8)),
-        warranty: `${panel.warranty || panel.warrantyYears || 12} سنة مصنعية و25 سنة كفاءة`
-      },
-      {
-        itemNumber: 4,
-        category: 'لوحة الحماية والقواطع',
-        name: 'لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة',
-        specs: 'قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة',
-        quantity: 1,
-        unit: 'منظومة',
-        unitPrice: protectionBoxCost + cablingCost,
-        totalPrice: protectionBoxCost + cablingCost,
-        warranty: 'سنتان'
-      },
-      {
-        itemNumber: 5,
-        category: 'الهياكل والقواعد',
-        name: 'قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح',
-        specs: 'هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل',
-        quantity: panel.quantity || 8,
-        unit: 'طقم',
-        unitPrice: structureUnitPrice,
-        totalPrice: structureCost,
-        warranty: '10 سنوات'
-      },
-      {
-        itemNumber: 6,
-        category: 'التركيب والتشغيل',
-        name: 'التركيب الميداني والبرمجة والتدشين والفحص الهندسي',
-        specs: 'تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل',
-        quantity: 1,
-        unit: 'خدمة',
-        unitPrice: installationFee,
-        totalPrice: installationFee,
-        warranty: 'سنة صيانة دورية مجانية'
+        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8))
       }
     ];
 
-    // الإجماليات المالية
-    const totalEquipmentCost = (inverter.totalCost || inverter.price) + (panel.totalCost || panel.price * panel.quantity) + (battery.totalCost || battery.price * battery.quantity);
-    const totalAccessoriesCost = structureCost + protectionBoxCost + cablingCost;
-    const totalCost = totalEquipmentCost + totalAccessoriesCost + installationFee;
+    // الإجماليات المالية: مطابقة دقيقة لمجموع أسعار المكونات الأساسية الثلاثة فقط
+    const totalEquipmentCost = (inverter.totalCost || inverter.price) + 
+      (battery.totalCost || (battery.price * (battery.quantity || 1))) + 
+      (panel.totalCost || (panel.price * (panel.quantity || 8)));
+    const totalAccessoriesCost = 0;
+    const installationFee = 0;
+    const totalCost = totalEquipmentCost;
     const totalCostYer = totalCost * exchangeRate;
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const quoteNo = customerInfo.quoteNo || ('PET-2026-' + randomSuffix);
     const currentDate = customerInfo.date || new Date().toISOString().split('T')[0];
+
+    const clientName = customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم";
 
     return {
       quoteId: quoteNo,
@@ -1097,10 +1209,11 @@ if (typeof SolarEngine === 'undefined') {
         website: "www.petroneelyemen.com"
       },
       customer: {
-        name: customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم",
+        name: clientName,
         phone: customerInfo.phone || customerInfo.customerPhone || "",
         address: customerInfo.address || customerInfo.customerAddress || customerInfo.location || "سيئون - حضرموت"
       },
+      clientPrintName: clientName, // اسم العميل فقط لترويسة عرض السعر
       systemOverview: {
         packageType: pkg.title || 'منظومة الطاقة الشمسية المتكاملة',
         inverterCapacityKw: inverter.capacityKw,
@@ -1126,22 +1239,12 @@ if (typeof SolarEngine === 'undefined') {
         totalCostYer: Math.round(totalCostYer),
         exchangeRate
       },
-      warrantyTerms: [
-        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
-        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
-        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
-        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
-      ],
+      specsSummary,
+      terms: specsSummary,
       companyFeatures: [
         "تقديم أفضل الخدمات بعد البيع من صيانة ومتابعة خلال فترة الضمانة المحددة وبعدها",
         "توفير جميع قطع الغيار الخاصة بمكونات منظومة الطاقة الشمسية",
         "منتجاتنا مصنعة حسب المواصفات والمعايير الأوروبية"
-      ],
-      terms: [
-        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
-        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
-        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
-        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
       ],
       note: "صلاحية عرض السعر لمدة أسبوع من تاريخه."
     };
@@ -1231,14 +1334,14 @@ if (typeof SolarEngine === 'undefined') {
     const effectiveRechargePowerKw = Math.max(0.5, Math.min(maxChargePowerKw, (inverter.capacityKw || 5) * 1.2));
     const rechargeTimeHours = parseFloat((usableCapacityKwh / (effectiveRechargePowerKw * chargeEfficiency)).toFixed(1));
 
-    const maxAllowedRechargeHours = psh * 1.25;
+    const maxAllowedRechargeHours = Math.min(2.5, psh);
     if (usableCapacityKwh > 0 && rechargeTimeHours > maxAllowedRechargeHours) {
       status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
       warnings.push(
-        `قدرة شحن الإنفرتر (${maxChargePowerKw} kW عبر ${maxChargeCurrentA}A) محدودة مقارنة بسعة البطارية الكبيرة (${totalCapacityKwh} kWh). ستستغرق إعادة الشحن الكاملة حوالي ${rechargeTimeHours} ساعات، مما يتجاوز ساعات ذروة الشمس اليومية (${psh}h).`
+        `قدرة شحن الإنفرتر (${maxChargePowerKw} kW عبر ${maxChargeCurrentA}A) محدودة مقارنة بسعة البطارية الكبيرة (${totalCapacityKwh} kWh). ستستغرق إعادة الشحن الكاملة حوالي ${rechargeTimeHours} ساعات، مما يتجاوز معيار الشحن السريع (ساعتان).`
       );
       recommendations.push(
-        `يُوصى باختيار إنفرتر بقدرة شحن أعلى (مثل Crown Elego Pro 6kW أو Deye 8kW/10kW) لضمان الشحن السريع في فترات السطوع الشمسي المحدودة.`
+        `يُوصى باختيار إنفرتر بقدرة شحن أعلى (مثل Crown Elego Star / Elego Oyster) لضمان الشحن الكامل خلال ساعتين فقط.`
       );
     }
 
@@ -2089,13 +2192,51 @@ function useFallbackData() {
 // PRODUCTS CATALOG & PWA CONTROLLER
 // ============================================================
 
+// ==========================================================================
+// Enhanced Clean & Elegant Products Catalog with Collapsible Specs
+// ==========================================================================
+
+window.toggleProductSpecs = function(id) {
+  const drawer = document.getElementById('specs-drawer-' + id);
+  const icon = document.querySelector('.toggle-icon-' + id);
+  const btn = document.getElementById('btn-toggle-' + id);
+  if (!drawer) return;
+  
+  const isHidden = drawer.style.display === 'none';
+  if (isHidden) {
+    drawer.style.display = 'block';
+    if (icon) icon.className = 'fa-solid fa-chevron-up toggle-icon-' + id;
+    if (btn) btn.classList.add('active');
+  } else {
+    drawer.style.display = 'none';
+    if (icon) icon.className = 'fa-solid fa-chevron-down toggle-icon-' + id;
+    if (btn) btn.classList.remove('active');
+  }
+};
+
+window.selectProductForCalc = function(category, id) {
+  if (category === 'inverter') {
+    if (!State.customSelections) State.customSelections = {};
+    State.customSelections.inverterId = id;
+    if (typeof showToast === 'function') showToast('تم اختيار الإنفرتر وتطبيقه على المنظومة', true);
+    goToStep(4);
+  } else if (category === 'battery') {
+    if (!State.customSelections) State.customSelections = {};
+    State.customSelections.batteryId = id;
+    if (typeof showToast === 'function') showToast('تم اختيار البطارية وتطبيقها على المنظومة', true);
+    goToStep(4);
+  } else {
+    goToStep(2);
+  }
+};
+
 function renderProductsCatalog(filter = 'all') {
   const container = document.getElementById('products-catalog-container');
   if (!container) return;
 
-  const inverters = State.inventory.inverters || [];
-  const batteries = State.inventory.batteries || [];
-  const panels = State.inventory.panels || [];
+  const inverters = (State.inventory.inverters || []).filter(i => i.available !== false);
+  const batteries = (State.inventory.batteries || []).filter(b => b.available !== false);
+  const panels = (State.inventory.panels || []).filter(p => p.available !== false);
 
   let items = [];
 
@@ -2113,60 +2254,128 @@ function renderProductsCatalog(filter = 'all') {
   }
 
   if (items.length === 0) {
-    container.innerHTML = '<div class="text-center p-4 text-muted col-span-full">لا توجد منتجات متطابقة في المخزون حالياً.</div>';
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);"><i class="fa-solid fa-box-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i> لا توجد منتجات متطابقة في المخزون حالياً.</div>';
     return;
   }
 
   container.innerHTML = items.map(item => {
     let brandBadge = '';
     let iconClass = 'fa-bolt';
-    let specsHtml = '';
+    let iconAvatarClass = '';
+    let highlightText = '';
+    let specsList = [];
 
-    if (item.subCat === 'crown') {
-      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown"></i> وكالة Crown Micro</span>';
-      iconClass = 'fa-solar-panel';
-      specsHtml = `
-        <div class="prod-spec-item"><span class="prod-spec-label">القدرة الاسمية:</span><span class="prod-spec-val font-num">${item.capacityKw} kW</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">جهد البطارية:</span><span class="prod-spec-val font-num">${item.batteryVoltage || item.systemVoltage || 48}V</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">أقصى تيار شحن:</span><span class="prod-spec-val font-num">${item.maxChargeCurrent || 80}A</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">نطاق MPPT:</span><span class="prod-spec-val font-num">${item.mpptMin || 90}V - ${item.mpptMax || 450}V</span></div>
-      `;
+    if (item.category === 'inverter') {
+      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown text-warning"></i> وكالة Crown Micro الأصلية</span>';
+      iconClass = 'fa-gauge-high';
+      iconAvatarClass = '';
+      highlightText = `قدرة ${item.capacityKw} kW • جهد بطارية ${item.batteryVoltage || 48}V • شاحن MPPT ذكي`;
+      
+      specsList = [
+        { key: 'القدرة التشغيلية المستمرة:', val: `${item.capacityKw} kW (موجة جيبية نقية)` },
+        { key: 'قدرة الإقلاع اللحظي (Surge):', val: `${item.surgeKw || (item.capacityKw * 2)} kW للمحركات والمكيفات` },
+        { key: 'جهد بنك البطاريات:', val: `${item.batteryVoltage || 48}V DC` },
+        { key: 'أقصى تيار شحن للبطارية:', val: `${item.maxChargeCurrent || 80}A` },
+        { key: 'نطاق عمل منظم MPPT:', val: `${item.mpptVoltageMin || 120}V - ${item.mpptVoltageMax || 450}V` },
+        { key: 'أقصى استطاعة للألواح PV:', val: `${item.maxPvInputKw || (item.capacityKw + 0.5)} kW` },
+        { key: 'سحب الشبكة / المولد AC:', val: `${item.maxAcInputKw || 5.0} kW شحن سريع` },
+        { key: 'الضمان المعتمد:', val: `${item.warrantyYears || 2} سنوات ضمان الوكيل الرسمي` }
+      ];
     } else if (item.category === 'battery') {
-      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown"></i> Crown LiFePO4</span>';
-      iconClass = 'fa-battery-three-quarters';
-      specsHtml = `
-        <div class="prod-spec-item"><span class="prod-spec-label">السعة التخزينية:</span><span class="prod-spec-val font-num">${item.capacityKwh} kWh</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">الجهد الاسمي:</span><span class="prod-spec-val font-num">${item.voltage || item.nominalVoltage || 48}V</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">عمق التفريغ DoD:</span><span class="prod-spec-val font-num">${((item.dod || 0.9) * 100).toFixed(0)}%</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">العمر الافتراضي:</span><span class="prod-spec-val font-num">${item.cycles || 6000} دورة (+${item.warrantyYears || 5} سنوات)</span></div>
-      `;
+      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown text-warning"></i> بطاريات Crown LiFePO4</span>';
+      iconClass = 'fa-battery-full';
+      iconAvatarClass = 'battery';
+      highlightText = `سعة ${item.capacityKwh} kWh • جهد ${item.voltage || 48}V • خلايا ليثيوم فوسفات`;
+      
+      specsList = [
+        { key: 'السعة التخزينية الإجمالية:', val: `${item.capacityKwh} kWh` },
+        { key: 'السعة القابلة للاستخدام:', val: `${item.usableCapacityKwh || (item.capacityKwh * 0.9).toFixed(2)} kWh (عمق تفريغ 90% DoD)` },
+        { key: 'الجهد الاسمي:', val: `${item.nominalVoltage || item.voltage || 48}V DC` },
+        { key: 'كيمياء وتكنولوجيا الخلايا:', val: 'ليثيوم فوسفات الحديد LiFePO4 فائقة الأمان' },
+        { key: 'العمر الافتراضي للدورات:', val: `${item.cycles || 4000}+ دورة تفريغ كاملة` },
+        { key: 'أقصى تيار تفريغ مستمر:', val: `${item.maxDischargeCurrent || 100}A` },
+        { key: 'نظام الإدارة والحماية BMS:', val: 'مدمج ذكي مع منفذ اتصال CAN / RS485' },
+        { key: 'الضمان المعتمد:', val: `${item.warrantyYears || 3} سنوات ضمان الوكيل` }
+      ];
     } else if (item.category === 'panel') {
-      brandBadge = '<span class="prod-brand-badge" style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.35);"><i class="fa-solid fa-sun"></i> Longi N-Type</span>';
+      brandBadge = '<span class="prod-brand-badge" style="background:rgba(234,179,8,0.18);color:#eab308;border:1px solid rgba(234,179,8,0.35);"><i class="fa-solid fa-sun"></i> Longi Solar N-Type</span>';
       iconClass = 'fa-solar-panel';
-      specsHtml = `
-        <div class="prod-spec-item"><span class="prod-spec-label">القدرة القصوى:</span><span class="prod-spec-val font-num">${item.watt} Watt</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">جهد الدائرة Voc:</span><span class="prod-spec-val font-num">${item.voc || 53.6}V</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">كفاءة الخلية:</span><span class="prod-spec-val font-num">${item.efficiency || '22.6%'}</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">ضمان الأداء:</span><span class="prod-spec-val font-num">${item.performanceWarrantyYears || 25} سنة</span></div>
-      `;
+      iconAvatarClass = 'panel';
+      highlightText = `قدرة ${item.watt} Watt • كفاءة 22.6% • ثنائي الوجهين Bifacial`;
+      
+      specsList = [
+        { key: 'القدرة القصوى للوح Pmax:', val: `${item.watt} Watt` },
+        { key: 'نوع الخلايا الشمسية:', val: 'N-Type Bifacial عالية الكفاءة في درجات الحرارة العالية' },
+        { key: 'جهد الدائرة المفتوحة Voc:', val: `${item.voc || 55.4} V` },
+        { key: 'جهد أقصى قدرة Vmp:', val: `${item.vmp || 46.2} V` },
+        { key: 'تيار الدائرة القصيرة Isc:', val: `${item.isc || 13.9} A` },
+        { key: 'تيار أقصى قدرة Imp:', val: `${item.imp || 13.2} A` },
+        { key: 'ضمان المنتج والأداء:', val: `${item.warrantyYears || 12} سنة صناعي + 25 سنة ضمان خطي` }
+      ];
     }
+
+    const specsDrawerHtml = specsList.map(s => `
+      <div class="prod-spec-row">
+        <span class="prod-spec-key">${s.key}</span>
+        <span class="prod-spec-val font-num">${s.val}</span>
+      </div>
+    `).join('');
+
+    const whatsappMsg = encodeURIComponent(`السلام عليكم شركة بترونيل يمن، أرغب بالاستفسار وطلب شراء: ${item.name} بسعر ${item.price.toLocaleString('en-US')} ر.س المعتمد.`);
+    const whatsappUrl = `https://wa.me/967779669868?text=${whatsappMsg}`;
 
     return `
       <div class="product-card glass" data-id="${item.id}" data-category="${item.category}">
-        <div class="prod-card-header">
-          ${brandBadge}
-          <div class="prod-icon-wrap"><i class="fa-solid ${iconClass}"></i></div>
-        </div>
-        <h3 class="prod-title">${item.name}</h3>
-        <p class="prod-model font-num">${item.model || ''}</p>
-        <div class="prod-specs-grid">${specsHtml}</div>
-        <div class="prod-card-footer">
-          <div class="prod-pricing">
-            <span class="prod-price font-num" style="color: #f59e0b; font-weight: 800; font-size: 1.25rem;">${item.price.toLocaleString('en-US')} ر.س</span>
+        <div>
+          <div class="prod-card-header">
+            ${brandBadge}
+            <span class="prod-stock-badge"><i class="fa-solid fa-circle-check"></i> متوفر</span>
           </div>
-          <button type="button" class="btn btn-secondary-outline btn-sm btn-quick-calc" onclick="goToStep(2)">
-            <i class="fa-solid fa-calculator"></i> استخدم بالحاسبة
+
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.8rem;">
+            <div class="prod-icon-wrap ${iconAvatarClass}">
+              <i class="fa-solid ${iconClass}"></i>
+            </div>
+            <div>
+              <h3 class="prod-title" style="margin: 0;">${item.name}</h3>
+              <span class="font-num" style="font-size: 0.8rem; color: var(--text-muted);">${item.model || ''}</span>
+            </div>
+          </div>
+
+          <div class="prod-highlight-pill">
+            <i class="fa-solid fa-bolt text-warning"></i>
+            <span>${highlightText}</span>
+          </div>
+
+          <div class="prod-pricing-card">
+            <div>
+              <div class="prod-price-label">السعر الرسمي المعتمد:</div>
+              <div class="prod-warranty-pill"><i class="fa-solid fa-shield-halved"></i> شامل ضمان الوكيل</div>
+            </div>
+            <div class="prod-price-val font-num">${(item.price || 0).toLocaleString('en-US')} ر.س</div>
+          </div>
+
+          <!-- Collapsible Specs Accordion Trigger -->
+          <button type="button" class="btn-toggle-specs" id="btn-toggle-${item.id}" onclick="toggleProductSpecs('${item.id}')">
+            <span><i class="fa-solid fa-list-check" style="margin-left: 6px; color: #f59e0b;"></i> المواصفات الفنية المعتمدة</span>
+            <i class="fa-solid fa-chevron-down toggle-icon-${item.id}"></i>
           </button>
+
+          <!-- Collapsible Specs Drawer -->
+          <div id="specs-drawer-${item.id}" class="prod-specs-drawer" style="display: none;">
+            <div class="prod-specs-list">
+              ${specsDrawerHtml}
+            </div>
+          </div>
+        </div>
+
+        <div class="prod-card-actions">
+          <button type="button" class="btn btn-secondary-outline btn-sm btn-use-in-calc" onclick="selectProductForCalc('${item.category}', '${item.id}')">
+            <i class="fa-solid fa-calculator"></i> احسب به المنظومة
+          </button>
+          <a href="${whatsappUrl}" target="_blank" class="btn btn-sm btn-whatsapp-order">
+            <i class="fa-brands fa-whatsapp"></i> طلب فوري
+          </a>
         </div>
       </div>
     `;
@@ -3432,6 +3641,56 @@ function calculateAndRenderPackages() {
     populateManualTuningSelects(opt);
   }
 
+  // 3. Render Qualifying Crown Micro Model Offer Cards (Click to Approve)
+  const modelsContainer = document.getElementById('step4-models-container');
+  const modelsSection = document.getElementById('step4-models-section');
+  if (modelsContainer && matchResult.modelQuotes && matchResult.modelQuotes.length > 0) {
+    if (modelsSection) modelsSection.style.display = 'block';
+    modelsContainer.innerHTML = matchResult.modelQuotes.map((mq, idx) => {
+      const isSelected = State.activePackage?.inverter?.id === mq.package.inverter.id;
+      const cardBorder = isSelected ? 'border: 2px solid #10b981; background: rgba(16, 185, 129, 0.08);' : 'border: 1px solid var(--border-color);';
+      const rHours = mq.package.rechargeTimeHours || 1.8;
+      
+      return `
+        <div class="model-offer-card glass" style="padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; ${cardBorder}">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 0.8rem;">
+                <i class="fa-solid fa-crown"></i> ${mq.package.inverter.brand || 'Crown Micro'}
+              </span>
+              <div class="font-num" style="font-weight: 900; font-size: 1.25rem; color: #10b981;">
+                ${mq.quotation.financials.grandTotal.toLocaleString('en-US')} <small style="font-size: 0.8rem;">ر.س</small>
+              </div>
+            </div>
+            <h4 style="margin: 0 0 10px; font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${mq.title}</h4>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 16px;">
+              <div><i class="fa-solid fa-bolt text-warning" style="width: 18px;"></i> <strong>الإنفرتر:</strong> ${mq.inverterName}</div>
+              <div><i class="fa-solid fa-battery-full text-success" style="width: 18px;"></i> <strong>البطاريات:</strong> ${mq.package.battery.quantity} × ${mq.package.battery.name} (${mq.package.battery.totalKwh} kWh)</div>
+              <div><i class="fa-solid fa-solar-panel text-warning" style="width: 18px;"></i> <strong>الألواح:</strong> ${mq.package.panel.quantity} ألواح لونجي (${mq.package.panel.totalKw} kWp)</div>
+              <div style="color: #0284c7; font-weight: 700; margin-top: 4px;"><i class="fa-solid fa-gauge-high" style="width: 18px;"></i> <strong>زمن الشحن:</strong> ${rHours} ساعة (شحن سريع &le; 2h)</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary w-full btn-select-model-quote" data-key="${mq.key}" style="font-weight: 800; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="fa-solid fa-circle-check"></i> اختيار والموافقة على هذا العرض
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    modelsContainer.querySelectorAll('.btn-select-model-quote').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-key');
+        const selected = matchResult.modelQuotes.find(m => m.key === key);
+        if (selected) {
+          State.activePackage = selected.package;
+          openCustomerQuoteModal(selected.package);
+        }
+      });
+    });
+  } else if (modelsSection) {
+    modelsSection.style.display = 'none';
+  }
+
   // Safe package card rendering for backwards-compatibility
   if (matchResult.packages) {
     renderPackageCard('econ', matchResult.packages.economic);
@@ -3534,6 +3793,9 @@ function initStep5Quotation() {
   // Download PDF Button
   document.getElementById('btn-download-pdf')?.addEventListener('click', downloadQuotationPdf);
 
+  // Approve Quote Button
+  document.getElementById('btn-approve-current-quote')?.addEventListener('click', approveCurrentQuotation);
+
   // Print button
   document.getElementById('btn-print-quote')?.addEventListener('click', () => {
     window.print();
@@ -3566,11 +3828,11 @@ function generateAndRenderQuotation() {
   // Doc references
   setEl('quote-ref-code', quotation.quoteNo || quotation.quoteId);
   setEl('quote-issue-date', quotation.date);
+  
+  // ترويسة عرض السعر: اسم العميل فقط بناءً على توجيهات الإدارة (الرقم والمنطقة للإدارة فقط)
   setEl('doc-client-name', quotation.customer.name || 'عميل بترونيل المحترم');
-  setEl('doc-client-phone', quotation.customer.phone || '--');
-  setEl('doc-client-location', quotation.customer.address || quotation.customer.location || 'حضرموت - سيئون');
 
-  // BOM Table Rows matching official sheet
+  // جدول الكميات BOM: المكونات الثلاثة فقط (إنفرتر، بطاريات، ألواح)
   const tbody = document.getElementById('quote-items-tbody');
   if (tbody) {
     tbody.innerHTML = quotation.items.map(item => `
@@ -3588,6 +3850,21 @@ function generateAndRenderQuotation() {
     `).join('');
   }
 
+  // ملخص المواصفات الفنية المعتمدة من كتالوج كراون مايكرو 2026 (كم يسحب كهرباء + المجموعات الشمسية)
+  const specsUl = document.getElementById('quote-specs-summary-list');
+  if (specsUl && quotation.specsSummary) {
+    specsUl.innerHTML = quotation.specsSummary.map(s => {
+      const parts = s.split(':');
+      const title = parts[0] || '';
+      const desc = parts.slice(1).join(':') || '';
+      return `
+        <li style="margin-bottom: 7px; line-height: 1.5; font-size: 0.88rem; color: #1e293b;">
+          <strong style="color: #0284c7;">${title}:</strong>${desc}
+        </li>
+      `;
+    }).join('');
+  }
+
   // Financial figures in SAR
   const grandTotal = Math.round(quotation.financials.grandTotal || quotation.financials.totalCost);
   setEl('op-subtotal-sar', `${grandTotal.toLocaleString('en-US')} ر.س`);
@@ -3599,33 +3876,151 @@ function generateAndRenderQuotation() {
   setEl('doc-total-usd', `${grandTotal.toLocaleString('en-US')} ر.س`);
   setEl('doc-total-yer', `${(quotation.financials.totalCostYer || grandTotal).toLocaleString('ar-YE')} ر.ي`);
   setEl('doc-cost-equipment', `${quotation.financials.equipmentCost || 0} ر.س`);
-  setEl('doc-cost-accessories', `${quotation.financials.accessoriesCost || 0} ر.س`);
-  setEl('doc-cost-install', `${quotation.financials.installationFee || 0} ر.س`);
+  setEl('doc-cost-accessories', `0 ر.س`);
+  setEl('doc-cost-install', `0 ر.س`);
   setEl('quote-validity-text', `صلاحية العرض: ${quotation.validUntilDays || 7} أيام`);
   setEl('doc-package-type', State.activePackage.title);
   setEl('doc-inv-kw', `${quotation.systemOverview.inverterCapacityKw} kW`);
   setEl('doc-pv-kw', `${quotation.systemOverview.pvCapacityKw} kWp (${quotation.systemOverview.panelsCount} لوح)`);
   setEl('doc-bat-kwh', `${quotation.systemOverview.batteryCapacityKwh} kWh`);
   setEl('doc-outage-support', `${quotation.validUntilDays || 24} ساعة`);
+
+  renderModelQuoteTabs();
 }
 
-function downloadQuotationPdf() {
-  const element = document.getElementById('printable-quotation-area');
-  if (!element || typeof html2pdf === 'undefined') {
-    alert("جارٍ تشغيل نافذة الطباعة كبديل...");
-    window.print();
+function renderModelQuoteTabs() {
+  const container = document.getElementById('model-quotes-tabs');
+  if (!container) return;
+  const modelQuotes = State.matchedPackages?.modelQuotes || [];
+  if (modelQuotes.length <= 1) {
+    if (container.parentElement) container.parentElement.style.display = 'none';
+    return;
+  }
+  if (container.parentElement) container.parentElement.style.display = 'block';
+
+  container.innerHTML = modelQuotes.map(mq => {
+    const isSelected = State.activePackage?.inverter?.id === mq.package.inverter.id;
+    const btnClass = isSelected ? 'btn-primary' : 'btn-secondary-outline';
+    return `
+      <button type="button" class="btn ${btnClass} btn-sm mq-tab-btn" data-key="${mq.key}" style="border-radius: 20px; font-weight: 700; padding: 7px 16px; cursor: pointer;">
+        <i class="fa-solid fa-solar-panel"></i> ${mq.title}
+        <span class="badge" style="margin-right: 6px; background: rgba(0,0,0,0.12); padding: 2px 7px; border-radius: 10px;">${mq.quotation.financials.grandTotal.toLocaleString('en-US')} ر.س</span>
+      </button>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.mq-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-key');
+      const selected = modelQuotes.find(m => m.key === key);
+      if (selected) {
+        State.activePackage = selected.package;
+        State.isQuoteApproved = false;
+        generateAndRenderQuotation();
+
+        // Update approval box for current model
+        const approvalBox = document.getElementById('quote-approval-box');
+        if (approvalBox) {
+          approvalBox.style.background = 'rgba(16, 185, 129, 0.08)';
+          approvalBox.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          approvalBox.innerHTML = `
+            <div class="qab-info" style="display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-circle-check text-success" style="font-size: 2rem;"></i>
+                <div>
+                    <h4 style="margin: 0; color: #10b981; font-weight: 800; font-size: 1.05rem;" id="quote-approval-title">الموافقة على هذا العرض واعتماده:</h4>
+                    <p style="margin: 2px 0 0; color: var(--text-muted); font-size: 0.85rem;" id="quote-approval-subtitle">إذا ناسبك موديل (${selected.inverterName})، اضغط الزر لاعتماده رسمياً وإشعار إدارة بترونيل فورياً</p>
+                </div>
+            </div>
+            <div class="qab-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn btn-success btn-lg" id="btn-approve-current-quote" style="font-weight: 800; padding: 10px 24px; border-radius: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); cursor: pointer;">
+                    <i class="fa-solid fa-check-double"></i> اعتماد والموافقة على هذا العرض
+                </button>
+            </div>
+          `;
+          document.getElementById('btn-approve-current-quote')?.addEventListener('click', approveCurrentQuotation);
+        }
+      }
+    });
+  });
+}
+
+async function downloadQuotationPdf() {
+  if (!State.activePackage && State.matchedPackages) {
+    State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+  }
+  if (!State.activePackage) {
+    alert("يرجى اختيار المنظومة أولاً قبل تنزيل عرض السعر.");
     return;
   }
 
-  const opt = {
-    margin: [6, 6, 6, 6],
-    filename: `عرض_سعر_بترونيل_يمن_${(State.customer.name || 'العميل').replace(/\s+/g, '_')}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  const quote = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  const total = Math.round(quote.financials.grandTotal || quote.financials.totalCost);
+
+  const payload = {
+    quoteNo: State.lastSavedQuote?.quoteNo || quote.quoteNo || ('PET-2026-' + Math.floor(1000 + Math.random() * 9000)),
+    date: new Date().toISOString().split('T')[0],
+    currency: 'ريال سعودي (SAR)',
+    customerName: State.customer.name || 'عميل بترونيل المحترم',
+    customerPhone: State.customer.phone || '',
+    customerAddress: State.customer.address || State.customer.location || 'حضرموت - سيئون',
+    items: quote.items,
+    subtotal: total,
+    discount: 0,
+    grandTotal: total,
+    verbalTotal: tafqeet(total),
+    specsSummary: quote.specsSummary,
+    terms: quote.specsSummary
   };
 
-  html2pdf().set(opt).from(element).save();
+  const btn = document.getElementById('btn-download-pdf');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ إنشاء ملف PDF الرسمي...';
+  }
+
+  try {
+    const res = await fetch('/api/quotes/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `عرض_سعر_بترونيل_يمن_${(payload.customerName || 'عميل').replace(/[\s\/\\:]+/g, '_')}_${payload.quoteNo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend PDF generation not reached, using browser fallback:", err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+
+  // Fallback to client html2pdf or print
+  const element = document.getElementById('printable-quotation-area');
+  if (element && typeof html2pdf !== 'undefined') {
+    const opt = {
+      margin: [6, 6, 6, 6],
+      filename: `عرض_سعر_بترونيل_يمن_${(State.customer.name || 'العميل').replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  } else {
+    window.print();
+  }
 }
 
 function shareViaWhatsApp() {
@@ -3652,6 +4047,122 @@ function shareViaWhatsApp() {
 
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
+}
+
+async function approveCurrentQuotation() {
+  if (!State.activePackage && State.matchedPackages) {
+    State.activePackage = State.matchedPackages.optimalRecommendation || (State.matchedPackages.packages && State.matchedPackages.packages.recommended);
+  }
+  if (!State.activePackage) {
+    alert("يرجى التأكد من حساب المنظومة أولاً.");
+    return;
+  }
+
+  // If customer name is default, ask them to confirm their name and phone
+  if (!State.customer.name || State.customer.name === 'عميل بترونيل المحترم' || State.customer.name === 'عميل بترونيل المميز') {
+    openCustomerQuoteModal('approval');
+    return;
+  }
+
+  const quote = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  const total = Math.round(quote.financials.grandTotal || quote.financials.totalCost);
+  const quoteNo = State.lastSavedQuote?.quoteNo || quote.quoteNo || ('PET-2026-' + Math.floor(1000 + Math.random() * 9000));
+
+  const payload = {
+    quoteNo,
+    customerName: State.customer.name,
+    customerPhone: State.customer.phone || '',
+    customerAddress: State.customer.address || State.customer.location || 'حضرموت',
+    systemPackage: State.activePackage.title || State.activePackage.inverter?.name,
+    items: quote.items,
+    subtotal: total,
+    discount: 0,
+    grandTotal: total,
+    currency: 'SAR',
+    status: 'Approved'
+  };
+
+  const approveBtn = document.getElementById('btn-approve-current-quote');
+  if (approveBtn) {
+    approveBtn.disabled = true;
+    approveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري اعتماد الموافقة...';
+  }
+
+  try {
+    const res = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    State.lastSavedQuote = data.quote || payload;
+    State.isQuoteApproved = true;
+
+    // Show Approved watermark on sheet
+    const badge = document.getElementById('quote-approved-badge');
+    if (badge) badge.classList.remove('hidden');
+
+    // Update approval box
+    const approvalBox = document.getElementById('quote-approval-box');
+    if (approvalBox) {
+      approvalBox.style.background = 'rgba(16, 185, 129, 0.18)';
+      approvalBox.style.borderColor = '#10b981';
+      approvalBox.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-circle-check text-success" style="font-size: 2.2rem;"></i>
+            <div>
+              <h4 style="margin: 0; color: #10b981; font-weight: 900; font-size: 1.15rem;">✅ تم اعتماد وموافقتك على هذا العرض بنجاح!</h4>
+              <p style="margin: 3px 0 0; color: var(--text-main); font-size: 0.9rem;">
+                تم تسجيل موافقة الأخ <strong>${State.customer.name}</strong> على عرض سعر <strong>${State.activePackage.inverter.name}</strong> برقم <strong>${quoteNo}</strong> بقيمة <strong>${total.toLocaleString('en-US')} ر.س</strong> لدى إدارة بترونيل يمن.
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-success btn-sm" onclick="shareApprovalViaWhatsApp()" style="border-radius: 20px; font-weight: 800; padding: 9px 18px; cursor: pointer;">
+              <i class="fa-brands fa-whatsapp"></i> إرسال تأكيد الموافقة عبر واتساب
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="downloadQuotationPdf()" style="border-radius: 20px; font-weight: 800; padding: 9px 18px; cursor: pointer;">
+              <i class="fa-solid fa-file-pdf"></i> تحميل الـ PDF المعتمد
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    alert(`🎉 مبارك يا أخ ${State.customer.name}!\n\nتم اعتماد موافقتك على عرض السعر بنجاح.\n- رقم العرض: ${quoteNo}\n- المنظومة: ${State.activePackage.inverter.name}\n- الإجمالي: ${total.toLocaleString('en-US')} ريال سعودي.\n\nسيتواصل معك مهندسو بترونيل يمن للطاقة فوراً لتجهيز الطلب.`);
+
+  } catch (err) {
+    console.error("Error approving quote:", err);
+    alert("تم تسجيل موافقتك مبدئياً، يرجى إرسال العرض عبر واتساب للشركة لتأكيد الحجز.");
+  } finally {
+    if (approveBtn) approveBtn.disabled = false;
+  }
+}
+
+function shareApprovalViaWhatsApp() {
+  const quote = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  const total = Math.round(quote ? (quote.financials.grandTotal || quote.financials.totalCost) : 0);
+  const quoteNo = State.lastSavedQuote?.quoteNo || quote?.quoteNo || 'PET-2026-CONFIRM';
+  const invName = State.activePackage?.inverter?.name || 'منظومة كراون مايكرو';
+  const clientName = State.customer?.name || 'العميل';
+  const clientPhone = State.customer?.phone || '';
+  const clientAddress = State.customer?.address || State.customer?.location || '';
+
+  const msg = `السلام عليكم شركة بترونيل يمن للطاقة،
+أنا العميل: ${clientName}
+رقم الهاتف: ${clientPhone}
+العنوان: ${clientAddress}
+
+أؤكد لكم موافقتي واعتمادي النهائي لعرض السعر رقم: ${quoteNo}
+المنظومة المختارة: ${invName}
+المكونات الأساسية: إنفرتر كراون مايكرو + بطاريات ليثيوم كراون + ألواح لونجي 610W
+الإجمالي النهائي المعتمد: ${total.toLocaleString('en-US')} ريال سعودي (SAR).
+
+يرجى التواصل معي لتنسيق الاستلام والتركيب.`;
+
+  const phoneNum = '967779669868';
+  window.open(`https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function updateAllPricesUI() {

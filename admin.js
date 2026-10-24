@@ -8,7 +8,12 @@ let editModeApplianceId = null;
 let allPanels = [];
 let allBatteries = [];
 let allInverters = [];
+let allBoards = [];
 let allQuotes = [];
+let allCustomProducts = [];
+let adminQuoteItems = [];
+let activeQuoteIconsFilter = "all";
+let activeQuotesFilter = "all";
 
 // --- Initialize Admin App ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -185,18 +190,24 @@ async function fetchUsers() {
 // --- Fetch System Inventory ---
 async function fetchInventory() {
     try {
-        const [pRes, bRes, iRes] = await Promise.all([
+        const [pRes, bRes, iRes, brdRes, cpRes] = await Promise.all([
             fetch('/api/inventory/panels?all=1'),
             fetch('/api/inventory/batteries?all=1'),
-            fetch('/api/inventory/inverters?all=1')
+            fetch('/api/inventory/inverters?all=1'),
+            fetch('/api/inventory/boards?all=1'),
+            fetch('/api/inventory/custom-products?all=1')
         ]);
         if (pRes.ok) allPanels = await pRes.json();
         if (bRes.ok) allBatteries = await bRes.json();
         if (iRes.ok) allInverters = await iRes.json();
+        if (brdRes && brdRes.ok) allBoards = await brdRes.json();
+        if (cpRes && cpRes.ok) allCustomProducts = await cpRes.json();
         
         renderPanelsTable();
         renderBatteriesTable();
         renderInvertersTable();
+        renderBoardsTable();
+        renderAdminQuoteProductIcons(activeQuoteIconsFilter);
     } catch (err) {
         console.error("Error loading inventory:", err);
         showToast("فشل تحميل مخزون المنظومة", false);
@@ -395,6 +406,551 @@ function populateContentForm(settings) {
 
 
 // --- Quotes Management ---
+
+// --- Tafqeet (Arabic Number to Words) ---
+function tafqeet(n) {
+  if (!n || n <= 0) return 'صفر ريال سعودي لا غير';
+  const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+  const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+  const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+
+  function convertChunk(num) {
+    let parts = [];
+    const h = Math.floor(num / 100);
+    const rem = num % 100;
+    if (h > 0) parts.push(hundreds[h]);
+    if (rem > 0) {
+      if (rem < 20) {
+        parts.push(ones[rem]);
+      } else {
+        const o = rem % 10;
+        const t = Math.floor(rem / 10);
+        if (o > 0) parts.push(ones[o] + ' و' + tens[t]);
+        else parts.push(tens[t]);
+      }
+    }
+    return parts.join(' و');
+  }
+
+  let thousands = Math.floor(n / 1000);
+  let remHundred = n % 1000;
+  let res = [];
+
+  if (thousands > 0) {
+    if (thousands === 1) res.push('ألف');
+    else if (thousands === 2) res.push('ألفان');
+    else if (thousands >= 3 && thousands <= 10) res.push(convertChunk(thousands) + ' آلاف');
+    else res.push(convertChunk(thousands) + ' ألفاً');
+  }
+
+  if (remHundred > 0) {
+    res.push(convertChunk(remHundred));
+  }
+
+  return 'فقط وقدره ' + res.join(' و') + ' ريال سعودي لا غير';
+}
+
+// --- Get All Catalog Items for Quote Selection Icons ---
+function getCatalogItems() {
+    let items = [];
+    
+    // Inverters (12 Crown Models)
+    (allInverters || []).forEach(i => {
+        if (i.available !== false) {
+            items.push({
+                id: i.id,
+                name: i.name,
+                category: 'inverter',
+                categoryLabel: 'انفرتر كراون',
+                icon: 'fa-gauge-high',
+                iconClass: '',
+                spec: (i.capacityKw ? i.capacityKw + 'kW' : '') + ' • ' + (i.batteryVoltage ? i.batteryVoltage + 'V' : ''),
+                price: Number(i.price || 0)
+            });
+        }
+    });
+
+    // Batteries (6 Crown Models)
+    (allBatteries || []).forEach(b => {
+        if (b.available !== false) {
+            items.push({
+                id: b.id,
+                name: b.name,
+                category: 'battery',
+                categoryLabel: 'بطارية ليثيوم',
+                icon: 'fa-battery-full',
+                iconClass: 'bat',
+                spec: (b.capacityKwh ? b.capacityKwh + 'kWh' : '') + ' • ' + (b.voltage ? b.voltage + 'V' : ''),
+                price: Number(b.price || 0)
+            });
+        }
+    });
+
+    // Panels (Longi 610W)
+    (allPanels || []).forEach(p => {
+        if (p.available !== false) {
+            items.push({
+                id: p.id,
+                name: p.name,
+                category: 'panel',
+                categoryLabel: 'لوح شمسي',
+                icon: 'fa-solar-panel',
+                iconClass: 'pnl',
+                spec: (p.watt || 610) + 'W N-Type',
+                price: Number(p.price || 0)
+            });
+        }
+    });
+
+    // Distribution Boards (الطبالين وقواطع الحماية)
+    (allBoards || []).forEach(d => {
+        if (d.available !== false) {
+            items.push({
+                id: d.id,
+                name: d.name,
+                category: 'board',
+                categoryLabel: 'طبلون وقواطع',
+                icon: 'fa-server',
+                iconClass: 'brd',
+                spec: d.specs || 'حماية وتوزيع AC/DC',
+                price: Number(d.price || 0)
+            });
+        }
+    });
+
+    // Custom Products Added On-The-Fly (المنتجات المضافة مخصصة)
+    (allCustomProducts || []).forEach(c => {
+        if (c.available !== false) {
+            items.push({
+                id: c.id,
+                name: c.name,
+                category: c.category || 'custom',
+                categoryLabel: c.categoryName || 'صنف مخصص',
+                icon: 'fa-box-open',
+                iconClass: 'cst',
+                spec: c.specs || 'صنف مضاف مخصص',
+                price: Number(c.price || 0)
+            });
+        }
+    });
+
+    return items;
+}
+
+// --- Render Quotation Product Selection Icons ---
+function renderAdminQuoteProductIcons(filter = 'all') {
+    const container = document.getElementById('admin-quote-product-icons-container');
+    if (!container) return;
+
+    activeQuoteIconsFilter = filter;
+    let items = getCatalogItems();
+
+    if (filter !== 'all') {
+        items = items.filter(it => it.category === filter);
+    }
+
+    if (items.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">لا توجد منتجات في هذا القسم حالياً. استخدم خانة إضافة منتج جديد بالأعلى لإضافة أي صنف.</div>';
+        return;
+    }
+
+    container.innerHTML = items.map(it => `
+        <div class="quote-prod-icon-card" data-id="${it.id}" title="انقر لإضافة ${it.name} إلى العرض">
+            <div class="quote-prod-icon-top">
+                <div class="quote-prod-icon-avatar ${it.iconClass}">
+                    <i class="fa-solid ${it.icon}"></i>
+                </div>
+                <span class="badge quote-prod-badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted);">${it.categoryLabel}</span>
+            </div>
+            <div class="quote-prod-title">${it.name}</div>
+            <div class="quote-prod-spec font-num">${it.spec}</div>
+            <div class="quote-prod-price-row">
+                <span class="quote-prod-price font-num">${(it.price || 0).toLocaleString('en-US')} ر.س</span>
+                <span class="quote-prod-add-btn"><i class="fa-solid fa-plus"></i> إضافة</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Attach click events
+    container.querySelectorAll('.quote-prod-icon-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const id = card.getAttribute('data-id');
+            const found = getCatalogItems().find(x => x.id === id);
+            if (found) {
+                addAdminQuoteItem(found);
+                // Quick pulse animation
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => { card.style.transform = ''; }, 150);
+            }
+        });
+    });
+}
+
+// --- Add Item to Current Admin Quotation ---
+function addAdminQuoteItem(item) {
+    const existing = adminQuoteItems.find(x => x.id === item.id);
+    if (existing) {
+        existing.quantity += 1;
+        existing.total = Math.round(existing.quantity * existing.price);
+    } else {
+        adminQuoteItems.push({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price || 0),
+            quantity: 1,
+            total: Number(item.price || 0),
+            category: item.category
+        });
+    }
+    renderAdminQuoteItemsTable();
+    showToast(`تمت إضافة: ${item.name}`, true);
+}
+
+// --- Render Admin Quotation Items Table & Update Totals ---
+function renderAdminQuoteItemsTable() {
+    const tbody = document.getElementById('admin-quote-items-tbody');
+    if (!tbody) return;
+
+    if (adminQuoteItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 25px; color: var(--text-muted);"><i class="fa-solid fa-hand-pointer text-warning"></i> لا توجد بنود بعد. اضغط على أيقونة أي منتج من الأعلى لإضافته فوراً للعرض.</td></tr>';
+        updateAdminQuoteTotals();
+        return;
+    }
+
+    tbody.innerHTML = adminQuoteItems.map((item, idx) => `
+        <tr>
+            <td class="font-num text-center" style="font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+            <td style="font-weight: 700; color: var(--text-main);">${item.name}</td>
+            <td>
+                <input type="number" class="font-num item-price-input" value="${item.price}" data-id="${item.id}" title="تعديل السعر لهذا العرض">
+            </td>
+            <td style="text-align: center;">
+                <div class="qty-control-wrap">
+                    <button type="button" class="qty-btn btn-qty-minus" data-id="${item.id}">-</button>
+                    <input type="number" class="qty-input font-num" value="${item.quantity}" min="1" data-id="${item.id}">
+                    <button type="button" class="qty-btn btn-qty-plus" data-id="${item.id}">+</button>
+                </div>
+            </td>
+            <td class="font-num" style="font-weight: 800; color: #10b981;">${(item.total).toLocaleString('en-US')} ر.س</td>
+            <td style="text-align: center;">
+                <button type="button" class="btn btn-sm btn-danger btn-item-del" data-id="${item.id}" title="حذف البند">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Attach listeners for Qty + / - / input & price input
+    tbody.querySelectorAll('.btn-qty-minus').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            const it = adminQuoteItems.find(x => x.id === id);
+            if (it) {
+                if (it.quantity > 1) {
+                    it.quantity -= 1;
+                    it.total = Math.round(it.quantity * it.price);
+                } else {
+                    adminQuoteItems = adminQuoteItems.filter(x => x.id !== id);
+                }
+                renderAdminQuoteItemsTable();
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.btn-qty-plus').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            const it = adminQuoteItems.find(x => x.id === id);
+            if (it) {
+                it.quantity += 1;
+                it.total = Math.round(it.quantity * it.price);
+                renderAdminQuoteItemsTable();
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.qty-input').forEach(inp => {
+        inp.addEventListener('change', (e) => {
+            const id = e.target.getAttribute('data-id');
+            const val = parseInt(e.target.value, 10);
+            const it = adminQuoteItems.find(x => x.id === id);
+            if (it) {
+                it.quantity = isNaN(val) || val < 1 ? 1 : val;
+                it.total = Math.round(it.quantity * it.price);
+                renderAdminQuoteItemsTable();
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.item-price-input').forEach(inp => {
+        inp.addEventListener('change', (e) => {
+            const id = e.target.getAttribute('data-id');
+            const val = parseFloat(e.target.value);
+            const it = adminQuoteItems.find(x => x.id === id);
+            if (it) {
+                it.price = isNaN(val) || val < 0 ? 0 : val;
+                it.total = Math.round(it.quantity * it.price);
+                renderAdminQuoteItemsTable();
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.btn-item-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            adminQuoteItems = adminQuoteItems.filter(x => x.id !== id);
+            renderAdminQuoteItemsTable();
+            showToast("تم حذف البند من العرض", true);
+        });
+    });
+
+    updateAdminQuoteTotals();
+}
+
+// --- Update Financial Totals & Tafqeet ---
+function updateAdminQuoteTotals() {
+    const subtotal = adminQuoteItems.reduce((acc, curr) => acc + (curr.total || 0), 0);
+    const discountInp = document.getElementById('admin-quote-discount');
+    const discount = discountInp ? Math.max(0, parseFloat(discountInp.value) || 0) : 0;
+    const grandTotal = Math.max(0, subtotal - discount);
+
+    const subtotalEl = document.getElementById('admin-quote-subtotal');
+    if (subtotalEl) subtotalEl.innerText = subtotal.toLocaleString('en-US') + ' ر.س';
+
+    const grandTotalEl = document.getElementById('admin-quote-grandtotal');
+    if (grandTotalEl) grandTotalEl.innerText = grandTotal.toLocaleString('en-US') + ' ر.س';
+
+    const verbalEl = document.getElementById('admin-quote-verbal-display');
+    if (verbalEl) verbalEl.innerText = tafqeet(grandTotal);
+}
+
+// --- Handle Fast On-The-Fly Product Creation ---
+async function handleAddNewCustomProduct(e) {
+    e.preventDefault();
+    const nameInp = document.getElementById('admin-new-prod-name');
+    const catInp = document.getElementById('admin-new-prod-category');
+    const priceInp = document.getElementById('admin-new-prod-price');
+    const specsInp = document.getElementById('admin-new-prod-specs');
+
+    const name = nameInp?.value.trim();
+    const category = catInp?.value || 'custom';
+    const price = parseFloat(priceInp?.value);
+    const specs = specsInp?.value.trim() || '';
+
+    if (!name || isNaN(price) || price < 0) {
+        showToast("يرجى إدخال اسم المنتج وسعره بشكل صحيح", false);
+        return;
+    }
+
+    const catLabels = {
+        'inverter': 'إنفرتر كراون مايكرو',
+        'battery': 'بطارية ليثيوم كراون',
+        'panel': 'ألواح شمسية',
+        'board': 'طبلون وقواطع حماية',
+        'custom': 'ملحقات وتوصيلات مخصصة'
+    };
+
+    try {
+        const res = await fetch('/api/inventory/custom-products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                category,
+                categoryName: catLabels[category] || 'صنف مخصص',
+                price,
+                specs
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            allCustomProducts.push(data.item);
+            showToast(`تم اعتماد المنتج (${name}) في الأيقونات بنجاح!`, true);
+            
+            // Auto add to current quote items
+            addAdminQuoteItem({
+                id: data.item.id,
+                name: data.item.name,
+                category: data.item.category,
+                price: data.item.price
+            });
+
+            // Re-render product icons so it appears in the grid immediately
+            renderAdminQuoteProductIcons(activeQuoteIconsFilter);
+
+            // Reset add product form
+            nameInp.value = '';
+            priceInp.value = '';
+            if (specsInp) specsInp.value = '';
+        } else {
+            showToast(data.error || "فشل إضافة الصنف", false);
+        }
+    } catch (err) {
+        console.error("Error adding custom product:", err);
+        showToast("حدث خطأ أثناء حفظ المنتج", false);
+    }
+}
+
+// --- Save Admin Custom Quotation ---
+async function saveAdminQuote() {
+    const custName = document.getElementById('admin-quote-cust-name')?.value.trim();
+    const custPhone = document.getElementById('admin-quote-cust-phone')?.value.trim() || '';
+    const custAddr = document.getElementById('admin-quote-cust-addr')?.value.trim() || 'حضرموت';
+    const notes = document.getElementById('admin-quote-notes')?.value.trim() || '';
+
+    if (!custName) {
+        alert("يرجى إدخال اسم العميل أولاً");
+        document.getElementById('admin-quote-cust-name')?.focus();
+        return;
+    }
+
+    if (adminQuoteItems.length === 0) {
+        alert("يرجى إضافة بند واحد على الأقل إلى عرض السعر عبر النقر على أيقونات المنتجات بالأعلى");
+        return;
+    }
+
+    const subtotal = adminQuoteItems.reduce((acc, curr) => acc + (curr.total || 0), 0);
+    const discount = Math.max(0, parseFloat(document.getElementById('admin-quote-discount')?.value) || 0);
+    const grandTotal = Math.max(0, subtotal - discount);
+
+    const quotePayload = {
+        customerName: custName,
+        customerPhone: custPhone,
+        customerAddress: custAddr,
+        notes: notes,
+        items: adminQuoteItems.map(it => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: it.price,
+            total: it.total
+        })),
+        subtotal: subtotal,
+        discount: discount,
+        grandTotal: grandTotal,
+        verbalTotal: tafqeet(grandTotal),
+        currency: 'SAR',
+        source: 'admin',
+        isPrivateAdmin: true,
+        status: 'AdminCustom',
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+        const res = await fetch('/api/quotes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quotePayload)
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast("تم حفظ عرض السعر الخاص بالإدارة بنجاح!", true);
+            await fetchQuotes();
+            
+            if (confirm(`تم حفظ عرض السعر بنجاح برقم: ${data.quote.quoteNo || data.quote.id}\n\nهل ترغب بتحميل ملف الـ PDF الرسمي الآن؟`)) {
+                window.open(`/api/quotes/${data.quote.id}/pdf`, '_blank');
+            }
+        } else {
+            showToast(data.error || "فشل حفظ عرض السعر", false);
+        }
+    } catch (err) {
+        console.error("Error saving admin quote:", err);
+        showToast("حدث خطأ أثناء حفظ عرض السعر", false);
+    }
+}
+
+// --- Download Official PDF On-The-Fly for Current Admin Quote ---
+async function downloadAdminQuotePdf() {
+    const custName = document.getElementById('admin-quote-cust-name')?.value.trim();
+    const custPhone = document.getElementById('admin-quote-cust-phone')?.value.trim() || '';
+    const custAddr = document.getElementById('admin-quote-cust-addr')?.value.trim() || 'حضرموت';
+    const notes = document.getElementById('admin-quote-notes')?.value.trim() || '';
+
+    if (!custName) {
+        alert("يرجى إدخال اسم العميل لإصدار الـ PDF الرسمي باسمه");
+        document.getElementById('admin-quote-cust-name')?.focus();
+        return;
+    }
+
+    if (adminQuoteItems.length === 0) {
+        alert("يرجى إضافة بند واحد على الأقل عبر الأيقونات لإصدار ملف الـ PDF");
+        return;
+    }
+
+    const subtotal = adminQuoteItems.reduce((acc, curr) => acc + (curr.total || 0), 0);
+    const discount = Math.max(0, parseFloat(document.getElementById('admin-quote-discount')?.value) || 0);
+    const grandTotal = Math.max(0, subtotal - discount);
+
+    const quotePayload = {
+        customerName: custName,
+        customerPhone: custPhone,
+        customerAddress: custAddr,
+        notes: notes,
+        items: adminQuoteItems.map(it => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: it.price,
+            total: it.total
+        })),
+        subtotal: subtotal,
+        discount: discount,
+        grandTotal: grandTotal,
+        verbalTotal: tafqeet(grandTotal),
+        currency: 'SAR',
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    showToast("جاري إنشاء ملف الـ PDF الرسمي...", true);
+
+    try {
+        const res = await fetch('/api/quotes/generate-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quotePayload)
+        });
+
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            const safeName = custName.replace(/[\s\\\/:]+/g, '_');
+            a.download = `عرض_سعر_بترونيل_يمن_${safeName}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast("تم تحميل ملف الـ PDF الرسمي بنجاح!", true);
+        } else {
+            showToast("فشل إنشاء ملف الـ PDF", false);
+        }
+    } catch (err) {
+        console.error("Error generating quote PDF:", err);
+        showToast("حدث خطأ أثناء إنشاء ملف الـ PDF", false);
+    }
+}
+
+// --- Reset Admin Quote Form ---
+function resetAdminQuoteForm() {
+    if (adminQuoteItems.length > 0 && !confirm("هل أنت متأكد من تفريغ جميع البنود والبيانات لبدء عرض جديد؟")) {
+        return;
+    }
+    const nameInp = document.getElementById('admin-quote-cust-name');
+    if (nameInp) nameInp.value = '';
+    const phoneInp = document.getElementById('admin-quote-cust-phone');
+    if (phoneInp) phoneInp.value = '';
+    const notesInp = document.getElementById('admin-quote-notes');
+    if (notesInp) notesInp.value = '';
+    const discInp = document.getElementById('admin-quote-discount');
+    if (discInp) discInp.value = '0';
+
+    adminQuoteItems = [];
+    renderAdminQuoteItemsTable();
+    showToast("تم تفريغ الخانات بنجاح", true);
+}
+
 async function fetchQuotes() {
     try {
         const res = await fetch('/api/quotes');
@@ -407,35 +963,86 @@ async function fetchQuotes() {
     }
 }
 
-function renderQuotesTable() {
+function renderQuotesTable(filter = activeQuotesFilter) {
+    activeQuotesFilter = filter;
     const tbody = document.getElementById('quotes-list-admin');
     if (!tbody) return;
     tbody.innerHTML = '';
+
+    const countBadge = document.getElementById('admin-quotes-count-badge');
+    if (countBadge) countBadge.innerText = (allQuotes || []).length;
     
-    if (!allQuotes || allQuotes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;" class="text-muted">لا توجد عروض أسعار مصدرة حتى الآن</td></tr>`;
+    let filtered = allQuotes || [];
+    if (filter === 'admin') {
+        filtered = filtered.filter(q => q.isPrivateAdmin || q.source === 'admin');
+    } else if (filter === 'calculator') {
+        filtered = filtered.filter(q => !q.isPrivateAdmin && q.source !== 'admin');
+    }
+    
+    const summaryEl = document.getElementById('quotes-table-summary');
+    if (summaryEl) summaryEl.innerText = `إجمالي العروض المعروضة: ${filtered.length} من أصل ${(allQuotes || []).length}`;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 25px;" class="text-muted">لا توجد عروض أسعار مطابقة في هذا التصنيف</td></tr>`;
         return;
     }
     
-    allQuotes.forEach((q, idx) => {
+    filtered.forEach((q, idx) => {
         const tr = document.createElement('tr');
+        
+        // Status & Source Badges
+        let sourceBadge = '';
+        if (q.isPrivateAdmin || q.source === 'admin') {
+            sourceBadge = '<span class="status-pill" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; font-weight: 800; border: 1px solid rgba(59, 130, 246, 0.4);"><i class="fa-solid fa-user-tie"></i> عرض خاص بالإدارة</span>';
+        } else if (q.status === 'Approved' || q.status === 'Accepted') {
+            sourceBadge = '<span class="status-pill status-completed" style="background: rgba(16, 185, 129, 0.18); color: #10b981; font-weight: 800; border: 1px solid rgba(16, 185, 129, 0.4);"><i class="fa-solid fa-circle-check"></i> معتمد من العميل</span>';
+        } else {
+            sourceBadge = '<span class="status-pill" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4);"><i class="fa-solid fa-calculator"></i> حاسبة العملاء</span>';
+        }
+
         tr.innerHTML = `
-            <td class="font-num text-center">${idx + 1}</td>
+            <td class="font-num text-center" style="font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
             <td class="font-num" style="font-weight: 700; color: #f59e0b;">${q.quoteNo || q.id}</td>
             <td class="font-num">${q.date ? q.date.split('T')[0] : '--'}</td>
-            <td style="font-weight: 700;">${q.customerName || '--'}</td>
+            <td style="font-weight: 800; color: var(--text-main);">${q.customerName || '--'}</td>
             <td class="font-num">${q.customerPhone || '--'}</td>
             <td>${q.customerAddress || '--'}</td>
-            <td class="font-num" style="font-weight: 800; color: #10b981;">${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'ر.س'}</td>
-            <td>
-                <button class="btn btn-sm btn-secondary btn-view-quote-details" data-id="${q.id}">
-                    <i class="fa-solid fa-list-check"></i> تفاصيل المنظومة
+            <td class="font-num" style="font-weight: 900; color: #10b981;">${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'ر.س'}</td>
+            <td>${sourceBadge}</td>
+            <td style="white-space: nowrap;">
+                <a href="/api/quotes/${q.id}/pdf" target="_blank" class="btn btn-sm btn-primary" title="تحميل ملف PDF الرسمي" style="margin-left: 4px;">
+                    <i class="fa-solid fa-file-pdf"></i> PDF
+                </a>
+                <button type="button" class="btn btn-sm btn-secondary btn-view-quote-details" data-id="${q.id}" title="عرض تفاصيل البنود" style="margin-left: 4px;">
+                    <i class="fa-solid fa-list-check"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-quote" data-id="${q.id}" title="حذف العرض">
+                    <i class="fa-solid fa-trash"></i>
                 </button>
             </td>
         `;
         
         tr.querySelector('.btn-view-quote-details')?.addEventListener('click', () => {
-            alert(`عرض سعر: ${q.quoteNo || q.id}\nالعميل: ${q.customerName}\nالهاتف: ${q.customerPhone}\nالعنوان: ${q.customerAddress}\nالإجمالي: ${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'SAR'}\n\nالبنود: ${q.items ? q.items.length : 0} صنف`);
+            let itemsSummary = (q.items && q.items.length > 0)
+                ? q.items.map(it => `- ${it.name || it.model} (عدد ${it.quantity || 1}) بسعر ${it.price || it.unitPrice || 0} ر.س`).join('\n')
+                : 'لا توجد تفاصيل بنود مسجلة';
+            alert(`عرض سعر رسمي: ${q.quoteNo || q.id}\nالعميل: ${q.customerName}\nالهاتف: ${q.customerPhone}\nالعنوان: ${q.customerAddress}\nالإجمالي: ${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'ر.س'}\n\nالبنود:\n${itemsSummary}`);
+        });
+
+        tr.querySelector('.btn-delete-quote')?.addEventListener('click', async () => {
+            if (confirm(`هل أنت متأكد من حذف عرض السعر (${q.quoteNo || q.id}) الخاص بالعميل (${q.customerName})؟`)) {
+                try {
+                    const res = await fetch(`/api/quotes/${q.id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast("تم حذف عرض السعر بنجاح", true);
+                        await fetchQuotes();
+                    } else {
+                        showToast("فشل حذف عرض السعر", false);
+                    }
+                } catch (e) {
+                    showToast("خطأ أثناء حذف عرض السعر", false);
+                }
+            }
         });
         
         tbody.appendChild(tr);
@@ -628,6 +1235,60 @@ async function deleteInverter(id) {
         const res = await fetch(`/api/inventory/inverters/${id}`, { method: 'DELETE' });
         if (res.ok) {
             showToast("تم حذف الانفرتر بنجاح", true);
+            fetchInventory();
+        }
+    } catch (err) { showToast("حدث خطأ في الاتصال بالخادم", false); }
+}
+
+function renderBoardsTable() {
+    const tbody = document.getElementById('inventory-boards-list');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!allBoards || allBoards.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;" class="text-muted">لا توجد طبالين أو لوحات توزيع مسجلة</td></tr>`;
+        return;
+    }
+    allBoards.forEach(brd => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight:700;">${brd.name}</td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">${brd.specs || '--'}</td>
+            <td class="font-num" style="font-weight: 700; color: #f59e0b;">
+                ${brd.price} ر.س
+                <button class="btn btn-sm btn-edit-price" title="تعديل السعر" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-right:6px;"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
+            <td>
+                <button class="btn btn-sm ${brd.available ? 'btn-primary' : 'btn-secondary'} btn-toggle-board" data-id="${brd.id}">
+                    ${brd.available ? '<i class="fa-solid fa-circle-check"></i> متوفر' : '<i class="fa-solid fa-circle-xmark"></i> غير متوفر'}
+                </button>
+            </td>
+            <td>
+                <button class="btn-action delete btn-delete-board" data-id="${brd.id}"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
+        `;
+        tr.querySelector('.btn-edit-price')?.addEventListener('click', () => editProductPrice('boards', brd.id, brd.price, brd.name));
+        tr.querySelector('.btn-toggle-board').addEventListener('click', () => toggleBoard(brd.id));
+        tr.querySelector('.btn-delete-board').addEventListener('click', () => deleteBoard(brd.id));
+        tbody.appendChild(tr);
+    });
+}
+
+async function toggleBoard(id) {
+    try {
+        const res = await fetch(`/api/inventory/boards/${id}/toggle`, { method: 'PUT' });
+        if (res.ok) {
+            showToast("تم تحديث حالة توفر الطبلون", true);
+            fetchInventory();
+        }
+    } catch (err) { showToast("حدث خطأ في الاتصال بالخادم", false); }
+}
+
+async function deleteBoard(id) {
+    if (!confirm("هل أنت متأكد من رغبتك في حذف هذا الطبلون نهائياً من قائمة المخزون؟")) return;
+    try {
+        const res = await fetch(`/api/inventory/boards/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            showToast("تم حذف الطبلون بنجاح", true);
             fetchInventory();
         }
     } catch (err) { showToast("حدث خطأ في الاتصال بالخادم", false); }
@@ -974,6 +1635,66 @@ function closeLeadModal() {
 
 // --- Setup Event Listeners ---
 function setupEventListeners() {
+
+    // --- Sub-Tabs inside Section Quotes ---
+    const btnTabCreate = document.getElementById('btn-tab-create-quote');
+    const btnTabHistory = document.getElementById('btn-tab-history-quotes');
+    const panelTabCreate = document.getElementById('panel-tab-create-quote');
+    const panelTabHistory = document.getElementById('panel-tab-history-quotes');
+
+    btnTabCreate?.addEventListener('click', () => {
+        btnTabCreate.classList.add('active');
+        btnTabHistory.classList.remove('active');
+        panelTabCreate.classList.add('active');
+        panelTabHistory.classList.remove('active');
+        renderAdminQuoteProductIcons(activeQuoteIconsFilter);
+    });
+
+    btnTabHistory?.addEventListener('click', () => {
+        btnTabHistory.classList.add('active');
+        btnTabCreate.classList.remove('active');
+        panelTabHistory.classList.add('active');
+        panelTabCreate.classList.remove('active');
+        renderQuotesTable(activeQuotesFilter);
+    });
+
+    // Quote Icons Filter Pills
+    document.querySelectorAll('#admin-quote-icons-filter-bar .quote-icon-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#admin-quote-icons-filter-bar .quote-icon-filter-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            const filter = e.currentTarget.getAttribute('data-filter') || 'all';
+            renderAdminQuoteProductIcons(filter);
+        });
+    });
+
+    // Saved Quotes Filter Pills
+    document.querySelectorAll('.filter-quotes-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-quotes-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            const filter = e.currentTarget.getAttribute('data-qfilter') || 'all';
+            renderQuotesTable(filter);
+        });
+    });
+
+    // Add New Product on-the-fly Form in Quote Builder
+    document.getElementById('admin-add-icon-product-form')?.addEventListener('submit', handleAddNewCustomProduct);
+
+    // Save & PDF & Clear Quote Buttons
+    document.getElementById('btn-admin-quote-save')?.addEventListener('click', saveAdminQuote);
+    document.getElementById('btn-admin-quote-pdf')?.addEventListener('click', downloadAdminQuotePdf);
+    document.getElementById('btn-admin-quote-reset')?.addEventListener('click', resetAdminQuoteForm);
+    document.getElementById('btn-admin-quote-clear')?.addEventListener('click', () => {
+        if (adminQuoteItems.length > 0 && confirm("هل تريد مسح جميع البنود المضافة؟")) {
+            adminQuoteItems = [];
+            renderAdminQuoteItemsTable();
+        }
+    });
+
+    // Discount input listener
+    document.getElementById('admin-quote-discount')?.addEventListener('input', updateAdminQuoteTotals);
+
     // Sidebar Tab switches
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
     const sections = document.querySelectorAll('.admin-main .content-section');
@@ -1085,6 +1806,34 @@ function setupEventListeners() {
             }
         } catch (err) { showToast("حدث خطأ في الاتصال بالخادم", false); }
     });
+
+    // Add Distribution Board (الطبالين وقواطع الحماية)
+    const addBoardForm = document.getElementById('add-board-form');
+    if (addBoardForm) {
+        addBoardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('board-new-name').value.trim();
+            const specs = document.getElementById('board-new-specs').value.trim();
+            const brand = document.getElementById('board-new-brand').value.trim() || 'Crown Micro';
+            const price = parseFloat(document.getElementById('board-new-price').value);
+
+            try {
+                const res = await fetch('/api/inventory/boards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, specs, brand, price })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast("تم إضافة الطبلون الجديد للمخزون بنجاح", true);
+                    addBoardForm.reset();
+                    fetchInventory();
+                } else {
+                    showToast(data.error || "تعذر إضافة الطبلون", false);
+                }
+            } catch (err) { showToast("حدث خطأ في الاتصال بالخادم", false); }
+        });
+    }
 }
 
 // --- Show Toast Message ---

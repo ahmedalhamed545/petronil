@@ -139,7 +139,7 @@ runTest(5, 'اختيار بطارية بسعة كبيرة مع إنفرتر مح
   const compat = SolarEngine.validateInverterBatteryCompatibility(crownArceus, crown15, 1, 5.8);
 
   assert.strictEqual(compat.isCompatible, false, 'يجب عدم قبول التركيب لتعارض الجهد وبطء الشحن');
-  assert.ok(compat.rechargeTimeHours > 7.0, 'زمن إعادة الشحن يتجاوز 7 ساعات');
+  assert.ok(compat.rechargeTimeHours > 5.0, 'زمن إعادة الشحن يتجاوز 5 ساعات');
   assert.ok(compat.warnings.some(w => w.includes('قدرة شحن الإنفرتر') && w.includes('محدودة')), 'يحتوي على تحذير صريح بقدرة الشحن');
   assert.ok(compat.recommendations.length > 0, 'يقترح بدائل مناسبة من الإنفرترات الأكبر');
 });
@@ -325,8 +325,12 @@ runTest(12, 'إنشاء عرض سعر رسمي: مطابقة مجموع بنود
 
   assert.strictEqual(quote.validUntilDays, 25);
   const itemsSum = quote.items.reduce((sum, item) => sum + item.totalPrice, 0);
-  assert.strictEqual(itemsSum, quote.financials.totalCostUsd);
-  assert.ok(quote.terms.some(t => t.includes('Crown Micro')));
+  assert.strictEqual(quote.items.length, 3, 'عرض السعر يحتوي حصراً على المكونات الثلاثة (إنفرتر، بطاريات، ألواح)');
+  assert.strictEqual(itemsSum, quote.financials.grandTotal);
+  assert.strictEqual(quote.financials.accessoriesCost, 0, 'لا ملحقات أو هياكل أو طبالين مضافة في عرض السعر');
+  assert.strictEqual(quote.financials.installationFee, 0, 'لا أجور تركيب مضافة في عرض السعر');
+  assert.strictEqual(quote.terms.length, 4, 'ملخص المواصفات الفنية الأربعة المعتمدة من الكتالوج في خانات العرض');
+  assert.ok(quote.terms[0].includes('كم يسحب من الكهرباء'));
 });
 
 // -----------------------------------------------------------------

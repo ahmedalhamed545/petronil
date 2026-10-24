@@ -818,24 +818,82 @@
     const dailyTargetEnergyKwh = (loadProfile.totalDayKwh) + batteryRechargeKwh;
     const minPvKwPeak = Math.max(1.0, dailyTargetEnergyKwh / (psh * derating));
 
-    // 2. فلترة ومطابقة الإنفرترات المناسبة كهربائياً
-    const validInverters = inverters.filter(inv => {
+    // 2. المتطلبات الهندسية الإلزامية واختيار الإنفرتر والبطارية:
+    // أ) التحقق من تغطية الأحمال المستمرة وتيار الإقلاع اللحظي للمحركات
+    // ب) التحقق من قدرة شحن البطارية خلال ساعتين كحد أقصى (2-Hour Charging Limit)
+    // ج) التطابق التام 100% بين جهد الإنفرتر وجهد البطارية (48V مع 48V، 24V مع 24V، 12V مع 12V)
+    const chargeEff = designParams.chargeEfficiency || 0.95;
+    const reqChargeKw2h = targetUsableBatteryKwh / 2.0 / chargeEff;
+
+    const fullyQualifiedInverters = inverters.filter(inv => {
       const ratedKw = inv.capacityKw || inv.ratedPowerKw || 0;
       const surgeKw = inv.surgeCapacityKw || inv.surgePowerKw || (ratedKw * 2);
-      return ratedKw >= (loadProfile.peakContinuousKw * 1.0) && surgeKw >= (minInverterSurgeKw * 0.9);
+      const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+      const maxA = inv.maxChargeCurrent || inv.chargeCurrentA || 60;
+      const invMaxChargeKw = (invV * maxA) / 1000;
+      const hasMatchingVoltBats = batteries.some(b => (b.voltage || b.nominalVoltage || 48) === invV);
+
+      return (
+        ratedKw >= (loadProfile.peakContinuousKw * 1.0) &&
+        surgeKw >= (minInverterSurgeKw * 0.95) &&
+        invMaxChargeKw >= (reqChargeKw2h * 0.95) &&
+        hasMatchingVoltBats
+      );
     });
 
-    const chosenInverterList = validInverters.length > 0 ? validInverters : inverters;
-    chosenInverterList.sort((a, b) => (a.capacityKw - b.capacityKw) || (a.price - b.price));
+    let chosenInverterList = fullyQualifiedInverters;
+    if (chosenInverterList.length === 0) {
+      // في حال كانت سعة البطارية هائلة جداً وتتطلب قدرة شحن تفوق أكبر إنفرتر، نختار ما يغطي الأحمال وجهده مطابق مع أعلى قدرة شحن
+      chosenInverterList = inverters.filter(inv => {
+        const ratedKw = inv.capacityKw || inv.ratedPowerKw || 0;
+        const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+        const hasMatchingVoltBats = batteries.some(b => (b.voltage || b.nominalVoltage || 48) === invV);
+        return ratedKw >= (loadProfile.peakContinuousKw * 1.0) && hasMatchingVoltBats;
+      });
+      chosenInverterList.sort((a, b) => {
+        const aChg = (a.batteryVoltage || 48) * (a.maxChargeCurrent || 60);
+        const bChg = (b.batteryVoltage || 48) * (b.maxChargeCurrent || 60);
+        return bChg - aChg;
+      });
+    } else {
+      chosenInverterList.sort((a, b) => (a.capacityKw - b.capacityKw) || (a.price - b.price));
+    }
 
-    // 3. بناء وتوليد الباقات الثلاث
+    // 3. دالة ذكية لمطابقة واختيار البطارية بجهد يطابق تماماً 100% جهد الإنفرتر حصراً
+    function pickMatchingBattery(inv, targetUsableKwh, preferredStrategy = 'balanced') {
+      const invV = inv.batteryVoltage || inv.systemVoltage || 48;
+      const matchVoltageBats = batteries.filter(b => {
+        const batV = b.voltage || b.nominalVoltage || 48;
+        return batV === invV;
+      });
+
+      if (matchVoltageBats.length === 0) {
+        throw new Error(`لا توجد بطاريات متوافقة بجهد ${invV}V في المخزون للإنفرتر ${inv.name}`);
+      }
+
+      if (preferredStrategy === 'economy') {
+        return matchVoltageBats.slice().sort((a, b) => a.price - b.price)[0];
+      } else if (preferredStrategy === 'high') {
+        return matchVoltageBats.slice().sort((a, b) => (b.capacityKwh - a.capacityKwh) || (b.price - a.price))[0];
+      } else {
+        // Balanced: closest to target capacity or best value
+        const sorted = matchVoltageBats.slice().sort((a, b) => {
+          const aDiff = Math.abs((a.capacityKwh * (a.dod || 0.9)) - targetUsableKwh);
+          const bDiff = Math.abs((b.capacityKwh * (b.dod || 0.9)) - targetUsableKwh);
+          return aDiff - bDiff;
+        });
+        return sorted[0];
+      }
+    }
+
+    // 4. بناء وتوليد الباقات الثلاث
     const packages = {};
 
     // --- باقة 1: الخيار الاقتصادي (Economic) - يبرز إنفرترات Crown Micro أو الخيار الأقل تكلفة ---
     const crownEcoInv = chosenInverterList.find(i => (i.brand || '').includes('Crown') && (i.capacityKw || 0) >= loadProfile.peakContinuousKw);
     const econInv = crownEcoInv || chosenInverterList[0] || inverters[0];
     const econPanel = panels.slice().sort((a, b) => a.price - b.price)[0] || panels[0];
-    const econBattery = batteries.slice().sort((a, b) => a.price - b.price)[0] || batteries[0];
+    const econBattery = pickMatchingBattery(econInv, targetUsableBatteryKwh, 'economy');
 
     const econBatDod = econBattery.dod || 0.85;
     const econBatUsableKwh = econBattery.capacityKwh * econBatDod;
@@ -872,8 +930,7 @@
       || chosenInverterList[Math.min(1, chosenInverterList.length - 1)];
 
     const recPanel = panels.find(p => (p.watt || 0) >= 580) || panels[0];
-    const recBattery = batteries.find(b => (b.chemistry || '').includes('Li') || (b.name || '').includes('ليثيوم') || (b.name || '').includes('نارادا'))
-      || batteries[0];
+    const recBattery = pickMatchingBattery(recInv, targetUsableBatteryKwh, 'balanced');
 
     const recBatDod = recBattery.dod || 0.90;
     const recBatUsableKwh = recBattery.capacityKwh * recBatDod;
@@ -908,7 +965,7 @@
     // --- باقة 3: خيار الأداء العالي (High Performance) ---
     const highInv = chosenInverterList[chosenInverterList.length - 1] || recInv;
     const highPanel = panels.slice().sort((a, b) => b.watt - a.watt)[0] || recPanel;
-    const highBattery = batteries.slice().sort((a, b) => b.capacityKwh - a.capacityKwh)[0] || recBattery;
+    const highBattery = pickMatchingBattery(highInv, targetUsableBatteryKwh * 1.35, 'high');
 
     const highBatDod = highBattery.dod || 0.90;
     const highBatUsableKwh = highBattery.capacityKwh * highBatDod;
@@ -942,6 +999,67 @@
 
     const optimalRecommendation = packages.recommended || packages.economic || packages.highPerformance;
 
+    // 5. إنشاء عروض أسعار متعددة لكل عائلة موديل إنفرتر كراون مايكرو متوافقة
+    // (اكزافير Xavier، اركيوس Arceus، ايليقو ستار Elego Star، ايليقو اويستر Elego Oyster، نوفا Nova)
+    const modelFamilies = [
+      { key: 'xavier', title: 'خيار اكزافير كراون مايكرو (Xavier)', pattern: /xavier/i },
+      { key: 'arceus', title: 'خيار اركيوس كراون مايكرو (Arceus)', pattern: /arceus/i },
+      { key: 'elego_star', title: 'خيار ايليقو ستار كراون مايكرو (Elego Star)', pattern: /elego.*star|star/i },
+      { key: 'elego_oyster', title: 'خيار ايليقو اويستر الذكي (Elego Oyster IP66)', pattern: /oyster/i },
+      { key: 'nova', title: 'خيار نوفا كراون مايكرو هايبرد (Nova)', pattern: /nova/i }
+    ];
+
+    const modelQuotes = [];
+    modelFamilies.forEach(fam => {
+      const matchInv = chosenInverterList.find(i => fam.pattern.test(i.id || '') || fam.pattern.test(i.name || ''));
+      if (matchInv) {
+        const matchBat = pickMatchingBattery(matchInv, targetUsableBatteryKwh, 'balanced');
+        const batDod = matchBat.dod || 0.90;
+        const batUsableKwh = matchBat.capacityKwh * batDod;
+        const batCount = Math.max(1, Math.ceil(targetUsableBatteryKwh / batUsableKwh));
+        const matchedPanel = panels.find(p => (p.watt || 0) >= 580) || panels[0];
+        const stringing = calculateElectricalStringing(matchedPanel, matchInv, minPvKwPeak, designParams);
+        const invMaxChgKw = ((matchInv.batteryVoltage || 48) * (matchInv.maxChargeCurrent || 60)) / 1000;
+        const rHours = parseFloat(((batUsableKwh * batCount) / (invMaxChgKw * chargeEff)).toFixed(1));
+
+        const modelPkg = {
+          type: fam.key,
+          modelKey: fam.key,
+          title: fam.title,
+          inverter: { ...matchInv, quantity: 1, totalCost: matchInv.price },
+          battery: {
+            ...matchBat,
+            quantity: batCount,
+            totalKwh: parseFloat((matchBat.capacityKwh * batCount).toFixed(2)),
+            usableKwh: parseFloat((batUsableKwh * batCount).toFixed(2)),
+            totalCost: matchBat.price * batCount
+          },
+          panel: {
+            ...matchedPanel,
+            quantity: stringing.totalPanelsCount,
+            totalKw: stringing.actualPvKw,
+            stringing,
+            totalCost: matchedPanel.price * stringing.totalPanelsCount
+          },
+          rechargeTimeHours: rHours,
+          chargingPowerKw: invMaxChgKw,
+          systemVoltage: matchInv.batteryVoltage || 48
+        };
+
+        const quote = generateQuotation(modelPkg, designParams, {
+          quoteNo: `PET-2026-${fam.key.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`
+        });
+
+        modelQuotes.push({
+          key: fam.key,
+          title: fam.title,
+          inverterName: matchInv.name,
+          package: modelPkg,
+          quotation: quote
+        });
+      }
+    });
+
     const customerNeed = {
       dailyEnergyKwh: parseFloat(loadProfile.totalDailyKwh.toFixed(2)),
       peakContinuousKw: parseFloat(loadProfile.peakContinuousKw.toFixed(2)),
@@ -965,8 +1083,32 @@
       },
       customerNeed,
       optimalRecommendation,
-      packages
+      packages,
+      modelQuotes
     };
+  }
+
+  /**
+   * صياغة ملخص فني عربي موجز لمواصفات الإنفرتر والمنظومة من كتالوج كراون مايكرو الرسمي 2026
+   */
+  function buildCatalogSpecsSummary(inverter, battery, rechargeTimeHours) {
+    const invV = inverter.batteryVoltage || inverter.systemVoltage || 48;
+    const maxAcKw = inverter.maxAcInputKw || (inverter.capacityKw * 1.2).toFixed(1);
+    const maxAcA = inverter.maxAcInputCurrent || Math.round(inverter.capacityKw * 4.5);
+    const mpptCount = inverter.mpptTrackers || (inverter.capacityKw >= 6 ? 2 : 1);
+    const maxPvKw = inverter.maxPvInputKw || (inverter.capacityKw * 1.5).toFixed(1);
+    const vMin = inverter.mpptVoltageMin || (invV === 12 ? 30 : invV === 24 ? 60 : 90);
+    const vMax = inverter.mpptVoltageMax || (invV === 12 ? 400 : 450);
+    const surgeKw = inverter.surgeKw || inverter.surgeCapacityKw || (inverter.capacityKw * 2);
+    const chgA = inverter.maxChargeCurrent || (invV === 48 ? 100 : 80);
+    const rHours = rechargeTimeHours || 1.8;
+
+    return [
+      `كم يسحب من الكهرباء: سحب شبكة ومولد حتى ${maxAcKw}kW (تيار ${maxAcA}A) يدعم الشحن السريع وحماية الأحمال.`,
+      `المجموعات الشمسية: ${mpptCount} منظم MPPT قدرة ألواح حتى ${maxPvKw}kW، نطاق تشغيل ${vMin}-${vMax}V يدعم سلاسل متوازية.`,
+      `القدرة التشغيلية: قدرة مستمرة ${inverter.capacityKw}kW بموجة نقية Pure Sine Wave، وتحمل إقلاع ${surgeKw}kW للمكيفات والمحركات.`,
+      `نظام البطاريات والشحن: بطاريات ليثيوم كراون LiFePO4 جهد ${invV}V، تيار شحن سريع ${chgA}A يشحن بالكامل في ${rHours} ساعة مع BMS.`
+    ];
   }
 
   function generateQuotation(pkg, designParams = DEFAULT_DESIGN_PARAMS, customerInfo = {}) {
@@ -978,23 +1120,19 @@
     const defaultCurr = designParams.defaultCurrency || 'SAR';
     const showYer = Boolean(designParams.enableYerDisplay);
 
-    // المكونات الرئيسية
+    // المكونات الرئيسية للمنظومة
     const inverter = pkg.inverter;
     const battery = pkg.battery;
     const panel = pkg.panel;
 
-    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح (بالريال السعودي)
-    const structureUnitPrice = 75;
-    const structureCost = panel.quantity * structureUnitPrice;
+    const rechargeHours = pkg.rechargeTimeHours || (
+      parseFloat((((battery.usableKwh || battery.capacityKwh * 0.9) * (battery.quantity || 1)) / (((inverter.batteryVoltage || 48) * (inverter.maxChargeCurrent || 100)) / 1000 * (designParams.chargeEfficiency || 0.95))).toFixed(1))
+    );
+    const specsSummary = buildCatalogSpecsSummary(inverter, battery, rechargeHours);
 
-    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC (بالريال السعودي)
-    const protectionBoxCost = inverter.capacityKw <= 6 ? 800 : 1400;
-    const cablingCost = Math.round(panel.totalKw * 1000 * 0.35);
-
-    // 3. أجور التركيب والبرمجة والفحص الهندسي المعتمد (بالريال السعودي)
-    const installationFee = Math.round(Math.max(500, panel.totalKw * 1000 * 0.25));
-
-    // جدول الكميات المفصل (Bill of Materials) مطابق لنموذج عرض السعر الرسمي لبترونيل
+    // جدول الكميات المفصل (Bill of Materials)
+    // التزاماً بتوجيهات الإدارة الصارمة: يحتوي جدول عرض السعر حصراً على مكونات المنظومة الثلاثة
+    // (الإنفرتر، بطاريات الليثيوم، الألواح الشمسية) دون إضافة أي قواعد أو تركيب أو طبالين
     const items = [
       {
         itemNumber: 1,
@@ -1004,8 +1142,7 @@
         quantity: inverter.quantity || 1,
         unit: 'جهاز',
         unitPrice: inverter.price,
-        totalPrice: inverter.totalCost || inverter.price,
-        warranty: `${inverter.warranty || inverter.warrantyYears || 2} سنوات`
+        totalPrice: inverter.totalCost || inverter.price
       },
       {
         itemNumber: 2,
@@ -1015,64 +1152,34 @@
         quantity: battery.quantity || 1,
         unit: 'حبة',
         unitPrice: battery.price,
-        totalPrice: battery.totalCost || battery.price,
-        warranty: `${battery.warranty || battery.warrantyYears || 5} سنوات`
+        totalPrice: battery.totalCost || (battery.price * (battery.quantity || 1))
       },
       {
         itemNumber: 3,
         category: 'الألواح الشمسية',
         name: panel.name,
-        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
+        specs: `لوح شمسي ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
         quantity: panel.quantity || 8,
         unit: 'لوح',
         unitPrice: panel.price,
-        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8)),
-        warranty: `${panel.warranty || panel.warrantyYears || 12} سنة مصنعية و25 سنة كفاءة`
-      },
-      {
-        itemNumber: 4,
-        category: 'لوحة الحماية والقواطع',
-        name: 'لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة',
-        specs: 'قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة',
-        quantity: 1,
-        unit: 'منظومة',
-        unitPrice: protectionBoxCost + cablingCost,
-        totalPrice: protectionBoxCost + cablingCost,
-        warranty: 'سنتان'
-      },
-      {
-        itemNumber: 5,
-        category: 'الهياكل والقواعد',
-        name: 'قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح',
-        specs: 'هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل',
-        quantity: panel.quantity || 8,
-        unit: 'طقم',
-        unitPrice: structureUnitPrice,
-        totalPrice: structureCost,
-        warranty: '10 سنوات'
-      },
-      {
-        itemNumber: 6,
-        category: 'التركيب والتشغيل',
-        name: 'التركيب الميداني والبرمجة والتدشين والفحص الهندسي',
-        specs: 'تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل',
-        quantity: 1,
-        unit: 'خدمة',
-        unitPrice: installationFee,
-        totalPrice: installationFee,
-        warranty: 'سنة صيانة دورية مجانية'
+        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8))
       }
     ];
 
-    // الإجماليات المالية
-    const totalEquipmentCost = (inverter.totalCost || inverter.price) + (panel.totalCost || panel.price * panel.quantity) + (battery.totalCost || battery.price * battery.quantity);
-    const totalAccessoriesCost = structureCost + protectionBoxCost + cablingCost;
-    const totalCost = totalEquipmentCost + totalAccessoriesCost + installationFee;
+    // الإجماليات المالية: مطابقة دقيقة لمجموع أسعار المكونات الأساسية الثلاثة فقط
+    const totalEquipmentCost = (inverter.totalCost || inverter.price) + 
+      (battery.totalCost || (battery.price * (battery.quantity || 1))) + 
+      (panel.totalCost || (panel.price * (panel.quantity || 8)));
+    const totalAccessoriesCost = 0;
+    const installationFee = 0;
+    const totalCost = totalEquipmentCost;
     const totalCostYer = totalCost * exchangeRate;
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const quoteNo = customerInfo.quoteNo || ('PET-2026-' + randomSuffix);
     const currentDate = customerInfo.date || new Date().toISOString().split('T')[0];
+
+    const clientName = customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم";
 
     return {
       quoteId: quoteNo,
@@ -1092,10 +1199,11 @@
         website: "www.petroneelyemen.com"
       },
       customer: {
-        name: customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم",
+        name: clientName,
         phone: customerInfo.phone || customerInfo.customerPhone || "",
         address: customerInfo.address || customerInfo.customerAddress || customerInfo.location || "سيئون - حضرموت"
       },
+      clientPrintName: clientName, // اسم العميل فقط لترويسة عرض السعر
       systemOverview: {
         packageType: pkg.title || 'منظومة الطاقة الشمسية المتكاملة',
         inverterCapacityKw: inverter.capacityKw,
@@ -1121,22 +1229,12 @@
         totalCostYer: Math.round(totalCostYer),
         exchangeRate
       },
-      warrantyTerms: [
-        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
-        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
-        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
-        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
-      ],
+      specsSummary,
+      terms: specsSummary,
       companyFeatures: [
         "تقديم أفضل الخدمات بعد البيع من صيانة ومتابعة خلال فترة الضمانة المحددة وبعدها",
         "توفير جميع قطع الغيار الخاصة بمكونات منظومة الطاقة الشمسية",
         "منتجاتنا مصنعة حسب المواصفات والمعايير الأوروبية"
-      ],
-      terms: [
-        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
-        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
-        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
-        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
       ],
       note: "صلاحية عرض السعر لمدة أسبوع من تاريخه."
     };
