@@ -1469,26 +1469,482 @@ const FALLBACK_TEMPLATES = [
 
 // Fallback Inventory if API is offline
 const FALLBACK_INVENTORY = {
-  inverters: [
-    { id: 'inv_crown_32', name: 'انفرتر كراون مايكرو Crown Elego 3.2kW 24V', brand: 'Crown Micro', capacityKw: 3.2, ratedPowerKw: 3.2, surgeCapacityKw: 6.4, systemVoltage: 24, mpptMin: 90, mpptMax: 430, maxVocInput: 450, price: 380, warranty: 2, available: true },
-    { id: 'inv_crown_60', name: 'انفرتر كراون مايكرو Crown Elego Pro 6kW 48V', brand: 'Crown Micro', capacityKw: 6.0, ratedPowerKw: 6.0, surgeCapacityKw: 12.0, systemVoltage: 48, mpptMin: 120, mpptMax: 450, maxVocInput: 500, price: 680, warranty: 2, available: true },
-    { id: 'inv_deye_36', name: 'انفرتر Deye SUN-3.6K-SG04LP1 3.6kW', capacityKw: 3.6, ratedPowerKw: 3.6, surgeCapacityKw: 7.2, systemVoltage: 48, mpptMin: 80, mpptMax: 430, maxVocInput: 500, price: 550, warranty: 5, available: true },
-    { id: 'inv_deye_50', name: 'انفرتر Deye SUN-5K-SG04LP1 5kW', capacityKw: 5.0, ratedPowerKw: 5.0, surgeCapacityKw: 10.0, systemVoltage: 48, mpptMin: 120, mpptMax: 430, maxVocInput: 500, price: 820, warranty: 5, available: true },
-    { id: 'inv_deye_80', name: 'انفرتر Deye SUN-8K-SG01LP1 8kW', capacityKw: 8.0, ratedPowerKw: 8.0, surgeCapacityKw: 16.0, systemVoltage: 48, mpptMin: 125, mpptMax: 425, maxVocInput: 500, price: 1300, warranty: 5, available: true },
-    { id: 'inv_deye_100', name: 'انفرتر Deye SUN-10K-SG04LP3 10kW 3P', capacityKw: 10.0, ratedPowerKw: 10.0, surgeCapacityKw: 20.0, systemVoltage: 48, mpptMin: 160, mpptMax: 650, maxVocInput: 800, price: 1750, warranty: 5, available: true }
+  "inverters": [
+    {
+      "id": "inv_crown_xavier_1_5k",
+      "brand": "Crown Micro",
+      "model": "Xavier 1.5kW 12V",
+      "name": "انفرتر اكزافير كراون مايكرو 1.5 كيلو 12V",
+      "capacityKw": 1.5,
+      "surgeKw": 3,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 12,
+      "mpptVoltageMin": 30,
+      "mpptVoltageMax": 100,
+      "maxPvVoltage": 105,
+      "maxPvInputKw": 1.8,
+      "maxPvCurrent": 15,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 60,
+      "maxDischargeCurrent": 125,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 725,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_xavier_4k",
+      "brand": "Crown Micro",
+      "model": "Xavier 4kW 24V",
+      "name": "انفرتر اكزافير كراون مايكرو 4 كيلو 24V",
+      "capacityKw": 4,
+      "surgeKw": 8,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 24,
+      "mpptVoltageMin": 60,
+      "mpptVoltageMax": 450,
+      "maxPvVoltage": 500,
+      "maxPvInputKw": 4.5,
+      "maxPvCurrent": 18,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 80,
+      "maxDischargeCurrent": 165,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 1200,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_xavier_6k",
+      "brand": "Crown Micro",
+      "model": "Xavier 6kW 48V",
+      "name": "انفرتر اكزافير كراون مايكرو 6 كيلو 48V",
+      "capacityKw": 6,
+      "surgeKw": 12,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 120,
+      "mpptVoltageMax": 450,
+      "maxPvVoltage": 500,
+      "maxPvInputKw": 6.5,
+      "maxPvCurrent": 20,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 100,
+      "maxDischargeCurrent": 130,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 1400,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_arceus_3_6k",
+      "brand": "Crown Micro",
+      "model": "Arceus 3.6kW 24V",
+      "name": "انفرتر اركيوس كراون مايكرو 3.6 كيلو 24V",
+      "capacityKw": 3.6,
+      "surgeKw": 7.2,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 24,
+      "mpptVoltageMin": 60,
+      "mpptVoltageMax": 450,
+      "maxPvVoltage": 500,
+      "maxPvInputKw": 4,
+      "maxPvCurrent": 18,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 80,
+      "maxDischargeCurrent": 150,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 900,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_arceus_6_5k",
+      "brand": "Crown Micro",
+      "model": "Arceus 6.5kW 48V",
+      "name": "انفرتر اركيوس كراون مايكرو 6.5 كيلو 48V",
+      "capacityKw": 6.5,
+      "surgeKw": 13,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 90,
+      "mpptVoltageMax": 450,
+      "maxPvVoltage": 500,
+      "maxPvInputKw": 7,
+      "maxPvCurrent": 22,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 120,
+      "maxDischargeCurrent": 135,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 1400,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_nova_8_6k",
+      "brand": "Crown Micro",
+      "model": "Nova 8.6kW 48V Hybrid",
+      "name": "انفرتر نوفا كراون مايكرو 8.6 كيلو هايبرد 48V",
+      "capacityKw": 8.6,
+      "surgeKw": 17.2,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 120,
+      "mpptVoltageMax": 500,
+      "maxPvVoltage": 550,
+      "maxPvInputKw": 9.5,
+      "maxPvCurrent": 25,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 140,
+      "maxDischargeCurrent": 180,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 3,
+      "price": 3200,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_nova_9_8k",
+      "brand": "Crown Micro",
+      "model": "Nova 9.8kW 48V Hybrid",
+      "name": "انفرتر نوفا كراون مايكرو 9.8 كيلو هايبرد 48V",
+      "capacityKw": 9.8,
+      "surgeKw": 19.6,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 120,
+      "mpptVoltageMax": 500,
+      "maxPvVoltage": 550,
+      "maxPvInputKw": 11,
+      "maxPvCurrent": 26,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 150,
+      "maxDischargeCurrent": 200,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 3,
+      "price": 3870,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_nova_12_6k",
+      "brand": "Crown Micro",
+      "model": "Nova 12.6kW 48V Hybrid",
+      "name": "انفرتر نوفا كراون مايكرو 12.6 كيلو هايبرد 48V",
+      "capacityKw": 12.6,
+      "surgeKw": 25.2,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 120,
+      "mpptVoltageMax": 500,
+      "maxPvVoltage": 550,
+      "maxPvInputKw": 14,
+      "maxPvCurrent": 30,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 180,
+      "maxDischargeCurrent": 260,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 3,
+      "price": 4520,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_elego_star_6_5k",
+      "brand": "Crown Micro",
+      "model": "Elego Star 6.5kW 48V",
+      "name": "انفرتر ايليقو ستار كراون مايكرو 6.5 كيلو 48V",
+      "capacityKw": 6.5,
+      "surgeKw": 13,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 90,
+      "mpptVoltageMax": 450,
+      "maxPvVoltage": 500,
+      "maxPvInputKw": 7,
+      "maxPvCurrent": 22,
+      "mpptTrackers": 1,
+      "maxChargeCurrent": 120,
+      "maxDischargeCurrent": 135,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 2,
+      "price": 1860,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_elego_oyster_6_5k",
+      "brand": "Crown Micro",
+      "model": "Elego Oyster 6.5kW 48V Smart",
+      "name": "انفرتر ايليقو اويستر كراون مايكرو 6.5 كيلو الذكي 48V",
+      "capacityKw": 6.5,
+      "surgeKw": 13,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 90,
+      "mpptVoltageMax": 500,
+      "maxPvVoltage": 550,
+      "maxPvInputKw": 7.5,
+      "maxPvCurrent": 22,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 130,
+      "maxDischargeCurrent": 135,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 3,
+      "price": 3100,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_elego_oyster_10k",
+      "brand": "Crown Micro",
+      "model": "Elego Oyster 10kW 48V Smart",
+      "name": "انفرتر ايليقو اويستر كراون مايكرو 10 كيلو الذكي 48V",
+      "capacityKw": 10,
+      "surgeKw": 20,
+      "surgeDurationSec": 10,
+      "phase": "1-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 120,
+      "mpptVoltageMax": 500,
+      "maxPvVoltage": 550,
+      "maxPvInputKw": 12,
+      "maxPvCurrent": 26,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 180,
+      "maxDischargeCurrent": 200,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 3,
+      "price": 5820,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "inv_crown_elego_oyster_15k",
+      "brand": "Crown Micro",
+      "model": "Elego Oyster 15kW 48V 3-Phase",
+      "name": "انفرتر ايليقو اويستر كراون مايكرو 15 كيلو ثلاثي الطور",
+      "capacityKw": 15,
+      "surgeKw": 30,
+      "surgeDurationSec": 10,
+      "phase": "3-Phase",
+      "batteryVoltage": 48,
+      "mpptVoltageMin": 160,
+      "mpptVoltageMax": 650,
+      "maxPvVoltage": 800,
+      "maxPvInputKw": 18,
+      "maxPvCurrent": 32,
+      "mpptTrackers": 2,
+      "maxChargeCurrent": 200,
+      "maxDischargeCurrent": 300,
+      "supportedBatteries": [
+        "LiFePO4",
+        "Lead-Acid",
+        "Gel"
+      ],
+      "warrantyYears": 5,
+      "price": 8260,
+      "currency": "SAR",
+      "available": true
+    }
   ],
-  batteries: [
-    { id: 'bat_narada_512', name: 'بطارية ليثيوم نارادا Narada 5.12kWh 48V', capacityKwh: 5.12, chemistry: 'LiFePO4', dod: 0.90, maxContinuousDischargeA: 100, price: 1150, warranty: 5, available: true },
-    { id: 'bat_felicity_10', name: 'بطارية ليثيوم فيليسيتي Felicity 10.24kWh 48V', capacityKwh: 10.24, chemistry: 'LiFePO4', dod: 0.90, maxContinuousDischargeA: 150, price: 2150, warranty: 5, available: true },
-    { id: 'bat_byd_15', name: 'بطارية ليثيوم بي واي دي BYD 15.36kWh 48V', capacityKwh: 15.36, chemistry: 'LiFePO4', dod: 0.90, maxContinuousDischargeA: 200, price: 3200, warranty: 5, available: true }
+  "batteries": [
+    {
+      "id": "bat_crown_1_2k_12v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 1.2kWh 12V 100Ah",
+      "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+      "capacityKwh": 1.2,
+      "usableCapacityKwh": 1.08,
+      "voltage": 12,
+      "nominalVoltage": 12.8,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 100,
+      "maxChargeCurrent": 50,
+      "cycles": 4000,
+      "warrantyYears": 3,
+      "price": 1400,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "bat_crown_2_5k_12v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 2.5kWh 12V 200Ah",
+      "name": "بطارية ليثيوم كراون مايكرو 2.5 كيلو 12V",
+      "capacityKwh": 2.56,
+      "usableCapacityKwh": 2.3,
+      "voltage": 12,
+      "nominalVoltage": 12.8,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 100,
+      "maxChargeCurrent": 50,
+      "cycles": 6000,
+      "warrantyYears": 5,
+      "price": 1500,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "bat_crown_2_5k_24v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 2.5kWh 24V 100Ah",
+      "name": "بطارية ليثيوم كراون مايكرو 2.5 كيلو 24V",
+      "capacityKwh": 2.56,
+      "usableCapacityKwh": 2.3,
+      "voltage": 24,
+      "nominalVoltage": 25.6,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 100,
+      "maxChargeCurrent": 60,
+      "cycles": 6000,
+      "warrantyYears": 5,
+      "price": 1600,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "bat_crown_5k_24v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 5kWh 24V 200Ah",
+      "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 24V",
+      "capacityKwh": 5.12,
+      "usableCapacityKwh": 4.6,
+      "voltage": 24,
+      "nominalVoltage": 25.6,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 100,
+      "maxChargeCurrent": 80,
+      "cycles": 6000,
+      "warrantyYears": 5,
+      "price": 2000,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "bat_crown_5k_48v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 5kWh 48V 100Ah",
+      "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+      "capacityKwh": 5.12,
+      "usableCapacityKwh": 4.6,
+      "voltage": 48,
+      "nominalVoltage": 51.2,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 100,
+      "maxChargeCurrent": 100,
+      "cycles": 6000,
+      "warrantyYears": 5,
+      "price": 3000,
+      "currency": "SAR",
+      "available": true
+    },
+    {
+      "id": "bat_crown_15k_48v",
+      "brand": "Crown Micro",
+      "model": "Crown LiFePO4 15kWh 48V 300Ah Powerwall",
+      "name": "بطارية ليثيوم كراون مايكرو 15 كيلو 48V Powerwall",
+      "capacityKwh": 15.36,
+      "usableCapacityKwh": 13.8,
+      "voltage": 48,
+      "nominalVoltage": 51.2,
+      "type": "LiFePO4",
+      "dod": 0.9,
+      "maxDischargeCurrent": 150,
+      "maxChargeCurrent": 150,
+      "cycles": 6000,
+      "warrantyYears": 5,
+      "price": 7000,
+      "currency": "SAR",
+      "available": true
+    }
   ],
-  panels: [
-    { id: 'pan_jinko_610', name: 'لوح جينكو Jinko Tiger Neo 610W N-Type TOPCon', watt: 610, voc: 56.1, vmp: 47.2, isc: 13.9, imp: 12.92, tempCoefficientVoc: -0.0026, price: 115, warranty: 25, available: true },
-    { id: 'pan_trina_580', name: 'لوح ترينا Trina Vertex S+ 580W Dual-Glass', watt: 580, voc: 52.8, vmp: 44.5, isc: 13.8, imp: 13.03, tempCoefficientVoc: -0.0025, price: 105, warranty: 25, available: true }
+  "panels": [
+    {
+      "id": "pnl_longi_610w",
+      "brand": "Longi Solar",
+      "model": "Hi-MO LR5-78HBD 610W",
+      "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+      "watt": 610,
+      "voc": 55.4,
+      "vmp": 46.2,
+      "isc": 13.9,
+      "imp": 13.2,
+      "tempCoeffVoc": -0.25,
+      "tempCoefficientVoc": -0.0025,
+      "tempCoefficientPmax": -0.003,
+      "warrantyYears": 12,
+      "price": 420,
+      "currency": "SAR",
+      "available": true
+    }
   ]
 };
 
-// --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initMobileMenu();
@@ -1716,6 +2172,323 @@ function renderProductsCatalog(filter = 'all') {
     `;
   }).join('');
 }
+
+function initPwaAndMobileNav() {
+  // 1. Mobile bottom navigation active state on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 120;
+      if (window.pageYOffset >= sectionTop) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navItems.forEach(item => {
+      item.classList.remove('active');
+      if (item.getAttribute('data-target') === current) {
+        item.classList.add('active');
+      }
+    });
+  }, { passive: true });
+
+  // 2. Filter buttons for products catalog
+  document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(b => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const filter = e.currentTarget.getAttribute('data-filter');
+      renderProductsCatalog(filter);
+    });
+  });
+
+  // 3. PWA install prompt handler
+  let deferredPrompt;
+  const pwaBanner = document.getElementById('pwa-install-banner');
+  const btnInstall = document.getElementById('btn-pwa-install');
+  const btnDismiss = document.getElementById('btn-pwa-dismiss');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!localStorage.getItem('pwa_dismissed')) {
+      if (pwaBanner) pwaBanner.style.display = 'flex';
+    }
+  });
+
+  btnInstall?.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (pwaBanner) pwaBanner.style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+  });
+
+  btnDismiss?.addEventListener('click', () => {
+    if (pwaBanner) pwaBanner.style.display = 'none';
+    localStorage.setItem('pwa_dismissed', 'true');
+  });
+}
+
+function initWizardNavigation() {
+  const stepNodes = document.querySelectorAll('.wizard-step-node');
+  stepNodes.forEach(node => {
+    node.addEventListener('click', () => {
+      const targetStep = parseInt(node.getAttribute('data-step'), 10);
+      goToStep(targetStep);
+    });
+  });
+
+  // Next / Back buttons
+  document.getElementById('btn-next-to-loads')?.addEventListener('click', () => goToStep(2));
+  document.getElementById('btn-back-to-grid')?.addEventListener('click', () => goToStep(1));
+  document.getElementById('btn-next-to-sim')?.addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-back-to-loads')?.addEventListener('click', () => goToStep(2));
+  document.getElementById('btn-next-to-matching')?.addEventListener('click', () => goToStep(4));
+  document.getElementById('btn-back-to-sim')?.addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-next-to-quote')?.addEventListener('click', () => goToStep(5));
+  document.getElementById('btn-back-to-matching')?.addEventListener('click', () => goToStep(4));
+  document.getElementById('btn-restart-wizard')?.addEventListener('click', () => goToStep(1));
+
+  // Quick navigation buttons from live sizing card
+  document.getElementById('btn-quick-to-sim')?.addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-quick-to-matching')?.addEventListener('click', () => goToStep(4));
+}
+
+function goToStep(step) {
+  if (step < 1 || step > 5) return;
+  State.currentStep = step;
+
+  // Update Stepper header
+  document.querySelectorAll('.wizard-step-node').forEach(node => {
+    const s = parseInt(node.getAttribute('data-step'), 10);
+    node.classList.toggle('active', s === step);
+    node.classList.toggle('completed', s < step);
+  });
+
+  // Switch panels
+  document.querySelectorAll('.wizard-step-panel').forEach(panel => {
+    panel.classList.remove('active');
+  });
+  const currentPanel = document.getElementById(`step-panel-${step}`);
+  if (currentPanel) currentPanel.classList.add('active');
+
+  // Trigger relevant step logic
+  if (step === 3) {
+    render24hSimulation();
+  } else if (step === 4) {
+    calculateAndRenderPackages();
+  } else if (step === 5) {
+    generateAndRenderQuotation();
+  }
+
+  // Smooth scroll into calculator view
+  document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================================
+// STEP 1: جدول توفر كهرباء الشبكة
+// ============================================================
+function initStep1Grid() {
+  // Mode selector radio tabs
+  const modeRadios = document.querySelectorAll('input[name="grid_mode"]');
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      State.grid.mode = e.target.value;
+      document.querySelectorAll('.mode-tab-option').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-mode') === State.grid.mode);
+      });
+      // Show/Hide config subpanels
+      document.getElementById('subpanel-schedule')?.classList.toggle('hidden', State.grid.mode !== 'schedule');
+      document.getElementById('subpanel-dailyHours')?.classList.toggle('hidden', State.grid.mode !== 'dailyHours');
+      document.getElementById('subpanel-irregular')?.classList.toggle('hidden', State.grid.mode !== 'irregular');
+      updateGridScheduleMetrics();
+    });
+  });
+
+  // Grid Policy radios
+  document.querySelectorAll('input[name="grid_policy"]').forEach(r => {
+    r.addEventListener('change', (e) => {
+      State.grid.policy = e.target.value;
+    });
+  });
+
+  // Daily Hours slider
+  const dailySlider = document.getElementById('input-daily-grid-hours');
+  const dailyBadge = document.getElementById('val-daily-grid-hours');
+  if (dailySlider && dailyBadge) {
+    dailySlider.addEventListener('input', (e) => {
+      State.grid.dailyHours = parseFloat(e.target.value);
+      dailyBadge.textContent = `${State.grid.dailyHours} ساعات`;
+      updateGridScheduleMetrics();
+    });
+  }
+
+  // Irregular worst outage slider
+  const outageSlider = document.getElementById('input-worst-outage-hours');
+  const outageBadge = document.getElementById('val-worst-outage-hours');
+  if (outageSlider && outageBadge) {
+    outageSlider.addEventListener('input', (e) => {
+      State.grid.worstOutageHours = parseFloat(e.target.value);
+      outageBadge.textContent = `${State.grid.worstOutageHours} ساعة`;
+      updateGridScheduleMetrics();
+    });
+  }
+
+  // Add Interval button
+  document.getElementById('btn-add-interval')?.addEventListener('click', () => {
+    const container = document.getElementById('intervals-container');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'interval-row';
+    row.innerHTML = `
+      <div class="time-input-group">
+        <label>من الساعة:</label>
+        <input type="time" class="form-control interval-start" value="12:00">
+      </div>
+      <div class="time-input-group">
+        <label>إلى الساعة:</label>
+        <input type="time" class="form-control interval-end" value="16:00">
+      </div>
+      <button type="button" class="btn-remove-interval" title="حذف الفترة"><i class="fa-solid fa-trash-can"></i></button>
+    `;
+    row.querySelector('.btn-remove-interval').addEventListener('click', () => {
+      row.remove();
+      readIntervalsFromDom();
+    });
+    row.querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', readIntervalsFromDom);
+    });
+    container.appendChild(row);
+    readIntervalsFromDom();
+  });
+
+  // Bind existing interval delete buttons
+  document.querySelectorAll('.btn-remove-interval').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.target.closest('.interval-row')?.remove();
+      readIntervalsFromDom();
+    });
+  });
+
+  document.querySelectorAll('.interval-start, .interval-end').forEach(inp => {
+    inp.addEventListener('change', readIntervalsFromDom);
+  });
+}
+
+function readIntervalsFromDom() {
+  const rows = document.querySelectorAll('.interval-row');
+  const list = [];
+  rows.forEach(r => {
+    const s = r.querySelector('.interval-start')?.value || '00:00';
+    const e = r.querySelector('.interval-end')?.value || '00:00';
+    list.push({ start: s, end: e });
+  });
+  State.grid.intervals = list;
+  updateGridScheduleMetrics();
+}
+
+function updateGridScheduleMetrics() {
+  const schedule = SolarEngine.parseGridSchedule({
+    mode: State.grid.mode,
+    intervals: State.grid.intervals,
+    dailyHours: State.grid.dailyHours,
+    worstOutageHours: State.grid.worstOutageHours
+  }, 96);
+
+  document.getElementById('summary-grid-hours').textContent = `${schedule.totalGridHours} ساعة`;
+  document.getElementById('summary-outage-hours').textContent = `${schedule.totalOutageHours} ساعة`;
+  document.getElementById('summary-max-outage').textContent = `${schedule.maxContiguousOutageHours} ساعة`;
+
+  // Trigger reactive calculation across loads and packages
+  triggerReactiveCalculation();
+}
+
+// ============================================================
+// STEP 2: الأحمال الكهربائية
+// ============================================================
+function initStep2Loads() {
+  // Category tabs
+  const catPills = document.querySelectorAll('.cat-pill');
+  catPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      catPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      renderAppliancePicker(pill.getAttribute('data-cat'));
+    });
+  });
+
+  // Toggle Custom Device Form Accordion
+  const toggleBtn = document.getElementById('toggle-custom-form');
+  const formContent = document.getElementById('custom-form-content');
+  if (toggleBtn && formContent) {
+    toggleBtn.addEventListener('click', () => {
+      formContent.classList.toggle('hidden');
+      toggleBtn.querySelector('.toggle-icon')?.classList.toggle('fa-chevron-up');
+    });
+  }
+
+  // Add Custom Appliance button
+  document.getElementById('btn-add-custom-app')?.addEventListener('click', () => {
+    const name = document.getElementById('custom-app-name').value.trim();
+    const watt = parseFloat(document.getElementById('custom-app-watt').value);
+    const type = document.getElementById('custom-app-type').value;
+    const duty = parseFloat(document.getElementById('custom-app-duty').value);
+    const priority = document.getElementById('custom-app-priority').value;
+
+    if (!name || isNaN(watt) || watt <= 0) {
+      alert("يرجى إدخال اسم الجهاز وقدرة صحيحة بالواط");
+      return;
+    }
+
+    let surgeMult = 1.0;
+    let pf = 0.9;
+    if (type === 'aircon') { surgeMult = 2.5; pf = 0.88; }
+    else if (type === 'motor') { surgeMult = 4.5; pf = 0.80; }
+    else if (type === 'electronic') { surgeMult = 1.0; pf = 0.92; }
+
+    const newApp = {
+      id: 'custom_' + Date.now(),
+      name,
+      category: 'أجهزة مخصصة',
+      watt,
+      powerFactor: pf,
+      loadType: type,
+      surgeMultiplier: surgeMult,
+      dutyCycle: duty,
+      dayHours: 4,
+      nightHours: 4,
+      quantity: 1,
+      priority,
+      icon: 'fa-plug'
+    };
+
+    State.appliances.push(newApp);
+    renderSelectedAppliancesTable();
+    updateLoadsMetrics();
+
+    // Reset inputs
+    document.getElementById('custom-app-name').value = '';
+    document.getElementById('custom-app-watt').value = '';
+    formContent.classList.add('hidden');
+  });
+
+  // Clear all appliances
+  document.getElementById('clear-all-appliances')?.addEventListener('click', () => {
+    if (confirm("هل أنت متأكد من مسح جميع الأجهزة من القائمة؟")) {
+      State.appliances = [];
+      renderSelectedAppliancesTable();
+      updateLoadsMetrics();
+    }
+  });
+}
+
 function renderAppliancePicker(category = 'all') {
   const container = document.getElementById('appliance-picker');
   if (!container) return;
@@ -1742,8 +2515,44 @@ function renderAppliancePicker(category = 'all') {
 
 function addApplianceByTemplateId(id) {
   const templates = State.applianceTemplates.length > 0 ? State.applianceTemplates : FALLBACK_TEMPLATES;
-  const found = templates.find(t => t.id === id);
+  let found = templates.find(t => t.id === id);
+  if (!found) {
+    const ID_ALIASES = {
+      'fridge_inv': ['app_fridge_med', 'fridge_inv', 'fridge'],
+      'fridge': ['app_fridge_med', 'fridge_inv', 'fridge'],
+      'led_group': ['app_led_lights', 'led_group', 'led'],
+      'led': ['app_led_lights', 'led_group', 'led'],
+      'tv_smart': ['app_tv_55', 'tv_smart', 'tv'],
+      'tv': ['app_tv_55', 'tv_smart', 'tv'],
+      'fan_dc': ['app_ceiling_fans', 'fan_dc', 'fan'],
+      'fan': ['app_ceiling_fans', 'fan_dc', 'fan'],
+      'router_net': ['app_router_cctv', 'router_net', 'router'],
+      'router': ['app_router_cctv', 'router_net', 'router'],
+      'water_pump': ['app_water_pump', 'water_pump', 'pump'],
+      'washing_mach': ['app_washing_auto', 'washing_mach', 'washer'],
+      'microwave_oven': ['app_microwave', 'microwave_oven', 'microwave'],
+      'pc_desktop': ['app_computers', 'pc_desktop', 'computer'],
+      'ac_split': ['app_ac_inv', 'app_ac_1_5', 'ac_split', 'ac']
+    };
+    if (ID_ALIASES[id]) {
+      found = templates.find(t => ID_ALIASES[id].includes(t.id));
+    }
+  }
+  if (!found) {
+    const cleanId = String(id).replace(/^app_/, '').toLowerCase();
+    found = templates.find(t => String(t.id).replace(/^app_/, '').toLowerCase() === cleanId);
+  }
   if (found) addApplianceByTemplate(found);
+}
+
+function removeAppliance(idOrIndex) {
+  if (typeof idOrIndex === 'number' && idOrIndex >= 0 && idOrIndex < State.appliances.length) {
+    State.appliances.splice(idOrIndex, 1);
+  } else {
+    State.appliances = State.appliances.filter(a => a.id !== idOrIndex);
+  }
+  renderSelectedAppliancesTable();
+  triggerReactiveCalculation();
 }
 
 function addApplianceByTemplate(tmpl) {
@@ -1761,9 +2570,9 @@ function addApplianceByTemplate(tmpl) {
       loadType: tmpl.loadType || 'resistive',
       surgeMultiplier: tmpl.surgeMultiplier || 1.0,
       dutyCycle: tmpl.dutyCycle || 1.0,
-      dayHours: tmpl.dayHours !== undefined ? tmpl.dayHours : 4,
-      nightHours: tmpl.nightHours !== undefined ? tmpl.nightHours : 4,
-      quantity: 1,
+      dayHours: tmpl.dayHours !== undefined ? tmpl.dayHours : (tmpl.defaultDayHours !== undefined ? tmpl.defaultDayHours : 4),
+      nightHours: tmpl.nightHours !== undefined ? tmpl.nightHours : (tmpl.defaultNightHours !== undefined ? tmpl.defaultNightHours : 4),
+      quantity: tmpl.quantity || 1,
       priority: tmpl.priority || 'important',
       icon: tmpl.icon || 'fa-plug'
     });
@@ -1846,40 +2655,38 @@ function renderSelectedAppliancesTable() {
       app.quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
       triggerReactiveCalculation();
     };
-    qtyInp.addEventListener('input', onQty);
-    qtyInp.addEventListener('change', onQty);
+    qtyInp?.addEventListener('input', onQty);
+    qtyInp?.addEventListener('change', onQty);
 
     const onWatt = (e) => {
       app.watt = Math.max(1, parseFloat(e.target.value) || 1);
       triggerReactiveCalculation();
     };
-    wattInp.addEventListener('input', onWatt);
-    wattInp.addEventListener('change', onWatt);
+    wattInp?.addEventListener('input', onWatt);
+    wattInp?.addEventListener('change', onWatt);
 
     const onDh = (e) => {
       app.dayHours = Math.max(0, Math.min(12, parseFloat(e.target.value) || 0));
       triggerReactiveCalculation();
     };
-    dhInp.addEventListener('input', onDh);
-    dhInp.addEventListener('change', onDh);
+    dhInp?.addEventListener('input', onDh);
+    dhInp?.addEventListener('change', onDh);
 
     const onNh = (e) => {
       app.nightHours = Math.max(0, Math.min(12, parseFloat(e.target.value) || 0));
       triggerReactiveCalculation();
     };
-    nhInp.addEventListener('input', onNh);
-    nhInp.addEventListener('change', onNh);
+    nhInp?.addEventListener('input', onNh);
+    nhInp?.addEventListener('change', onNh);
 
     const onDuty = (e) => {
       app.dutyCycle = parseFloat(e.target.value) || 1.0;
       triggerReactiveCalculation();
     };
-    dutySel.addEventListener('change', onDuty);
+    dutySel?.addEventListener('change', onDuty);
 
-    delBtn.addEventListener('click', () => {
-      State.appliances.splice(idx, 1);
-      renderSelectedAppliancesTable();
-      triggerReactiveCalculation();
+    delBtn?.addEventListener('click', () => {
+      removeAppliance(idx);
     });
 
     tbody.appendChild(tr);
@@ -1951,50 +2758,55 @@ function triggerReactiveCalculation() {
   if (State.inventory.inverters.length > 0 && State.inventory.batteries.length > 0 && State.inventory.panels.length > 0) {
     const matchResult = SolarEngine.sizeAndMatchSystem(profile, sched, State.inventory, State.designParams);
     State.matchedPackages = matchResult;
-    State.activePackage = matchResult.packages[State.selectedPackageType] || matchResult.packages.recommended;
 
-    const rec = matchResult.packages.recommended;
-    const recQuote = SolarEngine.generateQuotation(rec, State.designParams);
+    if (matchResult && matchResult.success && matchResult.packages) {
+      State.activePackage = matchResult.packages[State.selectedPackageType] || matchResult.packages.recommended || matchResult.optimalRecommendation;
 
-    // Update Live Recommended Sizing Card in Step 2
-    const elInvCap = document.getElementById('live-card-inv-cap');
-    const elInvName = document.getElementById('live-card-inv-name');
-    const elPvPanels = document.getElementById('live-card-pv-panels');
-    const elPvPower = document.getElementById('live-card-pv-power');
-    const elBatKwh = document.getElementById('live-card-bat-kwh');
-    const elBatAh = document.getElementById('live-card-bat-ah');
-    const elCostUsd = document.getElementById('live-card-cost-usd');
-    const elCostYer = document.getElementById('live-card-cost-yer');
+      const rec = matchResult.packages.recommended || matchResult.optimalRecommendation;
+      const recQuote = SolarEngine.generateQuotation(rec, State.designParams);
 
-    if (elInvCap) elInvCap.textContent = `${rec.inverter.capacityKw} kW`;
-    if (elInvName) elInvName.textContent = rec.inverter.name;
-    if (elPvPanels) elPvPanels.textContent = `${rec.panel.quantity} ألواح`;
-    if (elPvPower) elPvPower.textContent = `${rec.panel.totalKw} kWp (${rec.panel.watt}W لكل لوح)`;
-    if (elBatKwh) elBatKwh.textContent = `${rec.battery.totalKwh} kWh`;
-    if (elBatAh) {
-      const batAh = Math.round((rec.battery.totalKwh * 1000) / (rec.inverter.systemVoltage || 48));
-      elBatAh.textContent = `${batAh} Ah @ ${rec.inverter.systemVoltage || 48}V (${rec.battery.quantity} وحدة)`;
+      // Update Live Recommended Sizing Card in Step 2
+      const elInvCap = document.getElementById('live-card-inv-cap');
+      const elInvName = document.getElementById('live-card-inv-name');
+      const elPvPanels = document.getElementById('live-card-pv-panels');
+      const elPvPower = document.getElementById('live-card-pv-power');
+      const elBatKwh = document.getElementById('live-card-bat-kwh');
+      const elBatAh = document.getElementById('live-card-bat-ah');
+      const elCostUsd = document.getElementById('live-card-cost-usd');
+      const elCostYer = document.getElementById('live-card-cost-yer');
+
+      if (elInvCap && rec.inverter) elInvCap.textContent = `${rec.inverter.capacityKw} kW`;
+      if (elInvName && rec.inverter) elInvName.textContent = rec.inverter.name;
+      if (elPvPanels && rec.panel) elPvPanels.textContent = `${rec.panel.quantity} ألواح`;
+      if (elPvPower && rec.panel) elPvPower.textContent = `${rec.panel.totalKw} kWp (${rec.panel.watt}W لكل لوح)`;
+      if (elBatKwh && rec.battery) elBatKwh.textContent = `${rec.battery.totalKwh} kWh`;
+      if (elBatAh && rec.battery && rec.inverter) {
+        const batAh = Math.round((rec.battery.totalKwh * 1000) / (rec.inverter.systemVoltage || 48));
+        elBatAh.textContent = `${batAh} Ah @ ${rec.inverter.systemVoltage || 48}V (${rec.battery.quantity} وحدة)`;
+      }
+      if (elCostUsd && recQuote && recQuote.financials) elCostUsd.textContent = `${Math.round(recQuote.financials.totalCost).toLocaleString('en-US')} ر.س`;
+      if (elCostYer && recQuote && recQuote.financials) elCostYer.textContent = `${recQuote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+
+      // Pre-render Step 4 cards & MPPT validation
+      const recStringing = rec.panel ? rec.panel.stringing : null;
+      const mpptVoc = document.getElementById('mppt-val-voc');
+      const mpptVmp = document.getElementById('mppt-val-vmp');
+      const mpptSurge = document.getElementById('mppt-val-surge');
+      if (mpptVoc && recStringing) mpptVoc.textContent = `${recStringing.stringVocCold}V`;
+      if (mpptVmp && recStringing) mpptVmp.textContent = `${recStringing.stringVmpHot}V`;
+      if (mpptSurge && rec.inverter) mpptSurge.textContent = `${rec.inverter.surgeCapacityKw || (rec.inverter.capacityKw * 2)}kW`;
+
+      renderPackageCard('econ', matchResult.packages.economic);
+      renderPackageCard('rec', matchResult.packages.recommended);
+      renderPackageCard('high', matchResult.packages.highPerformance);
+      populateManualTuningSelects(rec);
+
+      // Update Hero Preview
+      const heroPv = document.getElementById('hero-pv-stat');
+      if (heroPv && rec.panel) heroPv.textContent = `${rec.panel.totalKw} kWp`;
+    } else {
+      State.activePackage = null;
     }
-    if (elCostUsd) elCostUsd.textContent = formatPrice(recQuote.financials.totalCostUsd);
-    if (elCostYer) elCostYer.textContent = `${recQuote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
-
-    // Pre-render Step 4 cards & MPPT validation
-    const recStringing = rec.panel.stringing;
-    const mpptVoc = document.getElementById('mppt-val-voc');
-    const mpptVmp = document.getElementById('mppt-val-vmp');
-    const mpptSurge = document.getElementById('mppt-val-surge');
-    if (mpptVoc) mpptVoc.textContent = `${recStringing.stringVocCold}V`;
-    if (mpptVmp) mpptVmp.textContent = `${recStringing.stringVmpHot}V`;
-    if (mpptSurge) mpptSurge.textContent = `${rec.inverter.surgeCapacityKw || (rec.inverter.capacityKw * 2)}kW`;
-
-    renderPackageCard('econ', matchResult.packages.economic);
-    renderPackageCard('rec', matchResult.packages.recommended);
-    renderPackageCard('high', matchResult.packages.highPerformance);
-    populateManualTuningSelects(rec);
-
-    // Update Hero Preview
-    const heroPv = document.getElementById('hero-pv-stat');
-    if (heroPv) heroPv.textContent = `${rec.panel.totalKw} kWp`;
   }
 
   // 5. Update Step 3 Simulation if active
@@ -2354,9 +3166,11 @@ function openCustomerQuoteModal(targetPkg = 'optimal') {
     return;
   }
   
-  if (targetPkg === 'optimal') {
+  if (typeof targetPkg === 'object' && targetPkg !== null) {
+    State.activePackage = targetPkg;
+  } else if (targetPkg === 'optimal') {
     if (State.matchedPackages) {
-      State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+      State.activePackage = State.matchedPackages.optimalRecommendation || (State.matchedPackages.packages && State.matchedPackages.packages.recommended) || State.activePackage;
     }
   }
 
@@ -2405,7 +3219,7 @@ function initCustomerQuoteModal() {
     State.customer.location = address;
 
     if (!State.activePackage && State.matchedPackages) {
-      State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+      State.activePackage = State.matchedPackages.optimalRecommendation || (State.matchedPackages.packages && State.matchedPackages.packages.recommended);
     }
 
     if (!State.activePackage) {
@@ -2546,7 +3360,7 @@ function calculateAndRenderPackages() {
       errorBanner = document.createElement('div');
       errorBanner.id = 'packages-error-banner';
       errorBanner.className = 'glass p-4 rounded-xl text-center mb-6 border border-amber-500/30 bg-amber-500/10';
-      const container = document.querySelector('.tailored-design-grid');
+      const container = document.querySelector('.tailored-design-grid') || document.querySelector('.packages-comparison-grid');
       if (container && container.parentNode) {
         container.parentNode.insertBefore(errorBanner, container);
       }
@@ -2563,6 +3377,9 @@ function calculateAndRenderPackages() {
     errorBanner.style.display = 'block';
 
     if (mpptBanner) mpptBanner.style.opacity = '0.4';
+    renderPackageCard('econ', null);
+    renderPackageCard('rec', null);
+    renderPackageCard('high', null);
     return;
   }
 
@@ -2611,8 +3428,57 @@ function calculateAndRenderPackages() {
       setEl('mppt-val-surge', `${opt.inverter.surgeKw || opt.inverter.surgeCapacityKw || (opt.inverter.capacityKw * 2)}kW`);
     }
 
-    // Populate manual tuning dropdowns with optimal defaults
+    // Pre-populate manual tuning dropdowns with optimal defaults
     populateManualTuningSelects(opt);
+  }
+
+  // Safe package card rendering for backwards-compatibility
+  if (matchResult.packages) {
+    renderPackageCard('econ', matchResult.packages.economic);
+    renderPackageCard('rec', matchResult.packages.recommended);
+    renderPackageCard('high', matchResult.packages.highPerformance);
+  }
+}
+
+function renderPackageCard(prefix, pkg) {
+  const invElem = document.getElementById(`${prefix}-inv-name`);
+  const panElem = document.getElementById(`${prefix}-panel-name`);
+  const batElem = document.getElementById(`${prefix}-battery-name`);
+  const usdElem = document.getElementById(`${prefix}-price-usd`);
+  const yerElem = document.getElementById(`${prefix}-price-yer`);
+
+  if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
+    if (invElem) invElem.textContent = 'غير متوفر';
+    if (panElem) panElem.textContent = 'غير متوفر';
+    if (batElem) batElem.textContent = 'غير متوفر';
+    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
+    if (yerElem) yerElem.textContent = '';
+    return;
+  }
+
+  const quote = SolarEngine.generateQuotation(pkg, State.designParams);
+
+  if (invElem) {
+    const isCrown = (pkg.inverter.brand || '').includes('Crown') || (pkg.inverter.name || '').includes('كراون');
+    const crownBadge = isCrown ? ' <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; display: inline-block;">وكالة Crown Micro</span>' : '';
+    invElem.innerHTML = `${pkg.inverter.name} (${pkg.inverter.capacityKw}kW)${crownBadge}`;
+  }
+  if (panElem) panElem.textContent = `${pkg.panel.quantity} ألواح × ${pkg.panel.watt}W (${pkg.panel.totalKw} kWp)`;
+  if (batElem) batElem.textContent = `${pkg.battery.quantity} × ${pkg.battery.name} (${pkg.battery.totalKwh} kWh)`;
+
+  if (quote && quote.financials && quote.financials.totalCost > 0) {
+    if (usdElem) usdElem.textContent = `${Math.round(quote.financials.totalCost).toLocaleString('en-US')} ر.س`;
+    if (yerElem) {
+      if (State.designParams.enableYerDisplay || State.currency === 'YER') {
+        yerElem.textContent = `${quote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
+        yerElem.style.display = 'block';
+      } else {
+        yerElem.style.display = 'none';
+      }
+    }
+  } else {
+    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
+    if (yerElem) yerElem.style.display = 'none';
   }
 }
 
@@ -2642,6 +3508,28 @@ function populateManualTuningSelects(defaultPkg) {
 // ============================================================
 function initStep5Quotation() {
   initCustomerQuoteModal();
+
+  // Sync client inputs with official printable doc if present
+  const nameInp = document.getElementById('quote-client-name');
+  const phoneInp = document.getElementById('quote-client-phone');
+  const locInp = document.getElementById('quote-client-location');
+
+  nameInp?.addEventListener('input', (e) => {
+    State.customer.name = e.target.value;
+    const docName = document.getElementById('doc-client-name');
+    if (docName) docName.textContent = e.target.value || 'عميل بترونيل المحترم';
+  });
+  phoneInp?.addEventListener('input', (e) => {
+    State.customer.phone = e.target.value;
+    const docPhone = document.getElementById('doc-client-phone');
+    if (docPhone) docPhone.textContent = e.target.value || '--';
+  });
+  locInp?.addEventListener('input', (e) => {
+    State.customer.location = e.target.value;
+    State.customer.address = e.target.value;
+    const docLoc = document.getElementById('doc-client-location');
+    if (docLoc) docLoc.textContent = e.target.value || 'حضرموت - سيئون';
+  });
 
   // Download PDF Button
   document.getElementById('btn-download-pdf')?.addEventListener('click', downloadQuotationPdf);
@@ -2708,11 +3596,11 @@ function generateAndRenderQuotation() {
   setEl('doc-verbal-total', tafqeet(grandTotal));
 
   // Legacy element sync for any test or background script
-  setEl('doc-total-usd', `$${quotation.financials.totalCostUsd || grandTotal}`);
+  setEl('doc-total-usd', `${grandTotal.toLocaleString('en-US')} ر.س`);
   setEl('doc-total-yer', `${(quotation.financials.totalCostYer || grandTotal).toLocaleString('ar-YE')} ر.ي`);
-  setEl('doc-cost-equipment', `$${quotation.financials.equipmentCostUsd || 0}`);
-  setEl('doc-cost-accessories', `$${quotation.financials.accessoriesCostUsd || 0}`);
-  setEl('doc-cost-install', `$${quotation.financials.installationFeeUsd || 0}`);
+  setEl('doc-cost-equipment', `${quotation.financials.equipmentCost || 0} ر.س`);
+  setEl('doc-cost-accessories', `${quotation.financials.accessoriesCost || 0} ر.س`);
+  setEl('doc-cost-install', `${quotation.financials.installationFee || 0} ر.س`);
   setEl('quote-validity-text', `صلاحية العرض: ${quotation.validUntilDays || 7} أيام`);
   setEl('doc-package-type', State.activePackage.title);
   setEl('doc-inv-kw', `${quotation.systemOverview.inverterCapacityKw} kW`);
@@ -2765,8 +3653,9 @@ function shareViaWhatsApp() {
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
 }
+
 function updateAllPricesUI() {
-  if (State.matchedPackages) {
+  if (State.matchedPackages && State.matchedPackages.packages) {
     renderPackageCard('econ', State.matchedPackages.packages.economic);
     renderPackageCard('rec', State.matchedPackages.packages.recommended);
     renderPackageCard('high', State.matchedPackages.packages.highPerformance);
@@ -2822,4 +3711,33 @@ function initContactLeadForm() {
       }
     }
   });
+}
+
+
+// Expose State and core navigation functions for inline onclick handlers & testing
+if (typeof window !== 'undefined') {
+  window.State = State;
+  window.goToStep = goToStep;
+  window.addApplianceByTemplateId = addApplianceByTemplateId;
+  window.addApplianceByTemplate = addApplianceByTemplate;
+  window.removeAppliance = removeAppliance;
+  window.calculateAndRenderPackages = calculateAndRenderPackages;
+  window.openCustomerQuoteModal = openCustomerQuoteModal;
+  window.closeCustomerQuoteModal = closeCustomerQuoteModal;
+  window.generateAndRenderQuotation = generateAndRenderQuotation;
+  window.render24hSimulation = render24hSimulation;
+  window.triggerReactiveCalculation = triggerReactiveCalculation;
+}
+if (typeof global !== 'undefined') {
+  global.State = State;
+  global.goToStep = goToStep;
+  global.addApplianceByTemplateId = addApplianceByTemplateId;
+  global.addApplianceByTemplate = addApplianceByTemplate;
+  global.removeAppliance = removeAppliance;
+  global.calculateAndRenderPackages = calculateAndRenderPackages;
+  global.openCustomerQuoteModal = openCustomerQuoteModal;
+  global.closeCustomerQuoteModal = closeCustomerQuoteModal;
+  global.generateAndRenderQuotation = generateAndRenderQuotation;
+  global.render24hSimulation = render24hSimulation;
+  global.triggerReactiveCalculation = triggerReactiveCalculation;
 }

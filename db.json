@@ -783,6 +783,107 @@
   ],
   "quotes": [
     {
+      "id": "quote_1792844189498_4927",
+      "quoteNo": "PET-2026-4927",
+      "customerName": "فحص حي للمنظومة",
+      "customerPhone": "777000111",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [],
+      "subtotal": 11842,
+      "discount": 0,
+      "grandTotal": 11842,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T12:16:29.498Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
+      "id": "quote_1792843945210_7965",
+      "quoteNo": "PET-2026-7965",
+      "customerName": "الشيخ صالح بن حريز",
+      "customerPhone": "770112233",
+      "customerAddress": "حضرموت - سيئون",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر اكزافير كراون مايكرو 1.5 كيلو 12V",
+          "specs": "قدرة مستمرة 1.5kW، تيار إقلاع 3kW، جهد بطارية 12V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 725,
+          "totalPrice": 725,
+          "warranty": "2 سنوات"
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 1.2 كيلو 12V",
+          "specs": "سعة 1.2kWh كيمياء LiFePO4، جهد 12V ونظام BMS ذكي",
+          "quantity": 6,
+          "unit": "حبة",
+          "unitPrice": 1400,
+          "totalPrice": 8400,
+          "warranty": "3 سنوات"
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمس ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 2,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 840,
+          "warranty": "12 سنة مصنعية و25 سنة كفاءة"
+        },
+        {
+          "itemNumber": 4,
+          "category": "لوحة الحماية والقواطع",
+          "name": "لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة",
+          "specs": "قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة",
+          "quantity": 1,
+          "unit": "منظومة",
+          "unitPrice": 1227,
+          "totalPrice": 1227,
+          "warranty": "سنتان"
+        },
+        {
+          "itemNumber": 5,
+          "category": "الهياكل والقواعد",
+          "name": "قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح",
+          "specs": "هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل",
+          "quantity": 2,
+          "unit": "طقم",
+          "unitPrice": 75,
+          "totalPrice": 150,
+          "warranty": "10 سنوات"
+        },
+        {
+          "itemNumber": 6,
+          "category": "التركيب والتشغيل",
+          "name": "التركيب الميداني والبرمجة والتدشين والفحص الهندسي",
+          "specs": "تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل",
+          "quantity": 1,
+          "unit": "خدمة",
+          "unitPrice": 500,
+          "totalPrice": 500,
+          "warranty": "سنة صيانة دورية مجانية"
+        }
+      ],
+      "subtotal": 11842,
+      "discount": 0,
+      "grandTotal": 11842,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T12:12:25.210Z",
+      "status": "New",
+      "validityDays": 7
+    },
+    {
       "id": "quote_1792814148739_6186",
       "quoteNo": "PET-2026-6186",
       "customerName": "تجربة مباشرة عبر الجوال",
