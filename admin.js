@@ -848,9 +848,7 @@ async function saveAdminQuote() {
             showToast("تم حفظ عرض السعر الخاص بالإدارة بنجاح!", true);
             await fetchQuotes();
             
-            if (confirm(`تم حفظ عرض السعر بنجاح برقم: ${data.quote.quoteNo || data.quote.id}\n\nهل ترغب بتحميل ملف الـ PDF الرسمي الآن؟`)) {
-                window.open(`/api/quotes/${data.quote.id}/pdf`, '_blank');
-            }
+            openAdminPdfModal(data.quote.id, data.quote.quoteNo, data.quote.customerName);
         } else {
             showToast(data.error || "فشل حفظ عرض السعر", false);
         }
@@ -963,6 +961,68 @@ async function fetchQuotes() {
     }
 }
 
+
+// --- Admin PDF Modal & Share Logic ---
+let currentAdminPdfUrl = '';
+let currentAdminPdfTitle = '';
+
+function openAdminPdfModal(id, quoteNo, customerName) {
+    const modal = document.getElementById('admin-pdf-preview-modal');
+    const iframe = document.getElementById('admin-pdf-preview-iframe');
+    const title = document.getElementById('admin-pdf-modal-title');
+    if (!modal || !iframe) return;
+
+    currentAdminPdfUrl = '/api/quotes/' + id + '/pdf';
+    currentAdminPdfTitle = 'عرض_سعر_بترونيل_' + (customerName || 'عميل').replace(/[\s\\\/:]+/g, '_') + '_' + (quoteNo || id);
+
+    if (title) title.innerHTML = '<i class="fa-solid fa-file-pdf text-warning"></i> عرض سعر: <span class="font-num">' + (quoteNo || id) + '</span> | ' + (customerName || 'عميل');
+    iframe.src = currentAdminPdfUrl;
+    modal.style.display = 'flex';
+}
+
+function closeAdminPdfModal() {
+    const modal = document.getElementById('admin-pdf-preview-modal');
+    const iframe = document.getElementById('admin-pdf-preview-iframe');
+    if (modal) modal.style.display = 'none';
+    if (iframe) iframe.src = 'about:blank';
+}
+
+async function shareCurrentAdminPdf() {
+    if (!currentAdminPdfUrl) return;
+    showToast("جاري تجهيز العرض للمشاركة...", true);
+
+    try {
+        const res = await fetch(currentAdminPdfUrl);
+        const blob = await res.blob();
+        const fileName = (currentAdminPdfTitle || 'عرض_سعر_بترونيل') + '.pdf';
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+
+        if (navigator.share) {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: currentAdminPdfTitle,
+                    text: 'عرض سعر رسمي معتمد من شركة بترونيل يمن للطاقة',
+                    files: [file]
+                });
+                return;
+            } else {
+                await navigator.share({
+                    title: currentAdminPdfTitle,
+                    text: 'عرض سعر رسمي معتمد من شركة بترونيل يمن للطاقة',
+                    url: window.location.origin + currentAdminPdfUrl
+                });
+                return;
+            }
+        }
+    } catch (e) {
+        if (e.name !== 'AbortError') console.error("Share error:", e);
+    }
+
+    // WhatsApp Fallback
+    const waUrl = 'https://wa.me/?text=' + encodeURIComponent('عرض سعر رسمي من بترونيل يمن للطاقة:\n' + currentAdminPdfTitle + '\n' + window.location.origin + currentAdminPdfUrl);
+    window.open(waUrl, '_blank');
+}
+
 function renderQuotesTable(filter = activeQuotesFilter) {
     activeQuotesFilter = filter;
     const tbody = document.getElementById('quotes-list-admin');
@@ -1010,9 +1070,9 @@ function renderQuotesTable(filter = activeQuotesFilter) {
             <td class="font-num" style="font-weight: 900; color: #10b981;">${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'ر.س'}</td>
             <td>${sourceBadge}</td>
             <td style="white-space: nowrap;">
-                <a href="/api/quotes/${q.id}/pdf" target="_blank" class="btn btn-sm btn-primary" title="تحميل ملف PDF الرسمي" style="margin-left: 4px;">
-                    <i class="fa-solid fa-file-pdf"></i> PDF
-                </a>
+                <button type="button" class="btn btn-sm btn-primary btn-open-pdf-viewer" data-id="${q.id}" data-quoteno="${q.quoteNo || q.id}" data-custname="${q.customerName || 'عميل'}" title="معاينة ومشاركة ملف PDF الرسمي" style="margin-left: 4px;">
+                    <i class="fa-solid fa-eye"></i> معاينة ومشاركة
+                </button>
                 <button type="button" class="btn btn-sm btn-secondary btn-view-quote-details" data-id="${q.id}" title="عرض تفاصيل البنود" style="margin-left: 4px;">
                     <i class="fa-solid fa-list-check"></i>
                 </button>
@@ -1022,6 +1082,10 @@ function renderQuotesTable(filter = activeQuotesFilter) {
             </td>
         `;
         
+        tr.querySelector('.btn-open-pdf-viewer')?.addEventListener('click', () => {
+            openAdminPdfModal(q.id, q.quoteNo, q.customerName);
+        });
+
         tr.querySelector('.btn-view-quote-details')?.addEventListener('click', () => {
             let itemsSummary = (q.items && q.items.length > 0)
                 ? q.items.map(it => `- ${it.name || it.model} (عدد ${it.quantity || 1}) بسعر ${it.price || it.unitPrice || 0} ر.س`).join('\n')
@@ -1635,6 +1699,21 @@ function closeLeadModal() {
 
 // --- Setup Event Listeners ---
 function setupEventListeners() {
+
+    // Admin PDF Viewer Modal Listeners
+    document.getElementById('btn-close-admin-pdf-modal')?.addEventListener('click', closeAdminPdfModal);
+    document.getElementById('btn-modal-share-admin-pdf')?.addEventListener('click', shareCurrentAdminPdf);
+    document.getElementById('btn-modal-download-admin-pdf')?.addEventListener('click', () => {
+        if (currentAdminPdfUrl) {
+            const a = document.createElement('a');
+            a.href = currentAdminPdfUrl;
+            a.download = (currentAdminPdfTitle || 'عرض_سعر_بترونيل') + '.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    });
+
 
     // --- Sub-Tabs inside Section Quotes ---
     const btnTabCreate = document.getElementById('btn-tab-create-quote');

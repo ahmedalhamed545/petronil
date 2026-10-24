@@ -3160,7 +3160,8 @@ function render24hSimulation() {
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
           ticks: {
             color: '#94a3b8',
-            maxTicksLimit: 12
+            maxTicksLimit: (window.innerWidth < 640) ? 6 : 12,
+            font: { family: 'Tajawal', size: (window.innerWidth < 640) ? 9 : 11 }
           }
         },
         y: {
@@ -3168,22 +3169,26 @@ function render24hSimulation() {
           display: true,
           position: 'left',
           title: {
-            display: true,
+            display: (window.innerWidth >= 640),
             text: 'القدرة (kW)',
             color: '#94a3b8',
             font: { family: 'Tajawal' }
           },
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8' }
+          ticks: {
+            color: '#94a3b8',
+            font: { family: 'Tajawal', size: (window.innerWidth < 640) ? 9 : 11 },
+            maxTicksLimit: (window.innerWidth < 640) ? 5 : 8
+          }
         },
         y1: {
           type: 'linear',
-          display: true,
+          display: (window.innerWidth >= 640),
           position: 'right',
           min: 0,
           max: 100,
           title: {
-            display: true,
+            display: (window.innerWidth >= 640),
             text: 'شحن البطارية (%)',
             color: '#10b981',
             font: { family: 'Tajawal' }
@@ -3943,6 +3948,153 @@ function renderModelQuoteTabs() {
     });
   });
 }
+
+async 
+// --- Client PDF Preview & Share Logic ---
+let currentClientPdfBlob = null;
+let currentClientPdfUrl = '';
+let currentClientPdfTitle = '';
+
+function getClientQuotePayload() {
+  if (!State.activePackage && State.matchedPackages) {
+    State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+  }
+  if (!State.activePackage) return null;
+
+  const quote = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  const total = Math.round(quote.financials.grandTotal || quote.financials.totalCost);
+
+  return {
+    quoteNo: State.lastSavedQuote?.quoteNo || quote.quoteNo || ('PET-2026-' + Math.floor(1000 + Math.random() * 9000)),
+    date: new Date().toISOString().split('T')[0],
+    currency: 'ريال سعودي (SAR)',
+    customerName: State.customer.name || 'عميل بترونيل المحترم',
+    customerPhone: State.customer.phone || '',
+    customerAddress: State.customer.address || State.customer.location || 'حضرموت',
+    items: quote.items,
+    subtotal: total,
+    discount: 0,
+    grandTotal: total,
+    verbalTotal: tafqeet(total),
+    specsSummary: quote.specsSummary,
+    terms: quote.specsSummary
+  };
+}
+
+async function prepareClientPdfBlob() {
+  const payload = getClientQuotePayload();
+  if (!payload) return null;
+
+  try {
+    const res = await fetch('/api/quotes/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      currentClientPdfBlob = await res.blob();
+      if (currentClientPdfUrl) window.URL.revokeObjectURL(currentClientPdfUrl);
+      currentClientPdfUrl = window.URL.createObjectURL(currentClientPdfBlob);
+      currentClientPdfTitle = 'عرض_سعر_بترونيل_يمن_' + (payload.customerName || 'عميل').replace(/[\s\\\/:]+/g, '_') + '_' + payload.quoteNo;
+      return currentClientPdfBlob;
+    }
+  } catch (e) {
+    console.error("Error generating client PDF blob:", e);
+  }
+  return null;
+}
+
+window.previewClientPdf = async function() {
+  const modal = document.getElementById('client-pdf-preview-modal');
+  const iframe = document.getElementById('client-pdf-preview-iframe');
+  const title = document.getElementById('client-pdf-modal-title');
+  if (!modal || !iframe) return;
+
+  const btn = document.getElementById('btn-preview-pdf-client');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحضير...';
+  }
+
+  const blob = await prepareClientPdfBlob();
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+
+  if (blob && currentClientPdfUrl) {
+    iframe.src = currentClientPdfUrl;
+    if (title) title.innerHTML = '<i class="fa-solid fa-file-pdf text-warning"></i> ' + (currentClientPdfTitle || 'عرض سعر رسمي معتمد');
+    modal.style.display = 'flex';
+  } else {
+    alert("تعذر إنشاء ملف الـ PDF حالياً. يرجى المحاولة مرة أخرى.");
+  }
+};
+
+window.closeClientPdfModal = function() {
+  const modal = document.getElementById('client-pdf-preview-modal');
+  const iframe = document.getElementById('client-pdf-preview-iframe');
+  if (modal) modal.style.display = 'none';
+  if (iframe) iframe.src = 'about:blank';
+};
+
+window.shareClientPdf = async function() {
+  const btn = document.getElementById('btn-share-pdf-client');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التجهيز...';
+  }
+
+  const blob = await prepareClientPdfBlob();
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+
+  if (!blob) {
+    alert("تعذر تجهيز ملف الـ PDF للمشاركة.");
+    return;
+  }
+
+  const fileName = (currentClientPdfTitle || 'عرض_سعر_بترونيل_يمن') + '.pdf';
+  const file = new File([blob], fileName, { type: 'application/pdf' });
+
+  if (navigator.share) {
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'عرض سعر رسمي - بترونيل يمن للطاقة',
+          text: 'عرض سعر رسمي معتمد لمنظومة الطاقة الشمسية من شركة بترونيل يمن للطاقة',
+          files: [file]
+        });
+        return;
+      } else {
+        await navigator.share({
+          title: 'عرض سعر رسمي - بترونيل يمن للطاقة',
+          text: 'عرض سعر رسمي معتمد لمنظومة الطاقة الشمسية من شركة بترونيل يمن للطاقة',
+          url: window.location.href
+        });
+        return;
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error("Share error:", e);
+    }
+  }
+
+  // Fallback: download file and open WhatsApp
+  const a = document.createElement('a');
+  a.href = currentClientPdfUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  const waMsg = encodeURIComponent('السلام عليكم شركة بترونيل يمن، قمت بحفظ ومشاركة عرض السعر الرسمي: ' + fileName);
+  window.open('https://wa.me/967779669868?text=' + waMsg, '_blank');
+};
 
 async function downloadQuotationPdf() {
   if (!State.activePackage && State.matchedPackages) {

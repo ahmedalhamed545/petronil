@@ -742,7 +742,7 @@
   "users": [
     {
       "username": "admin",
-      "passwordHash": "$2a$10$QuM3UzwYRQG1SBuGUf9EC.IcccPNGQQXAip9k3JFV8f3.BfMKcHYi",
+      "passwordHash": "$2a$10$AHNyIWIcTX3rSIXXzTnNVOk5mBlAYg36Lo9U.MRcoYbPEqzzLjl3S",
       "role": "SuperAdmin",
       "permissions": [
         "overview",
@@ -755,7 +755,7 @@
     },
     {
       "username": "editor",
-      "passwordHash": "$2a$10$FdrSbXa5HVbm0tycLoxe0Of7w2mWrkUrq42noep9LCCiIy.F6fpdq",
+      "passwordHash": "$2a$10$FCOpMv.pp6GpfoeeS.hWCOQ5vy7ZVm.hyOEGrdRMDrCqbsE1ArZFG",
       "role": "Editor",
       "permissions": [
         "overview",
@@ -806,6 +806,159 @@
     }
   ],
   "quotes": [
+    {
+      "id": "quote_1792863461590_4842",
+      "quoteNo": "PET-2026-2596",
+      "customerName": "محمد حسن",
+      "customerPhone": "5555555555",
+      "customerAddress": "عدن",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر نوفا كراون مايكرو 8.6 كيلو هايبرد 48V",
+          "specs": "قدرة مستمرة 8.6kW، تيار إقلاع 17.2kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 3200,
+          "totalPrice": 3200
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 6,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2520
+        }
+      ],
+      "subtotal": 11720,
+      "discount": 0,
+      "grandTotal": 11720,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T17:37:41.590Z",
+      "status": "Approved",
+      "validityDays": 15,
+      "isPrivateAdmin": false,
+      "source": "calculator",
+      "specsSummary": []
+    },
+    {
+      "id": "quote_1792863338633_4882",
+      "quoteNo": "PET-2026-4882",
+      "customerName": "محمد حسن",
+      "customerPhone": "5555555555",
+      "customerAddress": "عدن",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر نوفا كراون مايكرو 8.6 كيلو هايبرد 48V",
+          "specs": "قدرة مستمرة 8.6kW، تيار إقلاع 17.2kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 3200,
+          "totalPrice": 3200
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 5 كيلو 48V",
+          "specs": "سعة 5.12kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 3000,
+          "totalPrice": 6000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 6,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 2520
+        }
+      ],
+      "subtotal": 11720,
+      "discount": 0,
+      "grandTotal": 11720,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T17:35:38.633Z",
+      "status": "New",
+      "validityDays": 15,
+      "isPrivateAdmin": false,
+      "source": "calculator",
+      "specsSummary": []
+    },
+    {
+      "id": "quote_1792861651757_3000",
+      "quoteNo": "PET-2026-5229",
+      "customerName": "علي مصلح",
+      "customerPhone": "123456789",
+      "customerAddress": "عدن",
+      "notes": "",
+      "items": [
+        {
+          "itemNumber": 1,
+          "category": "الإنفرتر",
+          "name": "انفرتر ايليقو اويستر كراون مايكرو 10 كيلو الذكي 48V",
+          "specs": "قدرة مستمرة 10kW، تيار إقلاع 20kW، جهد بطارية 48V تتبع MPPT",
+          "quantity": 1,
+          "unit": "جهاز",
+          "unitPrice": 5820,
+          "totalPrice": 5820
+        },
+        {
+          "itemNumber": 2,
+          "category": "تخزين الطاقة (البطاريات)",
+          "name": "بطارية ليثيوم كراون مايكرو 15 كيلو 48V Powerwall",
+          "specs": "سعة 15.36kWh كيمياء LiFePO4، جهد 48V ونظام BMS ذكي",
+          "quantity": 2,
+          "unit": "حبة",
+          "unitPrice": 7000,
+          "totalPrice": 14000
+        },
+        {
+          "itemNumber": 3,
+          "category": "الألواح الشمسية",
+          "name": "لوح لونجي سولار 610 واط N-Type عالي الكفاءة",
+          "specs": "لوح شمسي ذروة 610W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة",
+          "quantity": 15,
+          "unit": "لوح",
+          "unitPrice": 420,
+          "totalPrice": 6300
+        }
+      ],
+      "subtotal": 26120,
+      "discount": 0,
+      "grandTotal": 26120,
+      "currency": "SAR",
+      "date": "2026-10-24",
+      "createdAt": "2026-10-24T17:07:31.757Z",
+      "status": "Approved",
+      "validityDays": 15,
+      "isPrivateAdmin": false,
+      "source": "calculator",
+      "specsSummary": []
+    },
     {
       "id": "quote_1792860596792_9806",
       "quoteNo": "PET-2026-9806",
