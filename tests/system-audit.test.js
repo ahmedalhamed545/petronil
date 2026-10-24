@@ -133,10 +133,10 @@ runTest(5, 'اختيار بطارية بسعة كبيرة مع إنفرتر مح
   const inverters = db.getInverters();
   const batteries = db.getBatteries();
 
-  const crown32 = inverters.find(i => i.id === 'inv_crown_3_2k'); // 3.2kW, 24V, charger 80A -> 1.92kW
-  const byd15 = batteries.find(b => b.id === 'bat_byd_15kwh');    // 15.36 kWh, 48V
+  const crownArceus = inverters.find(i => i.id === 'inv_crown_arceus_3_6k'); // 3.6kW, 24V, charger 60A -> 1.44kW
+  const crown15 = batteries.find(b => b.id === 'bat_crown_15k_48v');         // 15.36 kWh, 48V
 
-  const compat = SolarEngine.validateInverterBatteryCompatibility(crown32, byd15, 1, 5.8);
+  const compat = SolarEngine.validateInverterBatteryCompatibility(crownArceus, crown15, 1, 5.8);
 
   assert.strictEqual(compat.isCompatible, false, 'يجب عدم قبول التركيب لتعارض الجهد وبطء الشحن');
   assert.ok(compat.rechargeTimeHours > 7.0, 'زمن إعادة الشحن يتجاوز 7 ساعات');
@@ -163,7 +163,7 @@ runTest(6, 'اختيار إنفرتر غير مناسب لقدرة الأحما�
   const profile = SolarEngine.calculateLoadProfile(heavyMotorLoad, sched, 96);
 
   const inverters = db.getInverters();
-  const smallInv = inverters.find(i => i.id === 'inv_crown_3_2k'); // Surge 6.4kW < 12kW required!
+  const smallInv = inverters.find(i => i.id === 'inv_crown_xavier_1_5k'); // Surge 3.0kW < 12kW required!
   const batteries = db.getBatteries();
   const panels = db.getPanels();
 
@@ -192,21 +192,21 @@ runTest(7, 'تغيير الإنفرتر يدوياً: إعادة فحص التو
   }], sched, 96);
 
   const inverters = db.getInverters();
-  const deye5k = inverters.find(i => i.id === 'inv_deye_5k');
-  const deye8k = inverters.find(i => i.id === 'inv_deye_8k');
-  const battery = db.getBatteries()[0];
+  const inv6k = inverters.find(i => i.id === 'inv_crown_xavier_6k');
+  const inv12k = inverters.find(i => i.id === 'inv_crown_nova_12_6k');
+  const battery = db.getBatteries().find(b => (b.voltage || b.nominalVoltage) === 48 || (b.voltage || b.nominalVoltage) >= 44);
   const panel = db.getPanels()[0];
 
   const eval1 = SolarEngine.validateFullSystemConfiguration({
-    inverter: deye5k, battery, batteryCount: 1, panel, panelsCount: 8, loadProfile: profile, designParams: SolarEngine.DEFAULT_DESIGN_PARAMS
+    inverter: inv6k, battery, batteryCount: 1, panel, panelsCount: 8, loadProfile: profile, designParams: SolarEngine.DEFAULT_DESIGN_PARAMS
   });
   const eval2 = SolarEngine.validateFullSystemConfiguration({
-    inverter: deye8k, battery, batteryCount: 1, panel, panelsCount: 8, loadProfile: profile, designParams: SolarEngine.DEFAULT_DESIGN_PARAMS
+    inverter: inv12k, battery, batteryCount: 1, panel, panelsCount: 8, loadProfile: profile, designParams: SolarEngine.DEFAULT_DESIGN_PARAMS
   });
 
   assert.strictEqual(eval1.isFeasible, true);
   assert.strictEqual(eval2.isFeasible, true);
-  assert.ok(deye8k.price > deye5k.price, 'تغيير الإنفرتر إلى 8kW يغير السعر والتكلفة الهندسية');
+  assert.ok(inv12k.price > inv6k.price, 'تغيير الإنفرتر إلى Nova 12.6kW يغير السعر والتكلفة الهندسية');
 });
 
 // -----------------------------------------------------------------
@@ -217,7 +217,7 @@ runTest(8, 'اختيار مكونات غير متوافقة (جهد 24V مع 48V
   const batteries = db.getBatteries();
 
   const inv24 = inverters.find(i => (i.batteryVoltage || i.systemVoltage) === 24);
-  const bat48 = batteries.find(b => (b.nominalVoltage || b.systemVoltage) === 48);
+  const bat48 = batteries.find(b => (b.voltage || b.systemVoltage || b.nominalVoltage) === 48 || (b.voltage || b.nominalVoltage) >= 44);
 
   const compat = SolarEngine.validateInverterBatteryCompatibility(inv24, bat48, 1);
   assert.strictEqual(compat.isCompatible, false);

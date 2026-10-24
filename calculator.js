@@ -945,6 +945,21 @@ if (typeof SolarEngine === 'undefined') {
       }
     };
 
+    const optimalRecommendation = packages.recommended || packages.economic || packages.highPerformance;
+
+    const customerNeed = {
+      dailyEnergyKwh: parseFloat(loadProfile.totalDailyKwh.toFixed(2)),
+      peakContinuousKw: parseFloat(loadProfile.peakContinuousKw.toFixed(2)),
+      minInverterContinuousKw: parseFloat(minInverterContinuousKw.toFixed(2)),
+      maxSurgeKw: parseFloat(minInverterSurgeKw.toFixed(2)),
+      dayEnergyKwh: parseFloat(loadProfile.totalDayKwh.toFixed(2)),
+      nightEnergyKwh: parseFloat(loadProfile.totalNightKwh.toFixed(2)),
+      outageHours: gridSchedule.totalOutageHours,
+      targetUsableBatteryKwh: parseFloat(targetUsableBatteryKwh.toFixed(2)),
+      minPvKwPeak: parseFloat(minPvKwPeak.toFixed(2)),
+      recommendedPanelsCount: optimalRecommendation ? optimalRecommendation.panel.quantity : Math.ceil((minPvKwPeak * 1000) / (panels[0] ? panels[0].watt : 610))
+    };
+
     return {
       success: true,
       sizingRequirements: {
@@ -953,6 +968,8 @@ if (typeof SolarEngine === 'undefined') {
         targetUsableBatteryKwh: parseFloat(targetUsableBatteryKwh.toFixed(2)),
         minPvKwPeak: parseFloat(minPvKwPeak.toFixed(2))
       },
+      customerNeed,
+      optimalRecommendation,
       packages
     };
   }
@@ -961,9 +978,9 @@ if (typeof SolarEngine === 'undefined') {
     if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
       return null;
     }
-    const exchangeRate = designParams.currencyExchangeRate || 535;
-    const validityDays = parseInt(designParams.quoteValidityDays, 10) || 15;
-    const defaultCurr = designParams.defaultCurrency || 'USD';
+    const exchangeRate = designParams.currencyExchangeRate || 1;
+    const validityDays = parseInt(designParams.quoteValidityDays, 10) || 7;
+    const defaultCurr = designParams.defaultCurrency || 'SAR';
     const showYer = Boolean(designParams.enableYerDisplay);
 
     // المكونات الرئيسية
@@ -971,151 +988,162 @@ if (typeof SolarEngine === 'undefined') {
     const battery = pkg.battery;
     const panel = pkg.panel;
 
-    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح
-    const structureUnitPrice = 20;
+    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح (بالريال السعودي)
+    const structureUnitPrice = 75;
     const structureCost = panel.quantity * structureUnitPrice;
 
-    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC
-    const protectionBoxCost = inverter.capacityKw <= 6 ? 220 : 380;
-    const cablingCost = Math.round(panel.totalKw * 1000 * 0.08);
+    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC (بالريال السعودي)
+    const protectionBoxCost = inverter.capacityKw <= 6 ? 800 : 1400;
+    const cablingCost = Math.round(panel.totalKw * 1000 * 0.35);
 
-    // 3. أجور التركيب والبرمجة والفحص الهندسي
-    const installationFee = Math.round(Math.max(150, panel.totalKw * 1000 * 0.07));
+    // 3. أجور التركيب والبرمجة والفحص الهندسي المعتمد (بالريال السعودي)
+    const installationFee = Math.round(Math.max(500, panel.totalKw * 1000 * 0.25));
 
-    // جدول الكميات المفصل (Bill of Materials)
+    // جدول الكميات المفصل (Bill of Materials) مطابق لنموذج عرض السعر الرسمي لبترونيل
     const items = [
       {
         itemNumber: 1,
         category: 'الإنفرتر',
         name: inverter.name,
-        specs: `قدرة ${inverter.capacityKw}kW موجة جيبية نقية، جهد بطارية ${inverter.systemVoltage || 48}V، تتبع MPPT ذكي`,
-        quantity: inverter.quantity,
+        specs: `قدرة مستمرة ${inverter.capacityKw}kW، تيار إقلاع ${inverter.surgeKw || inverter.surgeCapacityKw || inverter.capacityKw * 2}kW، جهد بطارية ${inverter.batteryVoltage || inverter.systemVoltage || 48}V تتبع MPPT`,
+        quantity: inverter.quantity || 1,
         unit: 'جهاز',
         unitPrice: inverter.price,
-        totalPrice: inverter.totalCost,
-        warranty: `${inverter.warranty || inverter.warrantyYears || 5} سنوات`
+        totalPrice: inverter.totalCost || inverter.price,
+        warranty: `${inverter.warranty || inverter.warrantyYears || 2} سنوات`
       },
       {
         itemNumber: 2,
-        category: 'الألواح الشمسية',
-        name: panel.name,
-        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type TOPCon نصف خلية كفاءة 22%+`,
-        quantity: panel.quantity,
-        unit: 'لوح',
-        unitPrice: panel.price,
-        totalPrice: panel.totalCost,
-        warranty: `${panel.warranty || panel.warrantyYears || 25} سنة ضمان أداء`
-      },
-      {
-        itemNumber: 3,
         category: 'تخزين الطاقة (البطاريات)',
         name: battery.name,
-        specs: `سعة ${battery.capacityKwh}kWh كيمياء ${battery.chemistry || 'LiFePO4'} آمنة، نظام إدارة ذكي BMS يدعم 6000 دورة`,
-        quantity: battery.quantity,
-        unit: 'وحدة',
+        specs: `سعة ${battery.capacityKwh}kWh كيمياء ${battery.chemistry || 'LiFePO4'}، جهد ${battery.voltage || battery.nominalVoltage || 48}V ونظام BMS ذكي`,
+        quantity: battery.quantity || 1,
+        unit: 'حبة',
         unitPrice: battery.price,
-        totalPrice: battery.totalCost,
+        totalPrice: battery.totalCost || battery.price,
         warranty: `${battery.warranty || battery.warrantyYears || 5} سنوات`
       },
       {
-        itemNumber: 4,
-        category: 'الهياكل والقواعد',
-        name: 'قواعد وحوامل تثبيت ألومنيوم / حديد مجلفن',
-        specs: 'هيكل تثبيت أرضي أو سطحي مجلفن عالي المقاومة للرياح مع مشابك التثبيت المقاومة للصدأ',
-        quantity: panel.quantity,
+        itemNumber: 3,
+        category: 'الألواح الشمسية',
+        name: panel.name,
+        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
+        quantity: panel.quantity || 8,
         unit: 'لوح',
+        unitPrice: panel.price,
+        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8)),
+        warranty: `${panel.warranty || panel.warrantyYears || 12} سنة مصنعية و25 سنة كفاءة`
+      },
+      {
+        itemNumber: 4,
+        category: 'لوحة الحماية والقواطع',
+        name: 'لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة',
+        specs: 'قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة',
+        quantity: 1,
+        unit: 'منظومة',
+        unitPrice: protectionBoxCost + cablingCost,
+        totalPrice: protectionBoxCost + cablingCost,
+        warranty: 'سنتان'
+      },
+      {
+        itemNumber: 5,
+        category: 'الهياكل والقواعد',
+        name: 'قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح',
+        specs: 'هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل',
+        quantity: panel.quantity || 8,
+        unit: 'طقم',
         unitPrice: structureUnitPrice,
         totalPrice: structureCost,
         warranty: '10 سنوات'
       },
       {
-        itemNumber: 5,
-        category: 'لوحات الحماية والتحويل',
-        name: 'لوحة حماية وتوزيع متكاملة DC / AC مع مفتاح ATS',
-        specs: 'قواطع DC معتمدة، مانعات صواعق SPD، فيوزات حماية، قواطع AC، ومفتاح تحويل يدوي/أوتوماتيكي',
-        quantity: 1,
-        unit: 'لوحة',
-        unitPrice: protectionBoxCost,
-        totalPrice: protectionBoxCost,
-        warranty: 'سنتان'
-      },
-      {
         itemNumber: 6,
-        category: 'الكابلات والموصلات',
-        name: 'كابلات شمسية نحاسية أصلية 4mm/6mm مع وصلات MC4',
-        specs: 'كابلات مقاومة لأشعة الشمس UV ذات عزل مزدوج مع وصلات إحكام أصلية وتوصيلات البطاريات',
-        quantity: 1,
-        unit: 'مجموعة',
-        unitPrice: cablingCost,
-        totalPrice: cablingCost,
-        warranty: 'سنتان'
-      },
-      {
-        itemNumber: 7,
         category: 'التركيب والتشغيل',
-        name: 'التركيب الميداني والبرمجة والتسليم الفني',
-        specs: 'تركيب احترافي من مهندسي بترونيل يمن، تأريض الحماية، اختبارات الكفاءة وضبط إعدادات الإنفرتر والـ BMS',
+        name: 'التركيب الميداني والبرمجة والتدشين والفحص الهندسي',
+        specs: 'تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل',
         quantity: 1,
         unit: 'خدمة',
         unitPrice: installationFee,
         totalPrice: installationFee,
-        warranty: 'سنة صيانة مجانية'
+        warranty: 'سنة صيانة دورية مجانية'
       }
     ];
 
     // الإجماليات المالية
-    const totalEquipmentCostUsd = inverter.totalCost + panel.totalCost + battery.totalCost;
-    const totalAccessoriesCostUsd = structureCost + protectionBoxCost + cablingCost;
-    const totalCostUsd = totalEquipmentCostUsd + totalAccessoriesCostUsd + installationFee;
-    const totalCostYer = totalCostUsd * exchangeRate;
+    const totalEquipmentCost = (inverter.totalCost || inverter.price) + (panel.totalCost || panel.price * panel.quantity) + (battery.totalCost || battery.price * battery.quantity);
+    const totalAccessoriesCost = structureCost + protectionBoxCost + cablingCost;
+    const totalCost = totalEquipmentCost + totalAccessoriesCost + installationFee;
+    const totalCostYer = totalCost * exchangeRate;
 
-    const quoteId = 'PYS-' + (customerInfo.phone ? customerInfo.phone.slice(-4) : Math.floor(1000 + Math.random() * 9000)) + '-' + Math.floor(Math.random() * 1000);
-    const currentDate = new Date().toISOString().split('T')[0];
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const quoteNo = customerInfo.quoteNo || ('PET-2026-' + randomSuffix);
+    const currentDate = customerInfo.date || new Date().toISOString().split('T')[0];
 
     return {
-      quoteId,
+      quoteId: quoteNo,
+      quoteNo,
       date: currentDate,
       validUntilDays: validityDays,
       defaultCurrency: defaultCurr,
+      currency: defaultCurr,
       enableYerDisplay: showYer,
       company: {
         name: "بترونيل يمن للطاقة",
-        agency: "الوكيل المعتمد لمنتجات Crown Micro العالمية في الجمهورية اليمنية",
-        commercialReg: "شركة رائدة في أنظمة الطاقة الشمسية والحلول الذكية",
-        phone: "783999039",
-        address: "عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان",
-        email: "info@petronilyemen.com"
+        agency: "الوكيل الحصري لمنتجات Crown Micro في الجمهورية اليمنية",
+        address: "اليمن - حضرموت - سيئون - شارع الجزائر - مقابل حديقة الطويلة",
+        phone: "+967-779669868",
+        phonesList: ["+967-779669868", "+967-770557550", "+971-557777395"],
+        email: "info@petroneelyemen.com",
+        website: "www.petroneelyemen.com"
       },
       customer: {
-        name: customerInfo.name || "عميل بترونيل المميز",
-        phone: customerInfo.phone || "",
-        location: customerInfo.location || "اليمن"
+        name: customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم",
+        phone: customerInfo.phone || customerInfo.customerPhone || "",
+        address: customerInfo.address || customerInfo.customerAddress || customerInfo.location || "سيئون - حضرموت"
       },
       systemOverview: {
-        packageType: pkg.title,
+        packageType: pkg.title || 'منظومة الطاقة الشمسية المتكاملة',
         inverterCapacityKw: inverter.capacityKw,
         pvCapacityKw: panel.totalKw,
         panelsCount: panel.quantity,
-        batteryCapacityKwh: battery.totalKwh,
+        batteryCapacityKwh: battery.totalKwh || battery.capacityKwh * (battery.quantity || 1),
         batteryUsableKwh: battery.usableKwh,
-        batteryUnits: battery.quantity
+        batteryUnits: battery.quantity || 1
       },
       items,
       financials: {
-        equipmentCostUsd: parseFloat(totalEquipmentCostUsd.toFixed(2)),
-        accessoriesCostUsd: parseFloat(totalAccessoriesCostUsd.toFixed(2)),
+        equipmentCost: parseFloat(totalEquipmentCost.toFixed(2)),
+        accessoriesCost: parseFloat(totalAccessoriesCost.toFixed(2)),
+        installationFee: parseFloat(installationFee.toFixed(2)),
+        subtotal: parseFloat(totalCost.toFixed(2)),
+        discount: 0,
+        totalCost: parseFloat(totalCost.toFixed(2)),
+        grandTotal: parseFloat(totalCost.toFixed(2)),
+        equipmentCostUsd: parseFloat(totalEquipmentCost.toFixed(2)),
+        accessoriesCostUsd: parseFloat(totalAccessoriesCost.toFixed(2)),
         installationFeeUsd: parseFloat(installationFee.toFixed(2)),
-        totalCostUsd: parseFloat(totalCostUsd.toFixed(2)),
+        totalCostUsd: parseFloat(totalCost.toFixed(2)),
         totalCostYer: Math.round(totalCostYer),
         exchangeRate
       },
+      warrantyTerms: [
+        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
+        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
+        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
+        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
+      ],
+      companyFeatures: [
+        "تقديم أفضل الخدمات بعد البيع من صيانة ومتابعة خلال فترة الضمانة المحددة وبعدها",
+        "توفير جميع قطع الغيار الخاصة بمكونات منظومة الطاقة الشمسية",
+        "منتجاتنا مصنعة حسب المواصفات والمعايير الأوروبية"
+      ],
       terms: [
-        "الأسعار تشمل التوريد والتركيب والفحص الهندسي في نطاق فروع الشركة.",
-        `عرض السعر ساري المفعول لمدة ${validityDays} يوماً من تاريخ إصداره نظراً لتقلبات أسعار الصرف العالمية.`,
-        "بترونيل يمن للطاقة الوكيل المعتمد لإنفرترات Crown Micro العالمية في اليمن مع ضمان ودعم فني معتمد.",
-        "ضمان شامل للإنفرتر والبطاريات لمدة 5 سنوات، وضمان أداء الألواح لمدة 25 سنة وفق شروط المصنع.",
-        "هذه الدراسة الفنية والحسابات تقديرية مبنية على البيانات المدخلة، وتعتبر أساساً للتصميم ولا تغني عن المعاينة الميدانية للموقع واعتماد المهندس المختص."
-      ]
+        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
+        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
+        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
+        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
+      ],
+      note: "صلاحية عرض السعر لمدة أسبوع من تاريخه."
     };
   }
 
@@ -1146,7 +1174,10 @@ if (typeof SolarEngine === 'undefined') {
 
     // 1. فحص الجهد الاسمي للمنظومة (System Voltage Check)
     const invVoltage = inverter.batteryVoltage || inverter.systemVoltage || 48;
-    const batNominalVoltage = battery.nominalVoltage || battery.systemVoltage || 48;
+    let batNominalVoltage = battery.voltage || battery.systemVoltage || battery.nominalVoltage || 48;
+    if (batNominalVoltage >= 44 && batNominalVoltage <= 58) batNominalVoltage = 48;
+    else if (batNominalVoltage >= 22 && batNominalVoltage <= 29) batNominalVoltage = 24;
+    else if (batNominalVoltage >= 11 && batNominalVoltage <= 15) batNominalVoltage = 12;
     const qty = Math.max(1, parseInt(batteryCount, 10) || 1);
 
     let effectiveBatteryVoltage = batNominalVoltage;
@@ -1612,14 +1643,9 @@ function renderProductsCatalog(filter = 'all') {
 
   let items = [];
 
-  if (filter === 'all' || filter === 'crown') {
-    const crownInverters = inverters.filter(i => (i.brand || '').includes('Crown') || (i.name || '').includes('كراون'));
+  if (filter === 'all' || filter === 'inverters' || filter === 'crown') {
+    const crownInverters = inverters.filter(i => (i.brand || '').includes('Crown') || (i.name || '').includes('كراون') || (i.brand || '').includes('Xavier') || (i.brand || '').includes('Arceus') || (i.brand || '').includes('Nova') || (i.brand || '').includes('Elego'));
     items.push(...crownInverters.map(i => ({ ...i, category: 'inverter', subCat: 'crown' })));
-  }
-
-  if (filter === 'all' || filter === 'deye') {
-    const deyeInverters = inverters.filter(i => (i.brand || '').includes('Deye') || (i.name || '').includes('داي'));
-    items.push(...deyeInverters.map(i => ({ ...i, category: 'inverter', subCat: 'deye' })));
   }
 
   if (filter === 'all' || filter === 'batteries') {
@@ -1649,412 +1675,47 @@ function renderProductsCatalog(filter = 'all') {
         <div class="prod-spec-item"><span class="prod-spec-label">أقصى تيار شحن:</span><span class="prod-spec-val font-num">${item.maxChargeCurrent || 80}A</span></div>
         <div class="prod-spec-item"><span class="prod-spec-label">نطاق MPPT:</span><span class="prod-spec-val font-num">${item.mpptMin || 90}V - ${item.mpptMax || 450}V</span></div>
       `;
-    } else if (item.subCat === 'deye') {
-      brandBadge = '<span class="prod-brand-badge prod-brand-deye"><i class="fa-solid fa-bolt"></i> Deye Hybrid</span>';
-      iconClass = 'fa-gauge-high';
-      specsHtml = `
-        <div class="prod-spec-item"><span class="prod-spec-label">القدرة الاسمية:</span><span class="prod-spec-val font-num">${item.capacityKw} kW</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">عدد أطوار التشغيل:</span><span class="prod-spec-val">${item.phase || '1-Phase'}</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">أقصى تيار شحن:</span><span class="prod-spec-val font-num">${item.maxChargeCurrent || 120}A</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">الضمان:</span><span class="prod-spec-val font-num">${item.warrantyYears || 5} سنوات</span></div>
-      `;
     } else if (item.category === 'battery') {
-      brandBadge = '<span class="prod-brand-badge prod-brand-bat"><i class="fa-solid fa-battery-full"></i> LiFePO4</span>';
+      brandBadge = '<span class="prod-brand-badge prod-brand-crown"><i class="fa-solid fa-crown"></i> Crown LiFePO4</span>';
       iconClass = 'fa-battery-three-quarters';
       specsHtml = `
         <div class="prod-spec-item"><span class="prod-spec-label">السعة التخزينية:</span><span class="prod-spec-val font-num">${item.capacityKwh} kWh</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">الجهد الاسمي:</span><span class="prod-spec-val font-num">${item.nominalVoltage || 48}V</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">الجهد الاسمي:</span><span class="prod-spec-val font-num">${item.voltage || item.nominalVoltage || 48}V</span></div>
         <div class="prod-spec-item"><span class="prod-spec-label">عمق التفريغ DoD:</span><span class="prod-spec-val font-num">${((item.dod || 0.9) * 100).toFixed(0)}%</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">العمر الافتراضي:</span><span class="prod-spec-val">6000 دورة (+10 سنوات)</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">العمر الافتراضي:</span><span class="prod-spec-val font-num">${item.cycles || 6000} دورة (+${item.warrantyYears || 5} سنوات)</span></div>
       `;
     } else if (item.category === 'panel') {
-      brandBadge = '<span class="prod-brand-badge" style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.35);"><i class="fa-solid fa-sun"></i> Tier-1 N-Type</span>';
+      brandBadge = '<span class="prod-brand-badge" style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.35);"><i class="fa-solid fa-sun"></i> Longi N-Type</span>';
       iconClass = 'fa-solar-panel';
       specsHtml = `
         <div class="prod-spec-item"><span class="prod-spec-label">القدرة القصوى:</span><span class="prod-spec-val font-num">${item.watt} Watt</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">جهد الدائرة Voc:</span><span class="prod-spec-val font-num">${item.voc || '--'}V</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">كفاءة الخلية:</span><span class="prod-spec-val font-num">22.5%+</span></div>
-        <div class="prod-spec-item"><span class="prod-spec-label">ضمان الأداء:</span><span class="prod-spec-val font-num">25 سنة</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">جهد الدائرة Voc:</span><span class="prod-spec-val font-num">${item.voc || 53.6}V</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">كفاءة الخلية:</span><span class="prod-spec-val font-num">${item.efficiency || '22.6%'}</span></div>
+        <div class="prod-spec-item"><span class="prod-spec-label">ضمان الأداء:</span><span class="prod-spec-val font-num">${item.performanceWarrantyYears || 25} سنة</span></div>
       `;
     }
 
-    const priceUsdFormatted = `${Math.round(item.price).toLocaleString('en-US')}`;
-    const rate = State.designParams.currencyExchangeRate || 535;
-    const yerPrice = Math.round(item.price * rate).toLocaleString('ar-YE');
-
     return `
-      <div class="prod-card glass hover-lift" data-item-id="${item.id}" data-item-cat="${item.category}">
-        <div class="prod-card-top">
+      <div class="product-card glass" data-id="${item.id}" data-category="${item.category}">
+        <div class="prod-card-header">
           ${brandBadge}
-          <div class="prod-card-icon"><i class="fa-solid ${iconClass}"></i></div>
+          <div class="prod-icon-wrap"><i class="fa-solid ${iconClass}"></i></div>
         </div>
-        <h3 class="prod-card-title">${item.name}</h3>
-        <div class="prod-card-model">${item.model || ''}</div>
-        <div class="prod-specs-pills">
-          ${specsHtml}
-        </div>
+        <h3 class="prod-title">${item.name}</h3>
+        <p class="prod-model font-num">${item.model || ''}</p>
+        <div class="prod-specs-grid">${specsHtml}</div>
         <div class="prod-card-footer">
-          <div class="prod-price-box">
-            <span class="prod-price-usd font-num">${priceUsdFormatted}</span>
-            ${State.designParams.enableYerDisplay ? `<span class="prod-price-sub font-num">${yerPrice} ر.ي</span>` : '<span class="prod-price-sub">سعر الوكيل المعتمد</span>'}
+          <div class="prod-pricing">
+            <span class="prod-price font-num" style="color: #f59e0b; font-weight: 800; font-size: 1.25rem;">${item.price.toLocaleString('en-US')} ر.س</span>
           </div>
-          <button type="button" class="btn btn-primary btn-sm btn-select-product-calc" data-item-id="${item.id}" data-item-cat="${item.category}">
-            <i class="fa-solid fa-calculator"></i> صمم منظومة به
+          <button type="button" class="btn btn-secondary-outline btn-sm btn-quick-calc" onclick="goToStep(2)">
+            <i class="fa-solid fa-calculator"></i> استخدم بالحاسبة
           </button>
         </div>
       </div>
     `;
   }).join('');
-
-  // Add click handlers on product buttons
-  container.querySelectorAll('.btn-select-product-calc').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-item-id');
-      const cat = e.currentTarget.getAttribute('data-item-cat');
-
-      if (cat === 'inverter') {
-        const invSel = document.getElementById('custom-select-inverter');
-        if (invSel) invSel.value = id;
-      } else if (cat === 'battery') {
-        const batSel = document.getElementById('custom-select-battery');
-        if (batSel) batSel.value = id;
-      } else if (cat === 'panel') {
-        const panSel = document.getElementById('custom-select-panel');
-        if (panSel) panSel.value = id;
-      }
-
-      // Open tuning accordion if hidden
-      const tuningBody = document.getElementById('tuning-content');
-      if (tuningBody && tuningBody.classList.contains('hidden')) {
-        tuningBody.classList.remove('hidden');
-        document.getElementById('toggle-tuning-section')?.querySelector('.toggle-icon')?.classList.add('fa-chevron-up');
-      }
-
-      updateLiveCompatibilityCard();
-
-      // Scroll smoothly to calculator step 4
-      goToStep(4);
-      document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
 }
-
-function initPwaAndMobileNav() {
-  // 1. Mobile bottom navigation active state on scroll
-  const sections = document.querySelectorAll('section[id]');
-  const navItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
-
-  window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(section => {
-      const sectionTop = section.offsetTop - 120;
-      if (window.pageYOffset >= sectionTop) {
-        current = section.getAttribute('id');
-      }
-    });
-
-    navItems.forEach(item => {
-      item.classList.remove('active');
-      if (item.getAttribute('data-target') === current) {
-        item.classList.add('active');
-      }
-    });
-  }, { passive: true });
-
-  // 2. Filter buttons for products catalog
-  document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('#products-filter-bar .prod-filter-btn').forEach(b => b.classList.remove('active'));
-      e.currentTarget.classList.add('active');
-      const filter = e.currentTarget.getAttribute('data-filter');
-      renderProductsCatalog(filter);
-    });
-  });
-
-  // 3. PWA install prompt handler
-  let deferredPrompt;
-  const pwaBanner = document.getElementById('pwa-install-banner');
-  const btnInstall = document.getElementById('btn-pwa-install');
-  const btnDismiss = document.getElementById('btn-pwa-dismiss');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!localStorage.getItem('pwa_dismissed')) {
-      if (pwaBanner) pwaBanner.style.display = 'flex';
-    }
-  });
-
-  btnInstall?.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        if (pwaBanner) pwaBanner.style.display = 'none';
-      }
-      deferredPrompt = null;
-    }
-  });
-
-  btnDismiss?.addEventListener('click', () => {
-    if (pwaBanner) pwaBanner.style.display = 'none';
-    localStorage.setItem('pwa_dismissed', 'true');
-  });
-}
-
-function initWizardNavigation() {
-  const stepNodes = document.querySelectorAll('.wizard-step-node');
-  stepNodes.forEach(node => {
-    node.addEventListener('click', () => {
-      const targetStep = parseInt(node.getAttribute('data-step'), 10);
-      goToStep(targetStep);
-    });
-  });
-
-  // Next / Back buttons
-  document.getElementById('btn-next-to-loads')?.addEventListener('click', () => goToStep(2));
-  document.getElementById('btn-back-to-grid')?.addEventListener('click', () => goToStep(1));
-  document.getElementById('btn-next-to-sim')?.addEventListener('click', () => goToStep(3));
-  document.getElementById('btn-back-to-loads')?.addEventListener('click', () => goToStep(2));
-  document.getElementById('btn-next-to-matching')?.addEventListener('click', () => goToStep(4));
-  document.getElementById('btn-back-to-sim')?.addEventListener('click', () => goToStep(3));
-  document.getElementById('btn-next-to-quote')?.addEventListener('click', () => goToStep(5));
-  document.getElementById('btn-back-to-matching')?.addEventListener('click', () => goToStep(4));
-  document.getElementById('btn-restart-wizard')?.addEventListener('click', () => goToStep(1));
-
-  // Quick navigation buttons from live sizing card
-  document.getElementById('btn-quick-to-sim')?.addEventListener('click', () => goToStep(3));
-  document.getElementById('btn-quick-to-matching')?.addEventListener('click', () => goToStep(4));
-}
-
-function goToStep(step) {
-  if (step < 1 || step > 5) return;
-  State.currentStep = step;
-
-  // Update Stepper header
-  document.querySelectorAll('.wizard-step-node').forEach(node => {
-    const s = parseInt(node.getAttribute('data-step'), 10);
-    node.classList.toggle('active', s === step);
-    node.classList.toggle('completed', s < step);
-  });
-
-  // Switch panels
-  document.querySelectorAll('.wizard-step-panel').forEach(panel => {
-    panel.classList.remove('active');
-  });
-  const currentPanel = document.getElementById(`step-panel-${step}`);
-  if (currentPanel) currentPanel.classList.add('active');
-
-  // Trigger relevant step logic
-  if (step === 3) {
-    render24hSimulation();
-  } else if (step === 4) {
-    calculateAndRenderPackages();
-  } else if (step === 5) {
-    generateAndRenderQuotation();
-  }
-
-  // Smooth scroll into calculator view
-  document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ============================================================
-// STEP 1: جدول توفر كهرباء الشبكة
-// ============================================================
-function initStep1Grid() {
-  // Mode selector radio tabs
-  const modeRadios = document.querySelectorAll('input[name="grid_mode"]');
-  modeRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      State.grid.mode = e.target.value;
-      document.querySelectorAll('.mode-tab-option').forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-mode') === State.grid.mode);
-      });
-      // Show/Hide config subpanels
-      document.getElementById('subpanel-schedule')?.classList.toggle('hidden', State.grid.mode !== 'schedule');
-      document.getElementById('subpanel-dailyHours')?.classList.toggle('hidden', State.grid.mode !== 'dailyHours');
-      document.getElementById('subpanel-irregular')?.classList.toggle('hidden', State.grid.mode !== 'irregular');
-      updateGridScheduleMetrics();
-    });
-  });
-
-  // Grid Policy radios
-  document.querySelectorAll('input[name="grid_policy"]').forEach(r => {
-    r.addEventListener('change', (e) => {
-      State.grid.policy = e.target.value;
-    });
-  });
-
-  // Daily Hours slider
-  const dailySlider = document.getElementById('input-daily-grid-hours');
-  const dailyBadge = document.getElementById('val-daily-grid-hours');
-  if (dailySlider && dailyBadge) {
-    dailySlider.addEventListener('input', (e) => {
-      State.grid.dailyHours = parseFloat(e.target.value);
-      dailyBadge.textContent = `${State.grid.dailyHours} ساعات`;
-      updateGridScheduleMetrics();
-    });
-  }
-
-  // Irregular worst outage slider
-  const outageSlider = document.getElementById('input-worst-outage-hours');
-  const outageBadge = document.getElementById('val-worst-outage-hours');
-  if (outageSlider && outageBadge) {
-    outageSlider.addEventListener('input', (e) => {
-      State.grid.worstOutageHours = parseFloat(e.target.value);
-      outageBadge.textContent = `${State.grid.worstOutageHours} ساعة`;
-      updateGridScheduleMetrics();
-    });
-  }
-
-  // Add Interval button
-  document.getElementById('btn-add-interval')?.addEventListener('click', () => {
-    const container = document.getElementById('intervals-container');
-    if (!container) return;
-    const row = document.createElement('div');
-    row.className = 'interval-row';
-    row.innerHTML = `
-      <div class="time-input-group">
-        <label>من الساعة:</label>
-        <input type="time" class="form-control interval-start" value="12:00">
-      </div>
-      <div class="time-input-group">
-        <label>إلى الساعة:</label>
-        <input type="time" class="form-control interval-end" value="16:00">
-      </div>
-      <button type="button" class="btn-remove-interval" title="حذف الفترة"><i class="fa-solid fa-trash-can"></i></button>
-    `;
-    row.querySelector('.btn-remove-interval').addEventListener('click', () => {
-      row.remove();
-      readIntervalsFromDom();
-    });
-    row.querySelectorAll('input').forEach(input => {
-      input.addEventListener('change', readIntervalsFromDom);
-    });
-    container.appendChild(row);
-    readIntervalsFromDom();
-  });
-
-  // Bind existing interval delete buttons
-  document.querySelectorAll('.btn-remove-interval').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.target.closest('.interval-row')?.remove();
-      readIntervalsFromDom();
-    });
-  });
-
-  document.querySelectorAll('.interval-start, .interval-end').forEach(inp => {
-    inp.addEventListener('change', readIntervalsFromDom);
-  });
-}
-
-function readIntervalsFromDom() {
-  const rows = document.querySelectorAll('.interval-row');
-  const list = [];
-  rows.forEach(r => {
-    const s = r.querySelector('.interval-start')?.value || '00:00';
-    const e = r.querySelector('.interval-end')?.value || '00:00';
-    list.push({ start: s, end: e });
-  });
-  State.grid.intervals = list;
-  updateGridScheduleMetrics();
-}
-
-function updateGridScheduleMetrics() {
-  const schedule = SolarEngine.parseGridSchedule({
-    mode: State.grid.mode,
-    intervals: State.grid.intervals,
-    dailyHours: State.grid.dailyHours,
-    worstOutageHours: State.grid.worstOutageHours
-  }, 96);
-
-  document.getElementById('summary-grid-hours').textContent = `${schedule.totalGridHours} ساعة`;
-  document.getElementById('summary-outage-hours').textContent = `${schedule.totalOutageHours} ساعة`;
-  document.getElementById('summary-max-outage').textContent = `${schedule.maxContiguousOutageHours} ساعة`;
-
-  // Trigger reactive calculation across loads and packages
-  triggerReactiveCalculation();
-}
-
-// ============================================================
-// STEP 2: الأحمال الكهربائية
-// ============================================================
-function initStep2Loads() {
-  // Category tabs
-  const catPills = document.querySelectorAll('.cat-pill');
-  catPills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      catPills.forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      renderAppliancePicker(pill.getAttribute('data-cat'));
-    });
-  });
-
-  // Toggle Custom Device Form Accordion
-  const toggleBtn = document.getElementById('toggle-custom-form');
-  const formContent = document.getElementById('custom-form-content');
-  if (toggleBtn && formContent) {
-    toggleBtn.addEventListener('click', () => {
-      formContent.classList.toggle('hidden');
-      toggleBtn.querySelector('.toggle-icon')?.classList.toggle('fa-chevron-up');
-    });
-  }
-
-  // Add Custom Appliance button
-  document.getElementById('btn-add-custom-app')?.addEventListener('click', () => {
-    const name = document.getElementById('custom-app-name').value.trim();
-    const watt = parseFloat(document.getElementById('custom-app-watt').value);
-    const type = document.getElementById('custom-app-type').value;
-    const duty = parseFloat(document.getElementById('custom-app-duty').value);
-    const priority = document.getElementById('custom-app-priority').value;
-
-    if (!name || isNaN(watt) || watt <= 0) {
-      alert("يرجى إدخال اسم الجهاز وقدرة صحيحة بالواط");
-      return;
-    }
-
-    let surgeMult = 1.0;
-    let pf = 0.9;
-    if (type === 'aircon') { surgeMult = 2.5; pf = 0.88; }
-    else if (type === 'motor') { surgeMult = 4.5; pf = 0.80; }
-    else if (type === 'electronic') { surgeMult = 1.0; pf = 0.92; }
-
-    const newApp = {
-      id: 'custom_' + Date.now(),
-      name,
-      category: 'أجهزة مخصصة',
-      watt,
-      powerFactor: pf,
-      loadType: type,
-      surgeMultiplier: surgeMult,
-      dutyCycle: duty,
-      dayHours: 4,
-      nightHours: 4,
-      quantity: 1,
-      priority,
-      icon: 'fa-plug'
-    };
-
-    State.appliances.push(newApp);
-    renderSelectedAppliancesTable();
-    updateLoadsMetrics();
-
-    // Reset inputs
-    document.getElementById('custom-app-name').value = '';
-    document.getElementById('custom-app-watt').value = '';
-    formContent.classList.add('hidden');
-  });
-
-  // Clear all appliances
-  document.getElementById('clear-all-appliances')?.addEventListener('click', () => {
-    if (confirm("هل أنت متأكد من مسح جميع الأجهزة من القائمة؟")) {
-      State.appliances = [];
-      renderSelectedAppliancesTable();
-      updateLoadsMetrics();
-    }
-  });
-}
-
 function renderAppliancePicker(category = 'all') {
   const container = document.getElementById('appliance-picker');
   if (!container) return;
@@ -2642,15 +2303,195 @@ function updateLiveCompatibilityCard() {
   return evalResult;
 }
 
+
+// --- Arabic Number to Words Helper (Tafqeet) for Official Quotation ---
+function tafqeet(n) {
+  if (!n || n <= 0) return 'صفر ريال سعودي لا غير';
+  const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+  const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+  const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+
+  function convertChunk(num) {
+    let parts = [];
+    const h = Math.floor(num / 100);
+    const rem = num % 100;
+    if (h > 0) parts.push(hundreds[h]);
+    if (rem > 0) {
+      if (rem < 20) {
+        parts.push(ones[rem]);
+      } else {
+        const o = rem % 10;
+        const t = Math.floor(rem / 10);
+        if (o > 0) parts.push(ones[o] + ' و' + tens[t]);
+        else parts.push(tens[t]);
+      }
+    }
+    return parts.join(' و');
+  }
+
+  let thousands = Math.floor(n / 1000);
+  let remHundred = n % 1000;
+  let res = [];
+
+  if (thousands > 0) {
+    if (thousands === 1) res.push('ألف');
+    else if (thousands === 2) res.push('ألفان');
+    else if (thousands >= 3 && thousands <= 10) res.push(convertChunk(thousands) + ' آلاف');
+    else res.push(convertChunk(thousands) + ' ألفاً');
+  }
+
+  if (remHundred > 0) {
+    res.push(convertChunk(remHundred));
+  }
+
+  return 'فقط وقدره ' + res.join(' و') + ' ريال سعودي لا غير';
+}
+
+function openCustomerQuoteModal(targetPkg = 'optimal') {
+  const modal = document.getElementById('customer-quote-modal');
+  if (!modal) {
+    goToStep(5);
+    return;
+  }
+  
+  if (targetPkg === 'optimal') {
+    if (State.matchedPackages) {
+      State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+    }
+  }
+
+  const nameInp = document.getElementById('modal-input-name');
+  const phoneInp = document.getElementById('modal-input-phone');
+  const addrInp = document.getElementById('modal-input-address');
+
+  if (nameInp && State.customer.name && State.customer.name !== 'عميل بترونيل المميز') {
+    nameInp.value = State.customer.name;
+  }
+  if (phoneInp && State.customer.phone) {
+    phoneInp.value = State.customer.phone;
+  }
+  if (addrInp && State.customer.location) {
+    addrInp.value = State.customer.location;
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeCustomerQuoteModal() {
+  const modal = document.getElementById('customer-quote-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function initCustomerQuoteModal() {
+  const modal = document.getElementById('customer-quote-modal');
+  const closeBtn = document.getElementById('btn-close-quote-modal');
+  const form = document.getElementById('quote-customer-modal-form');
+
+  closeBtn?.addEventListener('click', closeCustomerQuoteModal);
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeCustomerQuoteModal();
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('modal-input-name')?.value.trim() || 'عميل بترونيل المحترم';
+    const phone = document.getElementById('modal-input-phone')?.value.trim() || '';
+    const address = document.getElementById('modal-input-address')?.value.trim() || 'حضرموت - سيئون';
+
+    State.customer.name = name;
+    State.customer.phone = phone;
+    State.customer.address = address;
+    State.customer.location = address;
+
+    if (!State.activePackage && State.matchedPackages) {
+      State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
+    }
+
+    if (!State.activePackage) {
+      alert("يرجى التأكد من تحديد الأحمال لحساب المنظومة قبل إصدار عرض السعر.");
+      closeCustomerQuoteModal();
+      return;
+    }
+
+    const quotation = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+
+    // Save quote to server so admin sees it
+    try {
+      await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: name,
+          customerPhone: phone,
+          customerAddress: address,
+          systemPackage: State.activePackage.title || 'منظومة كراون مايكرو المتكاملة',
+          items: quotation ? quotation.items : [],
+          grandTotal: quotation ? (quotation.financials.grandTotal || quotation.financials.totalCost) : 0,
+          currency: 'SAR'
+        })
+      });
+    } catch (err) {
+      console.warn("Could not save quote to backend:", err);
+    }
+
+    closeCustomerQuoteModal();
+    generateAndRenderQuotation();
+    goToStep(5);
+  });
+}
+
 function initStep4Packages() {
+  // Optimal quote button
+  document.getElementById('btn-order-optimal-quote')?.addEventListener('click', () => {
+    openCustomerQuoteModal('optimal');
+  });
+
+  // Custom quote button
+  document.getElementById('btn-order-custom-quote')?.addEventListener('click', () => {
+    const evalRes = updateLiveCompatibilityCard();
+    if (!evalRes) return;
+
+    if (evalRes.overallStatus === 'critical') {
+      const confirmContinue = confirm("تحذير هندسي: التركيب المختار يحتوي على تعارضات كهربائية قد تسبب فصلاً أو خطراً على الأجهزة.\n\nهل ترغب بالاستمرار رغم ذلك لمعاينة عرض السعر؟");
+      if (!confirmContinue) return;
+    }
+
+    const invId = document.getElementById('custom-select-inverter').value;
+    const panId = document.getElementById('custom-select-panel').value;
+    const batId = document.getElementById('custom-select-battery').value;
+    const panelsCount = parseInt(document.getElementById('custom-panels-count').value, 10) || 8;
+    const batCount = parseInt(document.getElementById('custom-batteries-count').value, 10) || 1;
+
+    const chosenInv = State.inventory.inverters.find(i => i.id === invId) || State.inventory.inverters[0];
+    const chosenPan = State.inventory.panels.find(p => p.id === panId) || State.inventory.panels[0];
+    const chosenBat = State.inventory.batteries.find(b => b.id === batId) || State.inventory.batteries[0];
+
+    const stringing = SolarEngine.calculateElectricalStringing(chosenPan, chosenInv, (panelsCount * chosenPan.watt) / 1000, State.designParams);
+    const isCrown = (chosenInv.brand || '').includes('Crown') || (chosenInv.name || '').includes('كراون');
+
+    State.activePackage = {
+      type: 'custom',
+      title: 'منظومة مخصصة يدوياً',
+      badge: isCrown ? 'تخصيص وكالة Crown Micro المعتمدة' : 'تم اختيار المكونات يدوياً من المخزون',
+      inverter: { ...chosenInv, quantity: 1, totalCost: chosenInv.price },
+      battery: { ...chosenBat, quantity: batCount, totalKwh: parseFloat((chosenBat.capacityKwh * batCount).toFixed(2)), usableKwh: parseFloat((chosenBat.usableKwh * batCount).toFixed(2)), totalCost: chosenBat.price * batCount },
+      panel: { ...chosenPan, quantity: panelsCount, totalKw: parseFloat(((panelsCount * chosenPan.watt) / 1000).toFixed(2)), stringing, totalCost: chosenPan.price * panelsCount },
+      compatibility: evalRes
+    };
+
+    openCustomerQuoteModal('custom');
+  });
+
+  // Any legacy select-pkg buttons
   document.querySelectorAll('.btn-select-pkg').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const type = e.currentTarget.getAttribute('data-pkg');
       State.selectedPackageType = type;
-      if (State.matchedPackages && State.matchedPackages.packages[type]) {
+      if (State.matchedPackages && State.matchedPackages.packages && State.matchedPackages.packages[type]) {
         State.activePackage = State.matchedPackages.packages[type];
       }
-      goToStep(5);
+      openCustomerQuoteModal(type);
     });
   });
 
@@ -2678,38 +2519,7 @@ function initStep4Packages() {
   document.getElementById('btn-apply-custom-tuning')?.addEventListener('click', () => {
     const evalRes = updateLiveCompatibilityCard();
     if (!evalRes) return;
-
-    if (evalRes.overallStatus === 'critical') {
-      const confirmContinue = confirm("تحذير هندسي: التركيب المختار يحتوي على تعارضات كهربائية قد تسبب فصلاً أو خطراً على الأجهزة.\n\nهل ترغب بالاستمرار رغم ذلك لمعاينة عرض السعر؟");
-      if (!confirmContinue) return;
-    }
-
-    const invId = document.getElementById('custom-select-inverter').value;
-    const panId = document.getElementById('custom-select-panel').value;
-    const batId = document.getElementById('custom-select-battery').value;
-    const panelsCount = parseInt(document.getElementById('custom-panels-count').value, 10) || 8;
-    const batCount = parseInt(document.getElementById('custom-batteries-count').value, 10) || 1;
-
-    const chosenInv = State.inventory.inverters.find(i => i.id === invId) || State.inventory.inverters[0];
-    const chosenPan = State.inventory.panels.find(p => p.id === panId) || State.inventory.panels[0];
-    const chosenBat = State.inventory.batteries.find(b => b.id === batId) || State.inventory.batteries[0];
-
-    const stringing = SolarEngine.calculateElectricalStringing(chosenPan, chosenInv, (panelsCount * chosenPan.watt) / 1000, State.designParams);
-
-    const isCrown = (chosenInv.brand || '').includes('Crown') || (chosenInv.name || '').includes('كراون');
-
-    State.activePackage = {
-      type: 'custom',
-      title: 'باقة مخصصة يدوياً',
-      badge: isCrown ? 'تخصيص وكالة Crown Micro المعتمدة' : 'تم اختيار المكونات يدوياً من لوحة التخصيص',
-      inverter: { ...chosenInv, quantity: 1, totalCost: chosenInv.price },
-      battery: { ...chosenBat, quantity: batCount, totalKwh: parseFloat((chosenBat.capacityKwh * batCount).toFixed(2)), usableKwh: parseFloat((chosenBat.usableKwh * batCount).toFixed(2)), totalCost: chosenBat.price * batCount },
-      panel: { ...chosenPan, quantity: panelsCount, totalKw: parseFloat(((panelsCount * chosenPan.watt) / 1000).toFixed(2)), stringing, totalCost: chosenPan.price * panelsCount },
-      compatibility: evalRes
-    };
-
-    alert("✅ تم تحديث وتدقيق مواصفات المنظومة بنجاح! جارٍ نقلك إلى الخطوة 5 لمعاينة وثيقة عرض السعر الرسمية.");
-    goToStep(5);
+    alert("✅ تم تحديث وتدقيق الحسابات الهندسية للمكونات المختارة.");
   });
 }
 
@@ -2728,20 +2538,20 @@ function calculateAndRenderPackages() {
   State.matchedPackages = matchResult;
 
   const mpptBanner = document.querySelector('.mppt-validation-banner');
-  const packagesGrid = document.querySelector('.packages-comparison-grid');
   let errorBanner = document.getElementById('packages-error-banner');
 
-  if (!matchResult || !matchResult.success || !matchResult.packages) {
+  if (!matchResult || !matchResult.success) {
     State.activePackage = null;
     if (!errorBanner) {
       errorBanner = document.createElement('div');
       errorBanner.id = 'packages-error-banner';
       errorBanner.className = 'glass p-4 rounded-xl text-center mb-6 border border-amber-500/30 bg-amber-500/10';
-      if (packagesGrid && packagesGrid.parentNode) {
-        packagesGrid.parentNode.insertBefore(errorBanner, packagesGrid);
+      const container = document.querySelector('.tailored-design-grid');
+      if (container && container.parentNode) {
+        container.parentNode.insertBefore(errorBanner, container);
       }
     }
-    const errMsg = (matchResult && matchResult.message) ? matchResult.message : 'يرجى إضافة الأجهزة وتحديد استهلاكك في الخطوة الأولى لحساب الباقات المناسبة.';
+    const errMsg = (matchResult && matchResult.message) ? matchResult.message : 'يرجى إضافة الأجهزة وتحديد استهلاكك في الخطوة الأولى لحساب المنظومة المناسبة.';
     errorBanner.innerHTML = `<div style="padding: 16px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; margin-bottom: 20px; text-align: center;">
       <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 2rem; margin-bottom: 8px; display: block;"></i>
       <h4 style="font-size: 1.15rem; font-weight: bold; margin-bottom: 6px; color: #f59e0b;">تنبيه هندسي</h4>
@@ -2753,78 +2563,56 @@ function calculateAndRenderPackages() {
     errorBanner.style.display = 'block';
 
     if (mpptBanner) mpptBanner.style.opacity = '0.4';
-    renderPackageCard('econ', null);
-    renderPackageCard('rec', null);
-    renderPackageCard('high', null);
     return;
   }
 
   if (errorBanner) errorBanner.style.display = 'none';
   if (mpptBanner) mpptBanner.style.opacity = '1';
 
-  // Set default active package
-  State.activePackage = matchResult.packages[State.selectedPackageType] || matchResult.packages.recommended;
+  // 1. Populate Customer Need Card
+  const need = matchResult.customerNeed || {
+    minInverterContinuousKw: matchResult.sizingRequirements.minInverterContinuousKw,
+    minInverterSurgeKw: matchResult.sizingRequirements.minInverterSurgeKw,
+    targetUsableBatteryKwh: matchResult.sizingRequirements.targetUsableBatteryKwh,
+    minPvKwPeak: matchResult.sizingRequirements.minPvKwPeak,
+    dayEnergyKwh: profile.totalDayKwh,
+    nightEnergyKwh: profile.totalNightKwh,
+    outageHours: sched.totalOutageHours
+  };
 
-  const { economic, recommended, highPerformance } = matchResult.packages;
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('need-cont-kw', `${need.minInverterContinuousKw} kW`);
+  setEl('need-surge-kw', `${need.minInverterSurgeKw} kW`);
+  setEl('need-battery-kwh', `${need.targetUsableBatteryKwh} kWh`);
+  setEl('need-pv-kw', `${need.minPvKwPeak} kWp`);
+  setEl('need-day-night-kwh', `${need.dayEnergyKwh} نهاراً / ${need.nightEnergyKwh} ليلاً kWh`);
+  setEl('need-outage-hours', `${need.outageHours} ساعة`);
 
-  // Render MPPT validation banner for recommended package
-  const recStringing = recommended.panel.stringing;
-  if (document.getElementById('mppt-val-voc')) document.getElementById('mppt-val-voc').textContent = `${recStringing.stringVocCold}V`;
-  if (document.getElementById('mppt-val-vmp')) document.getElementById('mppt-val-vmp').textContent = `${recStringing.stringVmpHot}V`;
-  if (document.getElementById('mppt-val-surge')) document.getElementById('mppt-val-surge').textContent = `${recommended.inverter.surgeCapacityKw || (recommended.inverter.capacityKw * 2)}kW`;
+  // 2. Populate Optimal Recommendation
+  const opt = matchResult.optimalRecommendation || (matchResult.packages ? matchResult.packages.recommended : null);
+  State.activePackage = opt;
 
-  // Render Package 1: Economic
-  renderPackageCard('econ', economic);
+  if (opt) {
+    setEl('opt-pkg-title', opt.title || 'منظومة كراون مايكرو ولونجي المتكاملة');
+    setEl('opt-inv-name', `${opt.inverter.name} (قدرة ${opt.inverter.capacityKw}kW - جهد ${opt.inverter.batteryVoltage || opt.inverter.systemVoltage || 48}V)`);
+    setEl('opt-battery-name', `${opt.battery.quantity} × ${opt.battery.name} (${opt.battery.totalKwh} kWh)`);
+    setEl('opt-panel-name', `${opt.panel.quantity} ألواح × ${opt.panel.name} (${opt.panel.totalKw} kWp)`);
 
-  // Render Package 2: Recommended
-  renderPackageCard('rec', recommended);
-
-  // Render Package 3: High Performance
-  renderPackageCard('high', highPerformance);
-
-  // Populate manual tuning dropdowns
-  populateManualTuningSelects(recommended);
-}
-
-function renderPackageCard(prefix, pkg) {
-  const invElem = document.getElementById(`${prefix}-inv-name`);
-  const panElem = document.getElementById(`${prefix}-panel-name`);
-  const batElem = document.getElementById(`${prefix}-battery-name`);
-  const usdElem = document.getElementById(`${prefix}-price-usd`);
-  const yerElem = document.getElementById(`${prefix}-price-yer`);
-
-  if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
-    if (invElem) invElem.textContent = 'غير متوفر';
-    if (panElem) panElem.textContent = 'غير متوفر';
-    if (batElem) batElem.textContent = 'غير متوفر';
-    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
-    if (yerElem) yerElem.textContent = '';
-    return;
-  }
-
-  const quote = SolarEngine.generateQuotation(pkg, State.designParams);
-
-  if (invElem) {
-    const isCrown = (pkg.inverter.brand || '').includes('Crown') || (pkg.inverter.name || '').includes('كراون');
-    const crownBadge = isCrown ? ' <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; display: inline-block;">وكالة Crown Micro</span>' : '';
-    invElem.innerHTML = `${pkg.inverter.name} (${pkg.inverter.capacityKw}kW)${crownBadge}`;
-  }
-  if (panElem) panElem.textContent = `${pkg.panel.quantity} ألواح × ${pkg.panel.watt}W (${pkg.panel.totalKw} kWp)`;
-  if (batElem) batElem.textContent = `${pkg.battery.quantity} × ${pkg.battery.name} (${pkg.battery.totalKwh} kWh)`;
-
-  if (quote && quote.financials && quote.financials.totalCostUsd > 0) {
-    if (usdElem) usdElem.textContent = `${Math.round(quote.financials.totalCostUsd).toLocaleString('en-US')}`;
-    if (yerElem) {
-      if (State.designParams.enableYerDisplay || State.currency === 'YER') {
-        yerElem.textContent = `${quote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
-        yerElem.style.display = 'block';
-      } else {
-        yerElem.style.display = 'none';
-      }
+    const optQuote = SolarEngine.generateQuotation(opt, State.designParams, State.customer);
+    if (optQuote && optQuote.financials) {
+      setEl('opt-price-sar', `${Math.round(optQuote.financials.totalCost).toLocaleString('en-US')} ر.س`);
     }
-  } else {
-    if (usdElem) usdElem.textContent = 'السعر عند الطلب';
-    if (yerElem) yerElem.style.display = 'none';
+
+    // Render MPPT validation banner
+    const stringing = opt.panel.stringing;
+    if (stringing) {
+      setEl('mppt-val-voc', `${stringing.stringVocCold}V`);
+      setEl('mppt-val-vmp', `${stringing.stringVmpHot}V`);
+      setEl('mppt-val-surge', `${opt.inverter.surgeKw || opt.inverter.surgeCapacityKw || (opt.inverter.capacityKw * 2)}kW`);
+    }
+
+    // Populate manual tuning dropdowns with optimal defaults
+    populateManualTuningSelects(opt);
   }
 }
 
@@ -2834,13 +2622,13 @@ function populateManualTuningSelects(defaultPkg) {
   const batSel = document.getElementById('custom-select-battery');
 
   if (invSel) {
-    invSel.innerHTML = State.inventory.inverters.map(i => `<option value="${i.id}" ${i.id === defaultPkg.inverter.id ? 'selected' : ''}>${i.name} - $${i.price}</option>`).join('');
+    invSel.innerHTML = State.inventory.inverters.map(i => `<option value="${i.id}" ${i.id === defaultPkg.inverter.id ? 'selected' : ''}>${i.name} (${i.capacityKw}kW) - ${i.price} ر.س</option>`).join('');
   }
   if (panSel) {
-    panSel.innerHTML = State.inventory.panels.map(p => `<option value="${p.id}" ${p.id === defaultPkg.panel.id ? 'selected' : ''}>${p.name} - $${p.price}</option>`).join('');
+    panSel.innerHTML = State.inventory.panels.map(p => `<option value="${p.id}" ${p.id === defaultPkg.panel.id ? 'selected' : ''}>${p.name} (${p.watt}W) - ${p.price} ر.س</option>`).join('');
   }
   if (batSel) {
-    batSel.innerHTML = State.inventory.batteries.map(b => `<option value="${b.id}" ${b.id === defaultPkg.battery.id ? 'selected' : ''}>${b.name} - $${b.price}</option>`).join('');
+    batSel.innerHTML = State.inventory.batteries.map(b => `<option value="${b.id}" ${b.id === defaultPkg.battery.id ? 'selected' : ''}>${b.name} (${b.capacityKwh}kWh) - ${b.price} ر.س</option>`).join('');
   }
 
   const pCount = document.getElementById('custom-panels-count');
@@ -2850,26 +2638,10 @@ function populateManualTuningSelects(defaultPkg) {
 }
 
 // ============================================================
-// STEP 5: عرض السعر والتقرير الفني الرسمي (BOM & PDF)
+// STEP 5: عرض السعر والتقرير الفني الرسمي (Matching Official Template)
 // ============================================================
 function initStep5Quotation() {
-  // Sync client inputs with official printable doc
-  const nameInp = document.getElementById('quote-client-name');
-  const phoneInp = document.getElementById('quote-client-phone');
-  const locInp = document.getElementById('quote-client-location');
-
-  nameInp?.addEventListener('input', (e) => {
-    State.customer.name = e.target.value;
-    document.getElementById('doc-client-name').textContent = e.target.value || 'عميل بترونيل المميز';
-  });
-  phoneInp?.addEventListener('input', (e) => {
-    State.customer.phone = e.target.value;
-    document.getElementById('doc-client-phone').textContent = e.target.value || '--';
-  });
-  locInp?.addEventListener('input', (e) => {
-    State.customer.location = e.target.value;
-    document.getElementById('doc-client-location').textContent = e.target.value || 'اليمن';
-  });
+  initCustomerQuoteModal();
 
   // Download PDF Button
   document.getElementById('btn-download-pdf')?.addEventListener('click', downloadQuotationPdf);
@@ -2894,65 +2666,59 @@ function initStep5Quotation() {
 
 function generateAndRenderQuotation() {
   if (!State.activePackage && State.matchedPackages) {
-    State.activePackage = State.matchedPackages.packages.recommended;
+    State.activePackage = State.matchedPackages.optimalRecommendation || State.matchedPackages.packages.recommended;
   }
   if (!State.activePackage) return;
 
   const quotation = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  if (!quotation) return;
+
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
   // Doc references
-  document.getElementById('quote-ref-code').textContent = quotation.quoteId;
-  document.getElementById('quote-issue-date').textContent = `التاريخ: ${quotation.date}`;
-  if (document.getElementById('quote-validity-text')) {
-    document.getElementById('quote-validity-text').textContent = `صلاحية العرض: ${quotation.validUntilDays || 15} يوماً`;
-  }
-  document.getElementById('doc-package-type').textContent = State.activePackage.title;
+  setEl('quote-ref-code', quotation.quoteNo || quotation.quoteId);
+  setEl('quote-issue-date', quotation.date);
+  setEl('doc-client-name', quotation.customer.name || 'عميل بترونيل المحترم');
+  setEl('doc-client-phone', quotation.customer.phone || '--');
+  setEl('doc-client-location', quotation.customer.address || quotation.customer.location || 'حضرموت - سيئون');
 
-  // Render Dynamic Terms & Disclaimers
-  const termsList = document.getElementById('quote-terms-list');
-  if (termsList && Array.isArray(quotation.terms)) {
-    termsList.innerHTML = quotation.terms.map(t => `<li>${t}</li>`).join('');
-  }
-
-  // Technical specs bar
-  document.getElementById('doc-inv-kw').textContent = `${quotation.systemOverview.inverterCapacityKw} kW`;
-  document.getElementById('doc-pv-kw').textContent = `${quotation.systemOverview.pvCapacityKw} kWp (${quotation.systemOverview.panelsCount} لوح)`;
-  document.getElementById('doc-bat-kwh').textContent = `${quotation.systemOverview.batteryCapacityKwh} kWh (${quotation.systemOverview.batteryUnits} وحدة)`;
-  document.getElementById('doc-outage-support').textContent = `${document.getElementById('summary-max-outage')?.textContent || '24 ساعة'}`;
-
-  // Itemized Table Rows
+  // BOM Table Rows matching official sheet
   const tbody = document.getElementById('quote-items-tbody');
   if (tbody) {
     tbody.innerHTML = quotation.items.map(item => `
       <tr>
-        <td class="text-center font-num">${item.itemNumber}</td>
+        <td style="text-align: center; font-weight: bold;" class="font-num">${item.itemNumber}</td>
         <td>
-          <strong>${item.name}</strong>
-          <small class="text-muted d-block">${item.specs}</small>
+          <strong style="display: block; font-size: 0.92rem; color: #0f172a;">${item.name}</strong>
+          <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 2px;">${item.specs}</small>
         </td>
-        <td class="text-center font-num">${item.quantity}</td>
-        <td class="text-center">${item.unit}</td>
-        <td class="text-center">${item.warranty}</td>
-        <td class="text-left font-num">$${item.unitPrice}</td>
-        <td class="text-left font-num font-weight-bold">$${item.totalPrice}</td>
+        <td style="text-align: center;">${item.unit}</td>
+        <td style="text-align: center; font-weight: bold;" class="font-num">${item.quantity}</td>
+        <td style="text-align: center;" class="font-num">${item.unitPrice.toLocaleString('en-US')} ر.س</td>
+        <td style="text-align: center; font-weight: 800; color: #1e3a8a;" class="font-num">${item.totalPrice.toLocaleString('en-US')} ر.س</td>
       </tr>
     `).join('');
   }
 
-  // Financial figures
-  document.getElementById('doc-cost-equipment').textContent = `$${quotation.financials.equipmentCostUsd.toLocaleString('en-US')}`;
-  document.getElementById('doc-cost-accessories').textContent = `$${quotation.financials.accessoriesCostUsd.toLocaleString('en-US')}`;
-  document.getElementById('doc-cost-install').textContent = `$${quotation.financials.installationFeeUsd.toLocaleString('en-US')}`;
-  document.getElementById('doc-total-usd').textContent = `$${quotation.financials.totalCostUsd.toLocaleString('en-US')}`;
-  const docYerElem = document.getElementById('doc-total-yer');
-  if (docYerElem) {
-    if (State.designParams.enableYerDisplay || State.currency === 'YER') {
-      docYerElem.textContent = `${quotation.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي`;
-      docYerElem.parentElement ? (docYerElem.parentElement.style.display = '') : (docYerElem.style.display = 'block');
-    } else {
-      docYerElem.parentElement ? (docYerElem.parentElement.style.display = 'none') : (docYerElem.style.display = 'none');
-    }
-  }
+  // Financial figures in SAR
+  const grandTotal = Math.round(quotation.financials.grandTotal || quotation.financials.totalCost);
+  setEl('op-subtotal-sar', `${grandTotal.toLocaleString('en-US')} ر.س`);
+  setEl('op-discount-sar', '0 ر.س');
+  setEl('op-grandtotal-sar', `${grandTotal.toLocaleString('en-US')} ر.س`);
+  setEl('doc-verbal-total', tafqeet(grandTotal));
+
+  // Legacy element sync for any test or background script
+  setEl('doc-total-usd', `$${quotation.financials.totalCostUsd || grandTotal}`);
+  setEl('doc-total-yer', `${(quotation.financials.totalCostYer || grandTotal).toLocaleString('ar-YE')} ر.ي`);
+  setEl('doc-cost-equipment', `$${quotation.financials.equipmentCostUsd || 0}`);
+  setEl('doc-cost-accessories', `$${quotation.financials.accessoriesCostUsd || 0}`);
+  setEl('doc-cost-install', `$${quotation.financials.installationFeeUsd || 0}`);
+  setEl('quote-validity-text', `صلاحية العرض: ${quotation.validUntilDays || 7} أيام`);
+  setEl('doc-package-type', State.activePackage.title);
+  setEl('doc-inv-kw', `${quotation.systemOverview.inverterCapacityKw} kW`);
+  setEl('doc-pv-kw', `${quotation.systemOverview.pvCapacityKw} kWp (${quotation.systemOverview.panelsCount} لوح)`);
+  setEl('doc-bat-kwh', `${quotation.systemOverview.batteryCapacityKwh} kWh`);
+  setEl('doc-outage-support', `${quotation.validUntilDays || 24} ساعة`);
 }
 
 function downloadQuotationPdf() {
@@ -2964,8 +2730,8 @@ function downloadQuotationPdf() {
   }
 
   const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `عرض_سعر_بترونيل_يمن_${State.customer.name.replace(/\s+/g, '_')}.pdf`,
+    margin: [6, 6, 6, 6],
+    filename: `عرض_سعر_بترونيل_يمن_${(State.customer.name || 'العميل').replace(/\s+/g, '_')}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -2977,25 +2743,28 @@ function downloadQuotationPdf() {
 function shareViaWhatsApp() {
   if (!State.activePackage) return;
   const quote = SolarEngine.generateQuotation(State.activePackage, State.designParams, State.customer);
+  const totalSar = Math.round(quote.financials.grandTotal || quote.financials.totalCost);
 
   const text = `*عرض سعر رسمي من شركة بترونيل يمن للطاقة* ☀️
 ━━━━━━━━━━━━━━━━━━━━
-👤 *العميل:* ${State.customer.name || 'عميل بترونيل المميز'}
-📄 *رقم العرض:* ${quote.quoteId}
+👤 *العميل:* ${State.customer.name || 'عميل بترونيل المحترم'}
+📍 *العنوان:* ${State.customer.address || 'حضرموت - سيئون'}
+📄 *رقم العرض:* ${quote.quoteNo || quote.quoteId}
 📦 *المنظومة:* ${State.activePackage.title}
-⚡ *الإنفرتر:* ${quote.systemOverview.inverterCapacityKw} kW
-☀️ *الألواح:* ${quote.systemOverview.panelsCount} لوح (${quote.systemOverview.pvCapacityKw} kWp)
-🔋 *البطاريات:* ${quote.systemOverview.batteryCapacityKwh} kWh ليثيوم
+⚡ *الإنفرتر:* ${quote.systemOverview.inverterCapacityKw} kW كراون مايكرو
+☀️ *الألواح:* ${quote.systemOverview.panelsCount} لوح لونجي (${quote.systemOverview.pvCapacityKw} kWp)
+🔋 *البطاريات:* ${quote.systemOverview.batteryCapacityKwh} kWh ليثيوم كراون مايكرو
 ━━━━━━━━━━━━━━━━━━━━
-💰 *الإجمالي بالدولار:* $${quote.financials.totalCostUsd.toLocaleString('en-US')}
-💵 *الإجمالي بالريال اليمني:* ${quote.financials.totalCostYer.toLocaleString('ar-YE')} ر.ي
+💰 *الإجمالي النهائي:* ${totalSar.toLocaleString('en-US')} ريال سعودي (SAR)
+📝 *المبلغ كتابة:* ${tafqeet(totalSar)}
 ━━━━━━━━━━━━━━━━━━━━
-📞 شركة بترونيل يمن للطاقة - عدن: 783999039`;
+📞 *بترونيل يمن للطاقة - الوكيل الحصري لـ Crown Micro:*
+📍 سيئون - شارع الجزائر - مقابل حديقة الطويلة
+📱 +967-779669868 / +967-770557550 / +971-557777395`;
 
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank');
 }
-
 function updateAllPricesUI() {
   if (State.matchedPackages) {
     renderPackageCard('econ', State.matchedPackages.packages.economic);

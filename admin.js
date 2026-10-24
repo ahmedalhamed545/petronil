@@ -8,6 +8,7 @@ let editModeApplianceId = null;
 let allPanels = [];
 let allBatteries = [];
 let allInverters = [];
+let allQuotes = [];
 
 // --- Initialize Admin App ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -113,6 +114,7 @@ async function loadAllData() {
     const hasPerm = (perm) => currentUser.role === 'SuperAdmin' || (Array.isArray(currentUser.permissions) && currentUser.permissions.includes(perm));
     
     if (hasPerm('leads')) promises.push(fetchLeads());
+promises.push(fetchQuotes());
     if (hasPerm('appliances')) promises.push(fetchAppliances());
     if (hasPerm('content')) {
         promises.push(fetchContentSettings());
@@ -184,9 +186,9 @@ async function fetchUsers() {
 async function fetchInventory() {
     try {
         const [pRes, bRes, iRes] = await Promise.all([
-            fetch('/api/inventory/panels'),
-            fetch('/api/inventory/batteries'),
-            fetch('/api/inventory/inverters')
+            fetch('/api/inventory/panels?all=1'),
+            fetch('/api/inventory/batteries?all=1'),
+            fetch('/api/inventory/inverters?all=1')
         ]);
         if (pRes.ok) allPanels = await pRes.json();
         if (bRes.ok) allBatteries = await bRes.json();
@@ -391,6 +393,85 @@ function populateContentForm(settings) {
 
 // --- Render Inventory Tables ---
 
+
+// --- Quotes Management ---
+async function fetchQuotes() {
+    try {
+        const res = await fetch('/api/quotes');
+        if (res.ok) {
+            allQuotes = await res.json();
+            renderQuotesTable();
+        }
+    } catch (err) {
+        console.error("Error fetching quotes:", err);
+    }
+}
+
+function renderQuotesTable() {
+    const tbody = document.getElementById('quotes-list-admin');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (!allQuotes || allQuotes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;" class="text-muted">لا توجد عروض أسعار مصدرة حتى الآن</td></tr>`;
+        return;
+    }
+    
+    allQuotes.forEach((q, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="font-num text-center">${idx + 1}</td>
+            <td class="font-num" style="font-weight: 700; color: #f59e0b;">${q.quoteNo || q.id}</td>
+            <td class="font-num">${q.date ? q.date.split('T')[0] : '--'}</td>
+            <td style="font-weight: 700;">${q.customerName || '--'}</td>
+            <td class="font-num">${q.customerPhone || '--'}</td>
+            <td>${q.customerAddress || '--'}</td>
+            <td class="font-num" style="font-weight: 800; color: #10b981;">${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'ر.س'}</td>
+            <td>
+                <button class="btn btn-sm btn-secondary btn-view-quote-details" data-id="${q.id}">
+                    <i class="fa-solid fa-list-check"></i> تفاصيل المنظومة
+                </button>
+            </td>
+        `;
+        
+        tr.querySelector('.btn-view-quote-details')?.addEventListener('click', () => {
+            alert(`عرض سعر: ${q.quoteNo || q.id}\nالعميل: ${q.customerName}\nالهاتف: ${q.customerPhone}\nالعنوان: ${q.customerAddress}\nالإجمالي: ${(q.grandTotal || 0).toLocaleString('en-US')} ${q.currency || 'SAR'}\n\nالبنود: ${q.items ? q.items.length : 0} صنف`);
+        });
+        
+        tbody.appendChild(tr);
+    });
+}
+
+async function editProductPrice(type, id, currentPrice, productName) {
+    const newPriceStr = prompt(`تعديل سعر (${productName}) بالريال السعودي:\nالسعر الحالي: ${currentPrice} ر.س`, currentPrice);
+    if (newPriceStr === null) return;
+    
+    const newPrice = parseFloat(newPriceStr);
+    if (isNaN(newPrice) || newPrice <= 0) {
+        alert("يرجى إدخال سعر رقمي صحيح أكبر من صفر.");
+        return;
+    }
+    
+    try {
+        const endpoint = `/api/inventory/${type}/${id}`;
+        const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: newPrice })
+        });
+        
+        if (res.ok) {
+            showToast(`تم تعديل سعر ${productName} إلى ${newPrice} ر.س بنجاح`, true);
+            await fetchInventory();
+        } else {
+            showToast("فشل تحديث السعر في قاعدة البيانات", false);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("حدث خطأ في الاتصال بالخادم", false);
+    }
+}
+
 function renderPanelsTable() {
     const tbody = document.getElementById('inventory-panels-list');
     tbody.innerHTML = '';
@@ -403,7 +484,10 @@ function renderPanelsTable() {
         tr.innerHTML = `
             <td style="font-weight:700;">${p.name}</td>
             <td class="font-num">${p.watt} W</td>
-            <td class="font-num">$${p.price}</td>
+            <td class="font-num" style="font-weight: 700; color: #f59e0b;">
+                ${p.price} ر.س
+                <button class="btn btn-sm btn-edit-price" title="تعديل السعر" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-right:6px;"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
             <td>
                 <button class="btn btn-sm ${p.available ? 'btn-primary' : 'btn-secondary'} btn-toggle-panel" data-id="${p.id}">
                     ${p.available ? '<i class="fa-solid fa-circle-check"></i> متوفر' : '<i class="fa-solid fa-circle-xmark"></i> غير متوفر'}
@@ -413,6 +497,7 @@ function renderPanelsTable() {
                 <button class="btn-action delete btn-delete-panel" data-id="${p.id}"><i class="fa-solid fa-trash-can"></i></button>
             </td>
         `;
+        tr.querySelector('.btn-edit-price')?.addEventListener('click', () => editProductPrice('panels', p.id, p.price, p.name));
         tr.querySelector('.btn-toggle-panel').addEventListener('click', () => togglePanel(p.id));
         tr.querySelector('.btn-delete-panel').addEventListener('click', () => deletePanel(p.id));
         tbody.appendChild(tr);
@@ -430,8 +515,11 @@ function renderBatteriesTable() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="font-weight:700;">${b.name}</td>
-            <td class="font-num">${b.capacityKwh} kWh</td>
-            <td class="font-num">$${b.price}</td>
+            <td class="font-num">${b.capacityKwh} kWh (${b.voltage || b.nominalVoltage || 48}V)</td>
+            <td class="font-num" style="font-weight: 700; color: #f59e0b;">
+                ${b.price} ر.س
+                <button class="btn btn-sm btn-edit-price" title="تعديل السعر" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-right:6px;"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
             <td>
                 <button class="btn btn-sm ${b.available ? 'btn-primary' : 'btn-secondary'} btn-toggle-battery" data-id="${b.id}">
                     ${b.available ? '<i class="fa-solid fa-circle-check"></i> متوفر' : '<i class="fa-solid fa-circle-xmark"></i> غير متوفر'}
@@ -441,6 +529,7 @@ function renderBatteriesTable() {
                 <button class="btn-action delete btn-delete-battery" data-id="${b.id}"><i class="fa-solid fa-trash-can"></i></button>
             </td>
         `;
+        tr.querySelector('.btn-edit-price')?.addEventListener('click', () => editProductPrice('batteries', b.id, b.price, b.name));
         tr.querySelector('.btn-toggle-battery').addEventListener('click', () => toggleBattery(b.id));
         tr.querySelector('.btn-delete-battery').addEventListener('click', () => deleteBattery(b.id));
         tbody.appendChild(tr);
@@ -458,8 +547,11 @@ function renderInvertersTable() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="font-weight:700;">${inv.name}</td>
-            <td class="font-num">${inv.capacityKw} kW</td>
-            <td class="font-num">$${inv.price}</td>
+            <td class="font-num">${inv.capacityKw} kW (${inv.batteryVoltage || inv.systemVoltage || 48}V)</td>
+            <td class="font-num" style="font-weight: 700; color: #f59e0b;">
+                ${inv.price} ر.س
+                <button class="btn btn-sm btn-edit-price" title="تعديل السعر" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-right:6px;"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
             <td>
                 <button class="btn btn-sm ${inv.available ? 'btn-primary' : 'btn-secondary'} btn-toggle-inverter" data-id="${inv.id}">
                     ${inv.available ? '<i class="fa-solid fa-circle-check"></i> متوفر' : '<i class="fa-solid fa-circle-xmark"></i> غير متوفر'}
@@ -469,6 +561,7 @@ function renderInvertersTable() {
                 <button class="btn-action delete btn-delete-inverter" data-id="${inv.id}"><i class="fa-solid fa-trash-can"></i></button>
             </td>
         `;
+        tr.querySelector('.btn-edit-price')?.addEventListener('click', () => editProductPrice('inverters', inv.id, inv.price, inv.name));
         tr.querySelector('.btn-toggle-inverter').addEventListener('click', () => toggleInverter(inv.id));
         tr.querySelector('.btn-delete-inverter').addEventListener('click', () => deleteInverter(inv.id));
         tbody.appendChild(tr);

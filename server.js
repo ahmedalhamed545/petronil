@@ -238,7 +238,8 @@ app.delete('/api/users/:username', requireAuth, hasPermission('users'), (req, re
 
 // Panels
 app.get('/api/inventory/panels', (req, res) => {
-  res.json(db.getPanels());
+  const includeAll = req.query.all === '1' && req.session && req.session.user;
+  res.json(db.getPanels(includeAll));
 });
 app.post('/api/inventory/panels', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, watt, price } = req.body;
@@ -266,7 +267,8 @@ app.delete('/api/inventory/panels/:id', requireAuth, hasPermission('inventory'),
 
 // Batteries
 app.get('/api/inventory/batteries', (req, res) => {
-  res.json(db.getBatteries());
+  const includeAll = req.query.all === '1' && req.session && req.session.user;
+  res.json(db.getBatteries(includeAll));
 });
 app.post('/api/inventory/batteries', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, capacityKwh, price } = req.body;
@@ -294,7 +296,8 @@ app.delete('/api/inventory/batteries/:id', requireAuth, hasPermission('inventory
 
 // Inverters
 app.get('/api/inventory/inverters', (req, res) => {
-  res.json(db.getInverters());
+  const includeAll = req.query.all === '1' && req.session && req.session.user;
+  res.json(db.getInverters(includeAll));
 });
 app.post('/api/inventory/inverters', requireAuth, hasPermission('inventory'), (req, res) => {
   const { name, capacityKw, price } = req.body;
@@ -332,6 +335,11 @@ app.put('/api/design-params', requireAuth, hasPermission('content'), (req, res) 
 // Quotes
 app.get('/api/quotes', requireAuth, hasPermission('leads'), (req, res) => {
   res.json(db.getQuotes());
+});
+app.get('/api/quotes/:id', (req, res) => {
+  const quote = db.getQuotes().find(q => q.id === req.params.id || q.quoteNo === req.params.id);
+  if (!quote) return res.status(404).json({ error: 'عرض السعر غير موجود' });
+  res.json(quote);
 });
 app.post('/api/quotes', (req, res) => {
   const quote = db.addQuote(req.body);

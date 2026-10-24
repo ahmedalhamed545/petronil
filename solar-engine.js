@@ -940,6 +940,21 @@
       }
     };
 
+    const optimalRecommendation = packages.recommended || packages.economic || packages.highPerformance;
+
+    const customerNeed = {
+      dailyEnergyKwh: parseFloat(loadProfile.totalDailyKwh.toFixed(2)),
+      peakContinuousKw: parseFloat(loadProfile.peakContinuousKw.toFixed(2)),
+      minInverterContinuousKw: parseFloat(minInverterContinuousKw.toFixed(2)),
+      maxSurgeKw: parseFloat(minInverterSurgeKw.toFixed(2)),
+      dayEnergyKwh: parseFloat(loadProfile.totalDayKwh.toFixed(2)),
+      nightEnergyKwh: parseFloat(loadProfile.totalNightKwh.toFixed(2)),
+      outageHours: gridSchedule.totalOutageHours,
+      targetUsableBatteryKwh: parseFloat(targetUsableBatteryKwh.toFixed(2)),
+      minPvKwPeak: parseFloat(minPvKwPeak.toFixed(2)),
+      recommendedPanelsCount: optimalRecommendation ? optimalRecommendation.panel.quantity : Math.ceil((minPvKwPeak * 1000) / (panels[0] ? panels[0].watt : 610))
+    };
+
     return {
       success: true,
       sizingRequirements: {
@@ -948,6 +963,8 @@
         targetUsableBatteryKwh: parseFloat(targetUsableBatteryKwh.toFixed(2)),
         minPvKwPeak: parseFloat(minPvKwPeak.toFixed(2))
       },
+      customerNeed,
+      optimalRecommendation,
       packages
     };
   }
@@ -956,9 +973,9 @@
     if (!pkg || !pkg.inverter || !pkg.battery || !pkg.panel) {
       return null;
     }
-    const exchangeRate = designParams.currencyExchangeRate || 535;
-    const validityDays = parseInt(designParams.quoteValidityDays, 10) || 15;
-    const defaultCurr = designParams.defaultCurrency || 'USD';
+    const exchangeRate = designParams.currencyExchangeRate || 1;
+    const validityDays = parseInt(designParams.quoteValidityDays, 10) || 7;
+    const defaultCurr = designParams.defaultCurrency || 'SAR';
     const showYer = Boolean(designParams.enableYerDisplay);
 
     // المكونات الرئيسية
@@ -966,151 +983,162 @@
     const battery = pkg.battery;
     const panel = pkg.panel;
 
-    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح
-    const structureUnitPrice = 20;
+    // 1. تكلفة الهياكل والقواعد المعدنية المجلفنة المقاومة للرياح (بالريال السعودي)
+    const structureUnitPrice = 75;
     const structureCost = panel.quantity * structureUnitPrice;
 
-    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC
-    const protectionBoxCost = inverter.capacityKw <= 6 ? 220 : 380;
-    const cablingCost = Math.round(panel.totalKw * 1000 * 0.08);
+    // 2. كابلات شمسية وتوصيلات MC4 وقواطع الحماية DC & AC (بالريال السعودي)
+    const protectionBoxCost = inverter.capacityKw <= 6 ? 800 : 1400;
+    const cablingCost = Math.round(panel.totalKw * 1000 * 0.35);
 
-    // 3. أجور التركيب والبرمجة والفحص الهندسي
-    const installationFee = Math.round(Math.max(150, panel.totalKw * 1000 * 0.07));
+    // 3. أجور التركيب والبرمجة والفحص الهندسي المعتمد (بالريال السعودي)
+    const installationFee = Math.round(Math.max(500, panel.totalKw * 1000 * 0.25));
 
-    // جدول الكميات المفصل (Bill of Materials)
+    // جدول الكميات المفصل (Bill of Materials) مطابق لنموذج عرض السعر الرسمي لبترونيل
     const items = [
       {
         itemNumber: 1,
         category: 'الإنفرتر',
         name: inverter.name,
-        specs: `قدرة ${inverter.capacityKw}kW موجة جيبية نقية، جهد بطارية ${inverter.systemVoltage || 48}V، تتبع MPPT ذكي`,
-        quantity: inverter.quantity,
+        specs: `قدرة مستمرة ${inverter.capacityKw}kW، تيار إقلاع ${inverter.surgeKw || inverter.surgeCapacityKw || inverter.capacityKw * 2}kW، جهد بطارية ${inverter.batteryVoltage || inverter.systemVoltage || 48}V تتبع MPPT`,
+        quantity: inverter.quantity || 1,
         unit: 'جهاز',
         unitPrice: inverter.price,
-        totalPrice: inverter.totalCost,
-        warranty: `${inverter.warranty || inverter.warrantyYears || 5} سنوات`
+        totalPrice: inverter.totalCost || inverter.price,
+        warranty: `${inverter.warranty || inverter.warrantyYears || 2} سنوات`
       },
       {
         itemNumber: 2,
-        category: 'الألواح الشمسية',
-        name: panel.name,
-        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type TOPCon نصف خلية كفاءة 22%+`,
-        quantity: panel.quantity,
-        unit: 'لوح',
-        unitPrice: panel.price,
-        totalPrice: panel.totalCost,
-        warranty: `${panel.warranty || panel.warrantyYears || 25} سنة ضمان أداء`
-      },
-      {
-        itemNumber: 3,
         category: 'تخزين الطاقة (البطاريات)',
         name: battery.name,
-        specs: `سعة ${battery.capacityKwh}kWh كيمياء ${battery.chemistry || 'LiFePO4'} آمنة، نظام إدارة ذكي BMS يدعم 6000 دورة`,
-        quantity: battery.quantity,
-        unit: 'وحدة',
+        specs: `سعة ${battery.capacityKwh}kWh كيمياء ${battery.chemistry || 'LiFePO4'}، جهد ${battery.voltage || battery.nominalVoltage || 48}V ونظام BMS ذكي`,
+        quantity: battery.quantity || 1,
+        unit: 'حبة',
         unitPrice: battery.price,
-        totalPrice: battery.totalCost,
+        totalPrice: battery.totalCost || battery.price,
         warranty: `${battery.warranty || battery.warrantyYears || 5} سنوات`
       },
       {
-        itemNumber: 4,
-        category: 'الهياكل والقواعد',
-        name: 'قواعد وحوامل تثبيت ألومنيوم / حديد مجلفن',
-        specs: 'هيكل تثبيت أرضي أو سطحي مجلفن عالي المقاومة للرياح مع مشابك التثبيت المقاومة للصدأ',
-        quantity: panel.quantity,
+        itemNumber: 3,
+        category: 'الألواح الشمسية',
+        name: panel.name,
+        specs: `لوح شمس ذروة ${panel.watt}W بتقنية N-Type كفاءة فائقة ومقاومة لدرجات الحرارة`,
+        quantity: panel.quantity || 8,
         unit: 'لوح',
+        unitPrice: panel.price,
+        totalPrice: panel.totalCost || (panel.price * (panel.quantity || 8)),
+        warranty: `${panel.warranty || panel.warrantyYears || 12} سنة مصنعية و25 سنة كفاءة`
+      },
+      {
+        itemNumber: 4,
+        category: 'لوحة الحماية والقواطع',
+        name: 'لوحة قواطع وحوافظ AC/DC وكابلات طاقة وتوصيلات معتمدة',
+        specs: 'قواطع تيار مستمر DC ومتردد AC أصلية، فيوزات حماية، مانعات صواعق SPD، وكابلات نحاسية معزولة',
+        quantity: 1,
+        unit: 'منظومة',
+        unitPrice: protectionBoxCost + cablingCost,
+        totalPrice: protectionBoxCost + cablingCost,
+        warranty: 'سنتان'
+      },
+      {
+        itemNumber: 5,
+        category: 'الهياكل والقواعد',
+        name: 'قواعد وهيكل تثبيت الألواح مجلفن ومقاوم للرياح',
+        specs: 'هيكل تثبيت حديد مجلفن ساخن مقاوم للأكسدة والرياح العاتية مع مسامير ستانلس ستيل',
+        quantity: panel.quantity || 8,
+        unit: 'طقم',
         unitPrice: structureUnitPrice,
         totalPrice: structureCost,
         warranty: '10 سنوات'
       },
       {
-        itemNumber: 5,
-        category: 'لوحات الحماية والتحويل',
-        name: 'لوحة حماية وتوزيع متكاملة DC / AC مع مفتاح ATS',
-        specs: 'قواطع DC معتمدة، مانعات صواعق SPD، فيوزات حماية، قواطع AC، ومفتاح تحويل يدوي/أوتوماتيكي',
-        quantity: 1,
-        unit: 'لوحة',
-        unitPrice: protectionBoxCost,
-        totalPrice: protectionBoxCost,
-        warranty: 'سنتان'
-      },
-      {
         itemNumber: 6,
-        category: 'الكابلات والموصلات',
-        name: 'كابلات شمسية نحاسية أصلية 4mm/6mm مع وصلات MC4',
-        specs: 'كابلات مقاومة لأشعة الشمس UV ذات عزل مزدوج مع وصلات إحكام أصلية وتوصيلات البطاريات',
-        quantity: 1,
-        unit: 'مجموعة',
-        unitPrice: cablingCost,
-        totalPrice: cablingCost,
-        warranty: 'سنتان'
-      },
-      {
-        itemNumber: 7,
         category: 'التركيب والتشغيل',
-        name: 'التركيب الميداني والبرمجة والتسليم الفني',
-        specs: 'تركيب احترافي من مهندسي بترونيل يمن، تأريض الحماية، اختبارات الكفاءة وضبط إعدادات الإنفرتر والـ BMS',
+        name: 'التركيب الميداني والبرمجة والتدشين والفحص الهندسي',
+        specs: 'تنفيذ احترافي بواسطة مهندسي شركة بترونيل يمن، ضبط معايير الشحن والتفريغ، وتدريب العميل',
         quantity: 1,
         unit: 'خدمة',
         unitPrice: installationFee,
         totalPrice: installationFee,
-        warranty: 'سنة صيانة مجانية'
+        warranty: 'سنة صيانة دورية مجانية'
       }
     ];
 
     // الإجماليات المالية
-    const totalEquipmentCostUsd = inverter.totalCost + panel.totalCost + battery.totalCost;
-    const totalAccessoriesCostUsd = structureCost + protectionBoxCost + cablingCost;
-    const totalCostUsd = totalEquipmentCostUsd + totalAccessoriesCostUsd + installationFee;
-    const totalCostYer = totalCostUsd * exchangeRate;
+    const totalEquipmentCost = (inverter.totalCost || inverter.price) + (panel.totalCost || panel.price * panel.quantity) + (battery.totalCost || battery.price * battery.quantity);
+    const totalAccessoriesCost = structureCost + protectionBoxCost + cablingCost;
+    const totalCost = totalEquipmentCost + totalAccessoriesCost + installationFee;
+    const totalCostYer = totalCost * exchangeRate;
 
-    const quoteId = 'PYS-' + (customerInfo.phone ? customerInfo.phone.slice(-4) : Math.floor(1000 + Math.random() * 9000)) + '-' + Math.floor(Math.random() * 1000);
-    const currentDate = new Date().toISOString().split('T')[0];
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const quoteNo = customerInfo.quoteNo || ('PET-2026-' + randomSuffix);
+    const currentDate = customerInfo.date || new Date().toISOString().split('T')[0];
 
     return {
-      quoteId,
+      quoteId: quoteNo,
+      quoteNo,
       date: currentDate,
       validUntilDays: validityDays,
       defaultCurrency: defaultCurr,
+      currency: defaultCurr,
       enableYerDisplay: showYer,
       company: {
         name: "بترونيل يمن للطاقة",
-        agency: "الوكيل المعتمد لمنتجات Crown Micro العالمية في الجمهورية اليمنية",
-        commercialReg: "شركة رائدة في أنظمة الطاقة الشمسية والحلول الذكية",
-        phone: "783999039",
-        address: "عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان",
-        email: "info@petronilyemen.com"
+        agency: "الوكيل الحصري لمنتجات Crown Micro في الجمهورية اليمنية",
+        address: "اليمن - حضرموت - سيئون - شارع الجزائر - مقابل حديقة الطويلة",
+        phone: "+967-779669868",
+        phonesList: ["+967-779669868", "+967-770557550", "+971-557777395"],
+        email: "info@petroneelyemen.com",
+        website: "www.petroneelyemen.com"
       },
       customer: {
-        name: customerInfo.name || "عميل بترونيل المميز",
-        phone: customerInfo.phone || "",
-        location: customerInfo.location || "اليمن"
+        name: customerInfo.name || customerInfo.customerName || "عميل بترونيل المحترم",
+        phone: customerInfo.phone || customerInfo.customerPhone || "",
+        address: customerInfo.address || customerInfo.customerAddress || customerInfo.location || "سيئون - حضرموت"
       },
       systemOverview: {
-        packageType: pkg.title,
+        packageType: pkg.title || 'منظومة الطاقة الشمسية المتكاملة',
         inverterCapacityKw: inverter.capacityKw,
         pvCapacityKw: panel.totalKw,
         panelsCount: panel.quantity,
-        batteryCapacityKwh: battery.totalKwh,
+        batteryCapacityKwh: battery.totalKwh || battery.capacityKwh * (battery.quantity || 1),
         batteryUsableKwh: battery.usableKwh,
-        batteryUnits: battery.quantity
+        batteryUnits: battery.quantity || 1
       },
       items,
       financials: {
-        equipmentCostUsd: parseFloat(totalEquipmentCostUsd.toFixed(2)),
-        accessoriesCostUsd: parseFloat(totalAccessoriesCostUsd.toFixed(2)),
+        equipmentCost: parseFloat(totalEquipmentCost.toFixed(2)),
+        accessoriesCost: parseFloat(totalAccessoriesCost.toFixed(2)),
+        installationFee: parseFloat(installationFee.toFixed(2)),
+        subtotal: parseFloat(totalCost.toFixed(2)),
+        discount: 0,
+        totalCost: parseFloat(totalCost.toFixed(2)),
+        grandTotal: parseFloat(totalCost.toFixed(2)),
+        equipmentCostUsd: parseFloat(totalEquipmentCost.toFixed(2)),
+        accessoriesCostUsd: parseFloat(totalAccessoriesCost.toFixed(2)),
         installationFeeUsd: parseFloat(installationFee.toFixed(2)),
-        totalCostUsd: parseFloat(totalCostUsd.toFixed(2)),
+        totalCostUsd: parseFloat(totalCost.toFixed(2)),
         totalCostYer: Math.round(totalCostYer),
         exchangeRate
       },
+      warrantyTerms: [
+        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
+        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
+        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
+        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
+      ],
+      companyFeatures: [
+        "تقديم أفضل الخدمات بعد البيع من صيانة ومتابعة خلال فترة الضمانة المحددة وبعدها",
+        "توفير جميع قطع الغيار الخاصة بمكونات منظومة الطاقة الشمسية",
+        "منتجاتنا مصنعة حسب المواصفات والمعايير الأوروبية"
+      ],
       terms: [
-        "الأسعار تشمل التوريد والتركيب والفحص الهندسي في نطاق فروع الشركة.",
-        `عرض السعر ساري المفعول لمدة ${validityDays} يوماً من تاريخ إصداره نظراً لتقلبات أسعار الصرف العالمية.`,
-        "بترونيل يمن للطاقة الوكيل المعتمد لإنفرترات Crown Micro العالمية في اليمن مع ضمان ودعم فني معتمد.",
-        "ضمان شامل للإنفرتر والبطاريات لمدة 5 سنوات، وضمان أداء الألواح لمدة 25 سنة وفق شروط المصنع.",
-        "هذه الدراسة الفنية والحسابات تقديرية مبنية على البيانات المدخلة، وتعتبر أساساً للتصميم ولا تغني عن المعاينة الميدانية للموقع واعتماد المهندس المختص."
-      ]
+        "ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.",
+        "ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس 5 سنوات كفاءة وتشغيل من تاريخ التركيب.",
+        "ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.",
+        "توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة."
+      ],
+      note: "صلاحية عرض السعر لمدة أسبوع من تاريخه."
     };
   }
 
@@ -1141,7 +1169,10 @@
 
     // 1. فحص الجهد الاسمي للمنظومة (System Voltage Check)
     const invVoltage = inverter.batteryVoltage || inverter.systemVoltage || 48;
-    const batNominalVoltage = battery.nominalVoltage || battery.systemVoltage || 48;
+    let batNominalVoltage = battery.voltage || battery.systemVoltage || battery.nominalVoltage || 48;
+    if (batNominalVoltage >= 44 && batNominalVoltage <= 58) batNominalVoltage = 48;
+    else if (batNominalVoltage >= 22 && batNominalVoltage <= 29) batNominalVoltage = 24;
+    else if (batNominalVoltage >= 11 && batNominalVoltage <= 15) batNominalVoltage = 12;
     const qty = Math.max(1, parseInt(batteryCount, 10) || 1);
 
     let effectiveBatteryVoltage = batNominalVoltage;

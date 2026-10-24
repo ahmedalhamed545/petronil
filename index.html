@@ -191,16 +191,15 @@
                     <i class="fa-solid fa-boxes-stacked"></i>
                     <span>المخزون المعتمد والأسعار المباشرة</span>
                 </div>
-                <h2 class="section-title">منتجات وكالة <span class="gradient-text">Crown Micro</span> والحلول العالمية</h2>
-                <p class="section-subtitle">نوفر إنفرترات كراون مايكرو الأصلية، إنفرترات داي الهجينة، بطاريات الليثيوم LiFePO4، وألواح الفئة الأولى Tier-1 بضمانات رسمية معتمدة.</p>
+                <h2 class="section-title">منتجات وكالة <span class="gradient-text">Crown Micro</span> والأسعار المعتمدة</h2>
+                <p class="section-subtitle">نوفر إنفرترات كراون مايكرو Crown Micro الأصلية، وبطاريات الليثيوم LiFePO4، وألواح لونجي Longi 610W N-Type بضمانات الوكيل الحصري في الجمهورية اليمنية.</p>
                 
                 <!-- Category Filters -->
                 <div class="products-filter-bar" id="products-filter-bar">
                     <button type="button" class="prod-filter-btn active" data-filter="all">جميع المنتجات</button>
-                    <button type="button" class="prod-filter-btn" data-filter="crown"><i class="fa-solid fa-crown text-warning"></i> إنفرترات Crown Micro</button>
-                    <button type="button" class="prod-filter-btn" data-filter="deye"><i class="fa-solid fa-bolt text-primary"></i> إنفرترات Deye</button>
-                    <button type="button" class="prod-filter-btn" data-filter="batteries"><i class="fa-solid fa-battery-full text-success"></i> بطاريات الليثيوم</button>
-                    <button type="button" class="prod-filter-btn" data-filter="panels"><i class="fa-solid fa-solar-panel text-warning"></i> ألواح الطاقة N-Type</button>
+                    <button type="button" class="prod-filter-btn" data-filter="inverters"><i class="fa-solid fa-crown text-warning"></i> إنفرترات Crown Micro</button>
+                    <button type="button" class="prod-filter-btn" data-filter="batteries"><i class="fa-solid fa-battery-full text-success"></i> بطاريات ليثيوم Crown Micro</button>
+                    <button type="button" class="prod-filter-btn" data-filter="panels"><i class="fa-solid fa-solar-panel text-warning"></i> ألواح لونجي 610W</button>
                 </div>
             </div>
 
@@ -837,125 +836,110 @@
                             </div>
                         </div>
 
-                        <!-- 3 Curated Packages Grid -->
-                        <div class="packages-comparison-grid">
-
-                            <!-- Package 1: Economic -->
-                            <div class="package-card glass" id="pkg-card-economic">
-                                <div class="pkg-header">
-                                    <span class="pkg-type-badge">خيار اقتصادي</span>
-                                    <h4 class="pkg-title">الباقة الاقتصادية</h4>
-                                    <p class="pkg-sub">تغطية كاملة للاحتياج بأقل تكلفة ممكنة مع الالتزام بالمعايير الهندسية</p>
+                        <!-- Customer Need & Tailored Recommendation Layout -->
+                        <div class="tailored-design-grid">
+                            
+                            <!-- 1. الاحتياج الفعلي المدروس هندسياً وفق أحمال العميل -->
+                            <div class="engineering-need-card glass" id="customer-need-card">
+                                <div class="card-head-badge">
+                                    <span class="badge-pill bg-amber"><i class="fa-solid fa-calculator"></i> نتائج دراسة الأحمال</span>
+                                    <h4>احتياجك الفعلي المدروس هندسياً</h4>
+                                    <p>تم حساب هذه المتطلبات بدقة بناءً على جدول أجهزتك وتيارات الإقلاع وساعات الانقطاع:</p>
                                 </div>
-                                <div class="pkg-specs-list">
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                        <div>
-                                            <span class="s-label">الإنفرتر:</span>
-                                            <span class="s-val" id="econ-inv-name">--</span>
+                                <div class="need-metrics-grid">
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-bolt text-warning"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">القدرة المستمرة المطلوبة:</span>
+                                            <strong class="n-val font-num" id="need-cont-kw">0.0 kW</strong>
                                         </div>
                                     </div>
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-solar-panel"></i>
-                                        <div>
-                                            <span class="s-label">الألواح الشمسية:</span>
-                                            <span class="s-val" id="econ-panel-name">--</span>
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-gauge-high text-danger"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">تيار وقدرة الإقلاع (Surge):</span>
+                                            <strong class="n-val font-num" id="need-surge-kw">0.0 kW</strong>
                                         </div>
                                     </div>
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-battery-full"></i>
-                                        <div>
-                                            <span class="s-label">البطاريات:</span>
-                                            <span class="s-val" id="econ-battery-name">--</span>
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-battery-three-quarters text-success"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">سعة البطارية المطلوبة:</span>
+                                            <strong class="n-val font-num" id="need-battery-kwh">0.0 kWh</strong>
+                                        </div>
+                                    </div>
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-solar-panel text-warning"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">قدرة الألواح المطلوبة:</span>
+                                            <strong class="n-val font-num" id="need-pv-kw">0.0 kWp</strong>
+                                        </div>
+                                    </div>
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-sun text-warning"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">استهلاك النهار / الليل:</span>
+                                            <strong class="n-val font-num" id="need-day-night-kwh">0 / 0 kWh</strong>
+                                        </div>
+                                    </div>
+                                    <div class="need-metric-box">
+                                        <div class="n-icon"><i class="fa-solid fa-shield-halved text-primary"></i></div>
+                                        <div class="n-data">
+                                            <span class="n-label">ساعات صمود البطارية:</span>
+                                            <strong class="n-val font-num" id="need-outage-hours">24 ساعة</strong>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pkg-pricing">
-                                    <div class="pkg-price-usd font-num" id="econ-price-usd">$0</div>
-                                    <div class="pkg-price-yer font-num" id="econ-price-yer">0 ر.ي</div>
-                                </div>
-                                <button type="button" class="btn btn-secondary w-full btn-select-pkg" data-pkg="economic">
-                                    <i class="fa-solid fa-check"></i> اختيار الباقة الاقتصادية
-                                </button>
                             </div>
 
-                            <!-- Package 2: Recommended (Featured) -->
-                            <div class="package-card glass featured-pkg" id="pkg-card-recommended">
-                                <div class="featured-ribbon"><i class="fa-solid fa-star"></i> موصى بها هندسياً</div>
-                                <div class="pkg-header">
-                                    <span class="pkg-type-badge badge-featured">الخيار المتوازن والأفضل</span>
-                                    <h4 class="pkg-title">الباقة الموصى بها</h4>
-                                    <p class="pkg-sub">أفضل توازن بين الأداء الفائق وعمر الليثيوم الطويل وهوامش الأمان الكاملة</p>
+                            <!-- 2. المنظومة المقترحة هندسياً من وكالة كراون مايكرو -->
+                            <div class="optimal-system-card glass featured-system" id="optimal-system-card">
+                                <div class="featured-ribbon"><i class="fa-solid fa-crown"></i> المنظومة الهندسية المقترحة</div>
+                                <div class="opt-card-head">
+                                    <span class="badge-agency">وكالة Crown Micro الرسمية</span>
+                                    <h4 class="opt-title" id="opt-pkg-title">منظومة كراون مايكرو ولونجي المتكاملة</h4>
+                                    <p class="opt-sub">مطابقة هندسية وكهربائية متكاملة لأحمالك مع هوامش أمان كاملة وكفاءة قصوى</p>
                                 </div>
-                                <div class="pkg-specs-list">
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-gauge-high text-primary"></i>
+                                <div class="opt-specs-list">
+                                    <div class="opt-spec-item">
+                                        <i class="fa-solid fa-bolt text-warning"></i>
                                         <div>
-                                            <span class="s-label">الإنفرتر الذكي:</span>
-                                            <span class="s-val" id="rec-inv-name">--</span>
+                                            <span class="s-label">الإنفرتر المعتمد:</span>
+                                            <strong class="s-val" id="opt-inv-name">--</strong>
                                         </div>
                                     </div>
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-solar-panel text-warning"></i>
-                                        <div>
-                                            <span class="s-label">الألواح الشمسية N-Type:</span>
-                                            <span class="s-val" id="rec-panel-name">--</span>
-                                        </div>
-                                    </div>
-                                    <div class="pkg-spec-row">
+                                    <div class="opt-spec-item">
                                         <i class="fa-solid fa-battery-full text-success"></i>
                                         <div>
-                                            <span class="s-label">بطارية ليثيوم LiFePO4:</span>
-                                            <span class="s-val" id="rec-battery-name">--</span>
+                                            <span class="s-label">بنك بطاريات الليثيوم LiFePO4:</span>
+                                            <strong class="s-val" id="opt-battery-name">--</strong>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="pkg-pricing">
-                                    <div class="pkg-price-usd font-num text-primary" id="rec-price-usd">$0</div>
-                                    <div class="pkg-price-yer font-num" id="rec-price-yer">0 ر.ي</div>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-lg w-full btn-select-pkg" data-pkg="recommended">
-                                    <i class="fa-solid fa-circle-check"></i> اعتماد الباقة الموصى بها
-                                </button>
-                            </div>
-
-                            <!-- Package 3: High Performance -->
-                            <div class="package-card glass" id="pkg-card-highPerformance">
-                                <div class="pkg-header">
-                                    <span class="pkg-type-badge">أداء فائق واستقلالية</span>
-                                    <h4 class="pkg-title">باقة الأداء العالي</h4>
-                                    <p class="pkg-sub">سعة تخزين مضاعفة وهوامش توسع مستقبلي لأثقل الأحمال والأيام الغائمة</p>
-                                </div>
-                                <div class="pkg-specs-list">
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-gauge-high"></i>
+                                    <div class="opt-spec-item">
+                                        <i class="fa-solid fa-solar-panel text-warning"></i>
                                         <div>
-                                            <span class="s-label">الإنفرتر:</span>
-                                            <span class="s-val" id="high-inv-name">--</span>
+                                            <span class="s-label">حقل الألواح الشمسية لونجي 610W:</span>
+                                            <strong class="s-val" id="opt-panel-name">--</strong>
                                         </div>
                                     </div>
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-solar-panel"></i>
+                                    <div class="opt-spec-item">
+                                        <i class="fa-solid fa-shield-halved text-secondary"></i>
                                         <div>
-                                            <span class="s-label">الألواح الشمسية:</span>
-                                            <span class="s-val" id="high-panel-name">--</span>
-                                        </div>
-                                    </div>
-                                    <div class="pkg-spec-row">
-                                        <i class="fa-solid fa-battery-full"></i>
-                                        <div>
-                                            <span class="s-label">البطاريات:</span>
-                                            <span class="s-val" id="high-battery-name">--</span>
+                                            <span class="s-label">الملحقات والحماية:</span>
+                                            <span class="s-val">لوحة قواطع DC/AC، كابلات نحاسية، هيكل مجلفن ساخن مقاوم للرياح</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pkg-pricing">
-                                    <div class="pkg-price-usd font-num" id="high-price-usd">$0</div>
-                                    <div class="pkg-price-yer font-num" id="high-price-yer">0 ر.ي</div>
+                                
+                                <div class="opt-pricing-box">
+                                    <div class="opt-price-total">
+                                        <span class="p-label">التكلفة التقديرية الإجمالية:</span>
+                                        <div class="p-amount font-num" id="opt-price-sar">0 ر.س</div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary btn-lg w-full btn-open-quote-modal" id="btn-order-optimal-quote">
+                                        <i class="fa-solid fa-file-invoice-dollar"></i> طلب وإصدار عرض السعر الرسمي (PDF)
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-secondary w-full btn-select-pkg" data-pkg="highPerformance">
-                                    <i class="fa-solid fa-check"></i> اختيار باقة الأداء العالي
-                                </button>
                             </div>
                         </div>
 
@@ -999,6 +983,12 @@
                                 <!-- Live Engineering Compatibility Card -->
                                 <div id="tuning-compatibility-card" class="tuning-compat-card mt-3">
                                     <!-- Populated dynamically via JS -->
+                                </div>
+
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-primary w-full btn-open-quote-modal" id="btn-order-custom-quote">
+                                        <i class="fa-solid fa-file-invoice-dollar"></i> طلب وإصدار عرض السعر للمنظومة المخصصة (PDF)
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1046,140 +1036,159 @@
                     </div>
 
                     <!-- Printable / PDF Official Quotation Sheet -->
-                    <div class="quotation-print-sheet" id="printable-quotation-area">
-                        <!-- Official Petronil Header -->
-                        <div class="quote-header">
-                            <div class="quote-logo-wrapper">
-                                <img src="logo.png" alt="بترونيل يمن للطاقة" class="quote-logo-img">
-                            </div>
-                            <div class="quote-company-info">
-                                <h2>بترونيل يمن للطاقة</h2>
-                                <p class="quote-tagline">منظومات الطاقة الشمسية، الإنفرترات، البطاريات، وملحقات الطاقة المتطورة</p>
-                                <div class="quote-meta-row">
-                                    <span><strong>المقر:</strong> عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان</span>
-                                    <span><strong>هاتف:</strong> 783999039</span>
+                    <!-- Printable / PDF Official Quotation Sheet (Matching Official Template) -->
+                    <div class="quotation-print-sheet official-petronil-sheet" id="printable-quotation-area">
+                        <!-- Top Official Ribbon & Header -->
+                        <div class="op-header-wrap">
+                            <div class="op-brand-right">
+                                <img src="logo.png" alt="بترونيل يمن للطاقة" class="op-logo-img">
+                                <div class="op-brand-text">
+                                    <h2 class="op-brand-name">بترونيل يمن للطاقة</h2>
+                                    <span class="op-brand-en">PETRONEEL YEMEN FOR ENERGY</span>
                                 </div>
                             </div>
-                            <div class="quote-doc-details">
-                                <div class="quote-ref-badge" id="quote-ref-code">PYS-2026-0001</div>
-                                <span class="quote-date" id="quote-issue-date">التاريخ: 2026/10/20</span>
-                                <span class="quote-validity" id="quote-validity-text">صلاحية العرض: 15 يوماً</span>
+                            <div class="op-center-badge">
+                                <div class="op-badge-pill">عرض سعر</div>
+                            </div>
+                            <div class="op-agency-left">
+                                <div class="op-crown-title">CROWN MICRO</div>
+                                <div class="op-crown-sub">الوكيل الحصري في الجمهورية اليمنية</div>
                             </div>
                         </div>
 
-                        <hr class="quote-divider">
-
-                        <!-- Client and System Summary Bar -->
-                        <div class="quote-client-banner">
-                            <div class="qc-box">
-                                <span class="qc-label">السيد / السادة:</span>
-                                <strong class="qc-val" id="doc-client-name">عميل بترونيل المميز</strong>
+                        <!-- Meta Row -->
+                        <div class="op-meta-row">
+                            <div class="op-meta-right">
+                                <span><strong>التاريخ:</strong> <span id="quote-issue-date" class="font-num">--</span></span>
                             </div>
-                            <div class="qc-box">
-                                <span class="qc-label">رقم الهاتف:</span>
-                                <strong class="qc-val font-num" id="doc-client-phone">--</strong>
-                            </div>
-                            <div class="qc-box">
-                                <span class="qc-label">الموقع:</span>
-                                <strong class="qc-val" id="doc-client-location">عدن</strong>
-                            </div>
-                            <div class="qc-box">
-                                <span class="qc-label">نوع المنظومة:</span>
-                                <strong class="qc-val text-primary" id="doc-package-type">الباقة الموصى بها</strong>
+                            <div class="op-meta-left">
+                                <span><strong>NO:</strong> <span id="quote-ref-code" class="font-num">PET-2026-0001</span></span>
+                                <span class="op-currency-tag">العملة: ريال سعودي (SAR)</span>
                             </div>
                         </div>
 
-                        <!-- Technical Specs Summary Box -->
-                        <div class="quote-tech-specs-summary">
-                            <div class="qts-item">
-                                <span>قدرة الإنفرتر:</span>
-                                <strong id="doc-inv-kw" class="font-num">-- kW</strong>
+                        <!-- Customer Info Box -->
+                        <div class="op-customer-banner">
+                            <div class="op-c-item">
+                                <span class="op-c-label">مطلوب من الأخ:</span>
+                                <strong class="op-c-val" id="doc-client-name">عميل بترونيل المميز</strong>
                             </div>
-                            <div class="qts-item">
-                                <span>إجمالي الألواح:</span>
-                                <strong id="doc-pv-kw" class="font-num">-- kWp (-- لوح)</strong>
+                            <div class="op-c-item">
+                                <span class="op-c-label">هاتف:</span>
+                                <strong class="op-c-val font-num" id="doc-client-phone">--</strong>
                             </div>
-                            <div class="qts-item">
-                                <span>سعة بنك البطاريات:</span>
-                                <strong id="doc-bat-kwh" class="font-num">-- kWh</strong>
-                            </div>
-                            <div class="qts-item">
-                                <span>ساعات دعم الانقطاع:</span>
-                                <strong id="doc-outage-support" class="font-num">-- ساعة</strong>
+                            <div class="op-c-item">
+                                <span class="op-c-label">العنوان:</span>
+                                <strong class="op-c-val" id="doc-client-location">حضرموت - سيئون</strong>
                             </div>
                         </div>
 
-                        <!-- Itemized Table (BOM) -->
-                        <div class="quote-table-wrapper">
-                            <table class="quote-table">
+                        <!-- Quotation Table (BOM) -->
+                        <div class="op-table-wrapper">
+                            <table class="op-items-table">
                                 <thead>
                                     <tr>
-                                        <th class="w-50 text-center">#</th>
-                                        <th>البند والمواصفات الفنية المعتمدة</th>
-                                        <th class="w-80 text-center">الكمية</th>
-                                        <th class="w-70 text-center">الوحدة</th>
-                                        <th class="w-100 text-center">الضمان</th>
-                                        <th class="w-110 text-left">السعر الإفرادي</th>
-                                        <th class="w-120 text-left">الإجمالي ($)</th>
+                                        <th style="width: 45px; text-align: center;">م</th>
+                                        <th style="text-align: right;">البيان والمواصفات الفنية المعتمدة</th>
+                                        <th style="width: 80px; text-align: center;">الوحدة</th>
+                                        <th style="width: 75px; text-align: center;">الكمية</th>
+                                        <th style="width: 120px; text-align: center;">السعر (ر.س)</th>
+                                        <th style="width: 140px; text-align: center;">الإجمالي (ر.س)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="quote-items-tbody">
-                                    <!-- Injected dynamically by SolarEngine.generateQuotation -->
+                                    <!-- Populated dynamically via JS -->
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- Financial Totals -->
-                        <div class="quote-totals-container">
-                            <div class="quote-notes-side">
-                                <h4>شروط وملاحظات بترونيل يمن:</h4>
-                                <ul id="quote-terms-list">
-                                    <li>الأسعار تشمل التوريد والتركيب والبرمجة والفحص الهندسي المعتمد.</li>
-                                    <li>ضمان الوكيل الرسمي 5 سنوات للإنفرتر والبطاريات، و25 سنة لألواح الطاقة.</li>
-                                    <li>الأسعار تخضع لأسعار الصرف السائدة في تاريخ تحرير هذا العرض.</li>
-                                </ul>
+                        <!-- Bottom Split: Terms & Features + Totals & Verbal -->
+                        <div class="op-bottom-split">
+                            <div class="op-terms-column">
+                                <div class="op-box-card">
+                                    <h4 class="op-box-title"><i class="fa-solid fa-shield-halved text-warning"></i> الضمان وشروطه:</h4>
+                                    <ol class="op-box-list" id="quote-terms-list">
+                                        <li>ضمان الإنفرتر كراون مايكرو Crown Micro سنتان صيانة واستبدال حسب شروط الوكالة الرسمية.</li>
+                                        <li>ضمان بطاريات الليثيوم كراون مايكرو Crown Micro خمس سنوات كفاءة وتشغيل من تاريخ التركيب.</li>
+                                        <li>ضمان الألواح الشمسية لونجي Longi اثنتا عشرة 12 سنة عيوب مصنعية و25 سنة كفاءة توليد.</li>
+                                        <li>توفير الدعم الفني والمتابعة الهندسية المستمرة وفحص المنظومة.</li>
+                                    </ol>
+                                </div>
+                                <div class="op-box-card mt-2">
+                                    <h4 class="op-box-title"><i class="fa-solid fa-star text-warning"></i> مميزاتنا:</h4>
+                                    <ol class="op-box-list">
+                                        <li>تقديم أفضل الخدمات بعد البيع من صيانة ومتابعة خلال فترة الضمانة المحددة وبعدها.</li>
+                                        <li>توفير جميع قطع الغيار الخاصة بمكونات منظومة الطاقة الشمسية.</li>
+                                        <li>منتجاتنا مصنعة حسب المواصفات والمعايير الأوروبية.</li>
+                                    </ol>
+                                </div>
+                                <div class="op-validity-banner">
+                                    <i class="fa-solid fa-circle-exclamation text-danger"></i> صلاحية عرض السعر لمدة أسبوع من تاريخه.
+                                </div>
                             </div>
-                            <div class="quote-figures-side">
-                                <div class="fig-row">
-                                    <span>تكلفة المعدات الأساسية:</span>
-                                    <span class="font-num" id="doc-cost-equipment">$0.00</span>
+
+                            <div class="op-totals-column">
+                                <div class="op-totals-box">
+                                    <div class="op-t-row">
+                                        <span>الإجمالي:</span>
+                                        <strong class="font-num" id="op-subtotal-sar">0 ر.س</strong>
+                                    </div>
+                                    <div class="op-t-row">
+                                        <span>الخصم:</span>
+                                        <strong class="font-num" id="op-discount-sar">0 ر.س</strong>
+                                    </div>
+                                    <div class="op-t-row op-t-grand">
+                                        <span>الإجمالي النهائي:</span>
+                                        <strong class="font-num text-primary" id="op-grandtotal-sar">0 ر.س</strong>
+                                    </div>
+                                    <div class="op-verbal-row">
+                                        <span class="v-label">المبلغ كتابة:</span>
+                                        <span class="v-val" id="doc-verbal-total">فقط وقدره ... ريال سعودي لا غير</span>
+                                    </div>
                                 </div>
-                                <div class="fig-row">
-                                    <span>القواعد والكابلات والحماية:</span>
-                                    <span class="font-num" id="doc-cost-accessories">$0.00</span>
-                                </div>
-                                <div class="fig-row">
-                                    <span>أجور التركيب والفحص الهندسي:</span>
-                                    <span class="font-num" id="doc-cost-install">$0.00</span>
-                                </div>
-                                <div class="fig-row total-usd-row">
-                                    <span>الإجمالي الكلي بالدولار:</span>
-                                    <span class="font-num" id="doc-total-usd">$0.00</span>
-                                </div>
-                                <div class="fig-row total-yer-row">
-                                    <span>الإجمالي بالريال اليمني:</span>
-                                    <span class="font-num" id="doc-total-yer">0 ر.ي</span>
+
+                                <div class="op-signatures-grid">
+                                    <div class="op-sig-cell">
+                                        <span>توقيع وختم الوكالة:</span>
+                                        <div class="op-company-stamp">
+                                            <i class="fa-solid fa-stamp text-warning"></i>
+                                            <span>بترونيل يمن للطاقة</span>
+                                            <small>الوكيل الحصري لمنتجات Crown Micro</small>
+                                        </div>
+                                    </div>
+                                    <div class="op-sig-cell">
+                                        <span>توقيع العميل المستلم:</span>
+                                        <div class="op-cust-sig-line">........................................</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Signatures & Official Stamp -->
-                        <div class="quote-signatures">
-                            <div class="sig-block">
-                                <span>إعداد المهندس المختص:</span>
-                                <strong>قسم الدراسات والمشاريع</strong>
-                                <span class="sig-line">بترونيل يمن للطاقة</span>
+                        <!-- Official Footer -->
+                        <div class="op-official-doc-footer">
+                            <div class="op-df-address">
+                                <i class="fa-solid fa-location-dot text-danger"></i> اليمن - حضرموت - سيئون - شارع الجزائر - مقابل حديقة الطويلة
                             </div>
-                            <div class="sig-block text-center">
-                                <div class="official-stamp-box">
-                                    <i class="fa-solid fa-stamp text-primary"></i>
-                                    <span>معتمد ومطابق للمواصفات</span>
-                                </div>
+                            <div class="op-df-contacts">
+                                <span><i class="fa-solid fa-phone text-success"></i> +967-779669868 / +967-770557550 / +971-557777395</span>
+                                <span><i class="fa-solid fa-globe text-primary"></i> WWW.PETRONEELYEMEN.COM</span>
+                                <span><i class="fa-solid fa-envelope text-warning"></i> INFO@PETRONEELYEMEN.COM</span>
                             </div>
-                            <div class="sig-block text-left">
-                                <span>موافقة العميل:</span>
-                                <span class="sig-line">.......................................</span>
-                            </div>
+                        </div>
+
+                        <!-- Hidden Legacy Fields for full code compatibility -->
+                        <div style="display: none;" id="hidden-legacy-doc-fields">
+                            <span id="doc-package-type"></span>
+                            <span id="doc-inv-kw"></span>
+                            <span id="doc-pv-kw"></span>
+                            <span id="doc-bat-kwh"></span>
+                            <span id="doc-outage-support"></span>
+                            <span id="doc-cost-equipment"></span>
+                            <span id="doc-cost-accessories"></span>
+                            <span id="doc-cost-install"></span>
+                            <span id="doc-total-usd"></span>
+                            <span id="doc-total-yer"></span>
+                            <span id="quote-validity-text"></span>
                         </div>
                     </div>
 
@@ -1227,21 +1236,21 @@
                             <i class="fa-solid fa-location-dot"></i>
                             <div>
                                 <h4>المقر الرئيسي</h4>
-                                <p id="main-address">عدن - المنصورة، خلف محطة التسعين، أمام فندق قتبان</p>
+                                <p id="main-address">اليمن - حضرموت - سيئون - شارع الجزائر - مقابل حديقة الطويلة</p>
                             </div>
                         </div>
                         <div class="info-item">
                             <i class="fa-solid fa-phone"></i>
                             <div>
                                 <h4>اتصل بنا</h4>
-                                <p class="font-num" id="main-phone">783999039</p>
+                                <p class="font-num" id="main-phone">+967-779669868</p>
                             </div>
                         </div>
                         <div class="info-item">
                             <i class="fa-solid fa-envelope"></i>
                             <div>
                                 <h4>البريد الإلكتروني</h4>
-                                <p id="main-email">info@petronilyemen.com</p>
+                                <p id="main-email">info@petroneelyemen.com</p>
                             </div>
                         </div>
                     </div>
@@ -1348,7 +1357,7 @@
             <i class="fa-solid fa-headset"></i>
             <span>اتصل بنا</span>
         </a>
-        <a href="https://wa.me/967783999039" target="_blank" rel="noopener" class="mobile-nav-item text-success">
+        <a href="https://wa.me/967779669868" target="_blank" rel="noopener" class="mobile-nav-item text-success">
             <i class="fa-brands fa-whatsapp"></i>
             <span>واتساب</span>
         </a>
@@ -1366,6 +1375,44 @@
         <div class="pwa-banner-actions">
             <button type="button" class="btn btn-primary btn-sm" id="btn-pwa-install">تثبيت التطبيق</button>
             <button type="button" class="btn btn-secondary-outline btn-sm" id="btn-pwa-dismiss">لاحقاً</button>
+        </div>
+    </div>
+
+    <!-- Customer Quote Details Modal -->
+    <div id="customer-quote-modal" class="quote-modal-backdrop hidden">
+        <div class="quote-modal-dialog glass">
+            <div class="quote-modal-header">
+                <div class="qm-title-wrap">
+                    <i class="fa-solid fa-file-invoice-dollar text-warning"></i>
+                    <div>
+                        <h3>إصدار عرض السعر الرسمي المعتمد</h3>
+                        <small>بترونيل يمن للطاقة - الوكيل الحصري لمنتجات Crown Micro</small>
+                    </div>
+                </div>
+                <button type="button" class="qm-close-btn" id="btn-close-quote-modal">&times;</button>
+            </div>
+            <div class="quote-modal-body">
+                <p class="qm-hint">يرجى كتابة بياناتك ليتم إدراجها رسمياً في وثيقة عرض السعر بصيغة PDF وتوثيقها لدى الإدارة:</p>
+                <form id="quote-customer-modal-form">
+                    <div class="form-group-custom mb-3">
+                        <label for="modal-input-name"><i class="fa-solid fa-user text-primary"></i> اسم العميل أو الجهة: <span class="text-danger">*</span></label>
+                        <input type="text" id="modal-input-name" class="form-control-custom" placeholder="مثال: الشيخ سالم باعباد / شركة الحضرمي" required>
+                    </div>
+                    <div class="form-group-custom mb-3">
+                        <label for="modal-input-phone"><i class="fa-solid fa-phone text-success"></i> رقم الهاتف / الواتساب: <span class="text-danger">*</span></label>
+                        <input type="tel" id="modal-input-phone" class="form-control-custom font-num" placeholder="مثال: 779669868 أو 770557550" required>
+                    </div>
+                    <div class="form-group-custom mb-3">
+                        <label for="modal-input-address"><i class="fa-solid fa-location-dot text-danger"></i> المدينة / العنوان: <span class="text-danger">*</span></label>
+                        <input type="text" id="modal-input-address" class="form-control-custom" placeholder="مثال: حضرموت - سيئون" value="حضرموت - سيئون" required>
+                    </div>
+                    <div class="qm-actions mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-full" id="btn-confirm-and-issue-quote">
+                            <i class="fa-solid fa-file-pdf"></i> تأكيد وإصدار عرض السعر الرسمي (PDF)
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </body>

@@ -764,6 +764,12 @@
             </button>
             
             <div class="error-message" id="login-error-msg"></div>
+
+            <div style="text-align: center; margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <a href="/" style="color: #3b82f6; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-arrow-right"></i> الرجوع للموقع الرئيسي
+                </a>
+            </div>
         </form>
     </div>
 
@@ -776,6 +782,9 @@
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="header-title">لوحة معلومات الإدارة</div>
+                <a href="/" class="btn-return-home" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <i class="fa-solid fa-arrow-right"></i> <span>الرجوع للموقع</span>
+                </a>
             </div>
             
             <div class="user-profile">
@@ -798,6 +807,9 @@
                 <li class="menu-item active" data-target="section-overview">
                     <i class="fa-solid fa-chart-pie"></i> الإحصائيات العامة
                 </li>
+                <li class="menu-item" data-target="section-quotes">
+                    <i class="fa-solid fa-file-invoice-dollar text-warning"></i> عروض الأسعار المصدرة
+                </li>
                 <li class="menu-item" data-target="section-leads">
                     <i class="fa-solid fa-envelope-open-text"></i> طلبات العملاء
                 </li>
@@ -818,6 +830,11 @@
                 </li>
                 <li class="menu-item" data-target="section-profile">
                     <i class="fa-solid fa-key"></i> كلمة المرور
+                </li>
+                <li class="menu-item link-item" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 15px;">
+                    <a href="/" style="display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; width: 100%;">
+                        <i class="fa-solid fa-globe"></i> <span>عرض الموقع الرئيسي</span>
+                    </a>
                 </li>
             </ul>
         </aside>
@@ -882,6 +899,38 @@
                             </thead>
                             <tbody id="overview-latest-leads">
                                 <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: QUOTES MANAGEMENT -->
+            <section class="content-section" id="section-quotes">
+                <div class="section-header-admin">
+                    <div class="section-title-admin">
+                        <h2>عروض الأسعار المصدرة للعملاء (Official Quotes)</h2>
+                        <p>سجل كامل بجميع عروض الأسعار الرسمية الصادرة من الحاسبة مع أسماء العملاء، أرقام هواتفهم، والمنظومات المختارة</p>
+                    </div>
+                </div>
+
+                <div class="admin-form-card glass-card">
+                    <div class="table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم العرض</th>
+                                    <th>التاريخ</th>
+                                    <th>اسم العميل</th>
+                                    <th>رقم الهاتف</th>
+                                    <th>العنوان</th>
+                                    <th>الإجمالي (ر.س)</th>
+                                    <th>الحالة</th>
+                                    <th>خيارات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quotes-list-admin">
+                                <!-- Injected dynamically via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -1139,7 +1188,7 @@
                 <div class="section-header-admin">
                     <div class="section-title-admin">
                         <h2>إدارة مخزون مكونات المنظومة</h2>
-                        <p>أضف المنتجات، حدد أسعارها بالدولار، وتحكم بتوفرها الفوري في الحاسبة</p>
+                        <p>أضف المنتجات، حدد أسعارها بالريال السعودي، وتحكم بتوفرها الفوري في الحاسبة (المنتج غير المتوفر يتم إخفاؤه تلقائياً)</p>
                     </div>
                 </div>
 
@@ -1158,7 +1207,7 @@
                                         <tr>
                                             <th>اللوح الشمسي</th>
                                             <th>القدرة (واط)</th>
-                                            <th>السعر ($)</th>
+                                            <th>السعر (ر.س)</th>
                                             <th>حالة التوفر</th>
                                             <th>خيارات</th>
                                         </tr>
@@ -1176,7 +1225,7 @@
                             <form id="add-panel-form">
                                 <div class="form-group">
                                     <label for="panel-new-name">اسم اللوح / الموديل</label>
-                                    <input type="text" id="panel-new-name" class="form-control" placeholder="مثال: لوح جينكو 610W" required>
+                                    <input type="text" id="panel-new-name" class="form-control" placeholder="مثال: لوح لونجي 610W" required>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
@@ -1184,8 +1233,8 @@
                                         <input type="number" id="panel-new-watt" class="form-control font-num" placeholder="610" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="panel-new-price">السعر بالدولار ($)</label>
-                                        <input type="number" id="panel-new-price" class="form-control font-num" placeholder="110" required>
+                                        <label for="panel-new-price">السعر (ر.س)</label>
+                                        <input type="number" id="panel-new-price" class="form-control font-num" placeholder="420" required>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> إضافة للمخزون</button>
@@ -1208,8 +1257,8 @@
                                     <thead>
                                         <tr>
                                             <th>موديل البطارية</th>
-                                            <th>السعة (kWh)</th>
-                                            <th>السعر ($)</th>
+                                            <th>السعة والجهد</th>
+                                            <th>السعر (ر.س)</th>
                                             <th>حالة التوفر</th>
                                             <th>خيارات</th>
                                         </tr>
@@ -1227,7 +1276,7 @@
                             <form id="add-battery-form">
                                 <div class="form-group">
                                     <label for="battery-new-name">موديل البطارية</label>
-                                    <input type="text" id="battery-new-name" class="form-control" placeholder="مثال: بطارية ليثيوم 5.12kWh" required>
+                                    <input type="text" id="battery-new-name" class="form-control" placeholder="مثال: بطارية ليثيوم كراون 5 كيلو 48V" required>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
@@ -1235,8 +1284,16 @@
                                         <input type="number" step="0.01" id="battery-new-capacity" class="form-control font-num" placeholder="5.12" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="battery-new-price">السعر بالدولار ($)</label>
-                                        <input type="number" id="battery-new-price" class="form-control font-num" placeholder="1200" required>
+                                        <label for="battery-new-voltage">الجهد (Volt)</label>
+                                        <select id="battery-new-voltage" class="form-control font-num">
+                                            <option value="48">48V</option>
+                                            <option value="24">24V</option>
+                                            <option value="12">12V</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="battery-new-price">السعر (ر.س)</label>
+                                        <input type="number" id="battery-new-price" class="form-control font-num" placeholder="3000" required>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> إضافة للمخزون</button>
@@ -1248,19 +1305,19 @@
                 <!-- 3. INVERTERS CATEGORY -->
                 <div class="inventory-category-wrapper" style="margin-bottom: 20px; padding-bottom: 20px;">
                     <h3 style="margin-bottom: 15px; color: var(--accent-secondary); display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-gauge-high"></i> إدارة مخزون الانفرترات (العواكس)
+                        <i class="fa-solid fa-gauge-high"></i> إدارة مخزون الإنفرترات (العواكس)
                     </h3>
                     <div class="admin-grid-form" style="grid-template-columns: 1.2fr 0.8fr;">
                         <!-- List Table -->
                         <div class="admin-form-card glass-card">
-                            <h3>الانفرترات المتاحة</h3>
+                            <h3>الإنفرترات المتاحة</h3>
                             <div class="table-wrapper">
                                 <table class="admin-table">
                                     <thead>
                                         <tr>
-                                            <th>نوع الانفرتر</th>
-                                            <th>القدرة (kW)</th>
-                                            <th>السعر ($)</th>
+                                            <th>موديل الإنفرتر</th>
+                                            <th>القدرة والجهد</th>
+                                            <th>السعر (ر.س)</th>
                                             <th>حالة التوفر</th>
                                             <th>خيارات</th>
                                         </tr>
@@ -1274,20 +1331,28 @@
                         
                         <!-- Add Form -->
                         <div class="admin-form-card glass-card">
-                            <h3>إضافة انفرتر جديد</h3>
+                            <h3>إضافة إنفرتر جديد</h3>
                             <form id="add-inverter-form">
                                 <div class="form-group">
-                                    <label for="inverter-new-name">موديل ونوع الانفرتر</label>
-                                    <input type="text" id="inverter-new-name" class="form-control" placeholder="مثال: انفرتر داي 5kW" required>
+                                    <label for="inverter-new-name">موديل واسم الإنفرتر</label>
+                                    <input type="text" id="inverter-new-name" class="form-control" placeholder="مثال: اكزافير كراون مايكرو 4 كيلو 24V" required>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="inverter-new-capacity">القدرة (kW)</label>
-                                        <input type="number" step="0.1" id="inverter-new-capacity" class="form-control font-num" placeholder="5" required>
+                                        <input type="number" step="0.1" id="inverter-new-capacity" class="form-control font-num" placeholder="4" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="inverter-new-price">السعر بالدولار ($)</label>
-                                        <input type="number" id="inverter-new-price" class="form-control font-num" placeholder="750" required>
+                                        <label for="inverter-new-voltage">جهد البطارية</label>
+                                        <select id="inverter-new-voltage" class="form-control font-num">
+                                            <option value="48">48V</option>
+                                            <option value="24">24V</option>
+                                            <option value="12">12V</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inverter-new-price">السعر (ر.س)</label>
+                                        <input type="number" id="inverter-new-price" class="form-control font-num" placeholder="1200" required>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> إضافة للمخزون</button>
